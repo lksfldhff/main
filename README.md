@@ -11,9 +11,24 @@ Redaktionsablauf: Text in Word schreiben → Datei ins Programm ziehen →
 
 ## Schnellstart
 
-**Variante A — als Windows-Programm (empfohlen für die Redaktion)**
+**Variante A — fertiges Windows-Programm herunterladen (empfohlen)**
 
-1. `Newsletter-Tool.exe` doppelklicken (Bauanleitung siehe unten)
+Die `.exe` wird von GitHub automatisch gebaut, es muss dafür nichts
+installiert werden:
+
+1. Im Repository auf den Reiter **Actions** → links **„Windows-EXE bauen“**
+2. Den obersten Lauf mit grünem Haken anklicken
+3. Ganz unten unter **Artifacts** → **`Newsletter-Tool-Windows`** herunterladen
+4. ZIP entpacken — `Newsletter-Tool.exe`, `config.json`, Anleitung und
+   Beispieldatei liegen darin. Alle Dateien im selben Ordner lassen.
+
+Beim ersten Start meldet Windows „Der Computer wurde durch Windows
+geschützt“, weil das Programm nicht signiert ist:
+**Weitere Informationen** → **Trotzdem ausführen**.
+
+Dann:
+
+1. `Newsletter-Tool.exe` doppelklicken
 2. „Word-Datei wählen …“ → die fertige `.docx` auswählen
 3. „HTML kopieren“ → in CleverReach einfügen
 
@@ -148,8 +163,9 @@ Das Layout selbst (HTML-Gerüst und CSS) steht in
 
 ---
 
-## Windows-Programm bauen
+## Windows-Programm selbst bauen
 
+Nur nötig, wenn die `.exe` nicht über den Actions-Download bezogen wird.
 Auf einem **Windows-Rechner** mit installiertem Python:
 
 ```
