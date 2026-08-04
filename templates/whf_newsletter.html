@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{{TITLE}}</title>
+
+    <link href="{{GOOGLE_FONTS_URL}}" rel="stylesheet" />
+
+    <style type="text/css">
+        body {
+            width: 100% !important;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: {{FONT_FAMILY}};
+            background-color: {{C_PAGE_BG}};
+            color: {{C_DARK}};
+        }
+
+        table {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+
+        img {
+            outline: none;
+            text-decoration: none;
+            -ms-interpolation-mode: bicubic;
+            border: none;
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .container {
+            width: 100%;
+            max-width: {{MAX_WIDTH}}px;
+            margin: 0 auto;
+            background-color: {{C_CONTENT_BG}};
+        }
+
+        .content-padding {
+            padding: 50px 40px;
+        }
+
+        .header-container {
+            width: 100%;
+            background-color: {{C_DARK}};
+        }
+
+        .header-image {
+            width: 100%;
+            max-width: {{MAX_WIDTH}}px;
+            height: auto;
+            display: block;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        p {
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: {{C_DARK}};
+            margin: 0 0 25px 0;
+            line-height: 1.2;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 14px;
+            color: {{C_TEAL}};
+            text-transform: uppercase;
+            margin: 0 0 25px 0;
+            letter-spacing: 2px;
+            font-weight: 800;
+            border-left: 4px solid {{C_YELLOW}};
+            padding-left: 15px;
+            line-height: 1.4;
+        }
+
+        h3 {
+            font-size: 24px;
+            color: {{C_TEAL}};
+            margin: 0 0 30px 0;
+            line-height: 1.2;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: {{C_TEXT}};
+            margin: 0 0 15px 0;
+        }
+
+        ul,
+        ol {
+            font-size: 16px;
+            line-height: 1.8;
+            color: {{C_TEXT}};
+            margin: 0 0 15px 0;
+            padding-left: 22px;
+        }
+
+        li {
+            margin: 0 0 6px 0;
+        }
+
+        blockquote {
+            margin: 0 0 20px 0;
+            padding: 15px 20px;
+            border-left: 4px solid {{C_YELLOW}};
+            background-color: {{C_PAGE_BG}};
+            font-size: 16px;
+            line-height: 1.7;
+            color: {{C_DARK}};
+            font-style: italic;
+        }
+
+        .intro {
+            margin-bottom: 35px;
+        }
+
+        .divider {
+            border-top: 1px solid {{C_DIVIDER}};
+            margin: 40px 0;
+            line-height: 0;
+            font-size: 0;
+        }
+
+        .section {
+            margin-bottom: 45px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .article {
+            margin-bottom: 40px;
+        }
+
+        .article:last-child {
+            margin-bottom: 0;
+        }
+
+        .article-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: {{C_DARK}};
+            text-decoration: none;
+            display: block;
+            margin: 0 0 10px 0;
+            line-height: 1.3;
+        }
+
+        .article-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 0 15px 0;
+        }
+
+        .cta {
+            font-size: 14px;
+            font-weight: 800;
+            color: {{C_TEAL}};
+            text-decoration: none;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        .footer-main {
+            background-color: {{C_DARK}};
+            padding: 50px 40px;
+            color: #ffffff;
+            font-family: {{FONT_FAMILY}};
+        }
+
+        .footer-heading {
+            color: {{C_YELLOW}};
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .footer-text {
+            font-size: 11px;
+            line-height: 1.6;
+            color: #ffffff;
+        }
+
+        .footer-text a {
+            color: {{C_YELLOW}};
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer-text .footer-mail {
+            color: #ffffff;
+            text-decoration: underline;
+            font-weight: normal;
+        }
+
+        .footer-bottom {
+            background-color: {{C_FOOTER_BOTTOM_BG}};
+            padding: 30px 40px;
+            color: {{C_FOOTER_BOTTOM_TEXT}};
+            border-top: 1px solid {{C_DIVIDER}};
+        }
+
+        .footer-links {
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-links a {
+            text-decoration: none;
+            color: {{C_DARK}};
+            font-weight: 800;
+        }
+
+        .copyright {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 10px;
+            color: #999999;
+            text-transform: uppercase;
+        }
+
+        @media only screen and (max-width: 600px) {
+
+            .column,
+            .footer-col {
+                display: block !important;
+                width: 100% !important;
+                padding: 10px 0 !important;
+                text-align: left !important;
+            }
+
+            .content-padding,
+            .footer-main,
+            .footer-bottom {
+                padding: 30px 20px !important;
+            }
+        }
+    </style>
+
+    <style data-source="autogenerated google-fixes">
+        u+#body {
+            width: 100% !important;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: {{FONT_FAMILY}};
+            background-color: {{C_PAGE_BG}};
+            color: {{C_DARK}};
+        }
+    </style>
+
+    <meta name="robots" content="noindex,nofollow">
+</head>
+
+<body id="body">
+{{PREHEADER}}
+<table class="container" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation">
+<tbody>
+<tr>
+<td>
+{{HEADER}}
+</td>
+</tr>
+<tr>
+<td class="content-padding">
+{{CONTENT}}
+</td>
+</tr>
+<tr>
+<td class="footer-main">
+<table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation">
+<tbody>
+<tr>
+{{FOOTER_COLUMNS}}
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr>
+<td class="footer-bottom">
+<table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation">
+<tbody>
+<tr>
+<td class="column footer-links" valign="middle" align="left">{{FOOTER_LINKS}}</td>
+<td class="column footer-logos" valign="middle" align="right">{{FOOTER_LOGOS}}</td>
+</tr>
+</tbody>
+</table>
+<div class="copyright">{{COPYRIGHT}}</div>
+</td>
+</tr>
+</tbody>
+</table>
+{{TRACKING}}
+</body>
+
+</html>

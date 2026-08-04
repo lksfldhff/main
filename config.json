@@ -1,0 +1,84 @@
+{
+  "template": "whf_newsletter.html",
+  "brand": {
+    "title": "WHF Impulse",
+    "max_width": 650,
+    "header_image_url": "https://files.crsend.com/186000/186049/images/whf_newsletter_2026_02_24/whf_newsletter_header.jpg",
+    "header_image_alt": "WHF Impulse Header",
+    "header_image_link": ""
+  },
+  "colors": {
+    "dark": "#06465E",
+    "teal": "#136F8B",
+    "yellow": "#FFFC00",
+    "page_background": "#f4f7f8",
+    "content_background": "#ffffff",
+    "text": "#333333",
+    "divider": "#e0e0e0",
+    "footer_bottom_background": "#ededed",
+    "footer_bottom_text": "#777777"
+  },
+  "typography": {
+    "font_family": "'Inter', Helvetica, Arial, sans-serif",
+    "google_fonts_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap"
+  },
+  "content": {
+    "word_mapping": "auto",
+    "cta_arrow": "→",
+    "divider_after_intro": true,
+    "divider_before_bereich": true,
+    "link_target": "_blank"
+  },
+  "footer": {
+    "columns": [
+      {
+        "heading": "Kontakt",
+        "width": "30%",
+        "html": "Ihr Kontakt für Fragen oder Anregungen zum Newsletter:<br /><br /><strong>Thomas Rinke</strong><br />Leitung Marketing | Kommunikation | Presse<br /><strong>T</strong> +49 7131 3825 130<br /><a href=\"mailto:t.rinke@heilbronn-franken.com\" class=\"footer-mail\">t.rinke@heilbronn-franken.com</a>"
+      },
+      {
+        "heading": "Herausgeber",
+        "width": "40%",
+        "html": "Wirtschaftsregion Heilbronn-Franken GmbH<br />Koepffstraße 17 • 74076 Heilbronn<br /><strong>T</strong> +49 (0)7131 3825-220<br /><strong>F</strong> +49 (0)7131 3825-38<br /><a href=\"https://www.heilbronn-franken.com\" target=\"_blank\" rel=\"noopener\">www.heilbronn-franken.com</a><br /><br />Amtsgericht Stuttgart HRB 106 758<br />Sitz der Gesellschaft ist Heilbronn<br />Steuer-Nr. 65209/09008<br />USt.-IdNr. DE 196996048<br /><strong>Geschäftsführer:</strong> Bernhard Feßler<br /><br /><strong>Vorsitzender:</strong><br />Oberbürgermeister Harry Mergel"
+      },
+      {
+        "heading": "Newsletter",
+        "width": "30%",
+        "html": "Sie möchten keinen Newsletter mehr erhalten? Dann klicken Sie <a href=\"https://seu2.cleverreach.com/f/186049-187414/wwu/\" target=\"_blank\" rel=\"noopener\">hier</a>."
+      }
+    ],
+    "links": [
+      {
+        "label": "IMPRESSUM",
+        "url": "https://www.heilbronn-franken.com/de/metanavigation/impressum.html"
+      },
+      {
+        "label": "DATENSCHUTZ",
+        "url": "https://www.heilbronn-franken.com/de/metanavigation/datenschutz.html"
+      }
+    ],
+    "logos": [
+      {
+        "image": "https://files.crsend.com/186000/186049/images/whf_newsletter_2026_02_24/charta.png",
+        "url": "https://www.charta-der-vielfalt.de/startseite.html",
+        "alt": "Charta der Vielfalt",
+        "margin_right": "15px"
+      },
+      {
+        "image": "https://files.crsend.com/186000/186049/images/whf_newsletter_2026_02_24/proRegion.png",
+        "url": "http://www.pro-region.de/de/proregion/index.php",
+        "alt": "Pro Region"
+      }
+    ],
+    "copyright": "© {jahr} Wirtschaftsregion Heilbronn-Franken GmbH"
+  },
+  "tracking_pixels": [
+    "https://stats-eu2.crsend.com/stats/mc_[CLIENT_ID]_[MAILING_ID]_[USER_ID_SECURE].gif",
+    "https://186049.seu2.cleverreach.com/op2/[CLIENT_ID]-[MAILING_ID]/[USER_AES].gif"
+  ],
+  "images": {
+    "mode": "relative",
+    "base_url": "",
+    "folder_suffix": "_bilder"
+  }
+}
