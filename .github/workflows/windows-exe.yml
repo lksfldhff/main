@@ -1,0 +1,90 @@
+name: Windows-EXE bauen
+
+# Baut Newsletter-Tool.exe auf einem Windows-Rechner von GitHub.
+# Auf dem eigenen PC muss dafuer nichts installiert werden.
+#
+# Manuell starten: Reiter "Actions" -> "Windows-EXE bauen" -> "Run workflow"
+# Ergebnis: unten auf der Seite des Laufs unter "Artifacts" herunterladen.
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Quellcode holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tests ausfuehren
+        run: python -m unittest discover -s tests -v
+
+      - name: PyInstaller installieren
+        run: python -m pip install --upgrade pip pyinstaller
+
+      - name: EXE bauen
+        run: python build_exe.py
+
+      - name: Paket zusammenstellen
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path paket | Out-Null
+          Copy-Item dist/Newsletter-Tool.exe paket/
+          Copy-Item config.json paket/
+          Copy-Item README.md paket/Anleitung.md
+          New-Item -ItemType Directory -Force -Path paket/beispiel | Out-Null
+          Copy-Item beispiel/Newsletter-Vorlage.docx paket/beispiel/
+
+      - name: Kurzanleitung beilegen
+        shell: pwsh
+        run: |
+          @"
+          Newsletter-Tool
+          ===============
+
+          1. Newsletter-Tool.exe doppelklicken.
+             Beim ersten Start meldet sich Windows mit "Der Computer wurde
+             durch Windows geschuetzt" -- das Programm ist nicht signiert.
+             Auf "Weitere Informationen" und dann "Trotzdem ausfuehren" klicken.
+
+          2. "Word-Datei waehlen ..." und die fertige .docx auswaehlen.
+
+          3. "HTML kopieren" und den Inhalt in CleverReach in den
+             Quelltext-Editor einfuegen.
+
+          Die config.json muss im selben Ordner wie die .exe liegen.
+          Dort stehen Farben, Kopfbild, Fusszeile und die Tracking-Pixel.
+
+          Wie die Word-Datei aufgebaut sein muss, steht in Anleitung.md.
+          Eine ausgefuellte Vorlage liegt unter beispiel\Newsletter-Vorlage.docx.
+          "@ | Set-Content -Path paket/BITTE-ZUERST-LESEN.txt -Encoding utf8
+
+      - name: Zum Download bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Newsletter-Tool-Windows
+          path: paket/
+          retention-days: 90
+
+      - name: Release anhaengen (nur bei Version-Tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/Newsletter-Tool.exe
+            config.json
