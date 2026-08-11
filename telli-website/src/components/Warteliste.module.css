@@ -1,0 +1,70 @@
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  max-width: 34rem;
+}
+
+.formular {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s3);
+}
+
+.feldZeile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: var(--ink2);
+  padding-left: var(--s4);
+}
+
+.feld {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.75rem var(--s4);
+  border-radius: var(--r-pill);
+  background: var(--surface2);
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.feld::placeholder {
+  color: var(--ink2);
+}
+
+.feld[aria-invalid='true'] {
+  background: var(--alert-tint);
+}
+
+.fehler {
+  min-height: 1.25rem;
+  padding-left: var(--s4);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  letter-spacing: 0.005em;
+  color: var(--alert-ink);
+}
+
+.erfolg {
+  padding: var(--s4) var(--s5);
+  background: var(--energy-tint);
+  border-radius: var(--r-tile);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+
+.erfolgTitel {
+  font-weight: 700;
+  color: var(--energy-ink);
+}

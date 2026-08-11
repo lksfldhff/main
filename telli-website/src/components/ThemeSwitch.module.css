@@ -1,0 +1,131 @@
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.gruppe {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legende {
+  padding: 0 0 var(--s3);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: var(--ink2);
+}
+
+.karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--s3);
+}
+
+.karte {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: var(--s4);
+  background: var(--surface2);
+  border-radius: var(--r-tile);
+  cursor: pointer;
+}
+
+.karte:has(.eingabe:checked) {
+  background: var(--primary-tint);
+}
+
+.karte:has(.eingabe:focus-visible) {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 3px;
+}
+
+/* Die Eingabe traegt die Semantik, die Karte die Optik. */
+.eingabe {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.farben {
+  display: flex;
+  gap: 0.375rem;
+  margin-bottom: var(--s2);
+}
+
+.farbe {
+  width: 2.25rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+}
+
+.kartenName {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.karte:has(.eingabe:checked) .kartenName {
+  color: var(--on-tint);
+}
+
+.kartenText {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}
+
+/* --------------------------------------------------------- Hell / Dunkel */
+
+.schalter {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--surface2);
+  border-radius: var(--r-pill);
+}
+
+.segment {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 6rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--r-pill);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink2);
+  cursor: pointer;
+}
+
+.segment:has(.eingabe:checked) {
+  background: var(--card);
+  color: var(--primary-text);
+  box-shadow: var(--shadow);
+}
+
+.segment:has(.eingabe:focus-visible) {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 3px;
+}
+
+.segmentText {
+  position: relative;
+}
+
+.notiz {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+  color: var(--ink2);
+  max-width: 34rem;
+}

@@ -1,0 +1,30 @@
+.punkte {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--s4);
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.punkt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  height: 100%;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  background: var(--card);
+  border-radius: var(--r-tile);
+  box-shadow: var(--shadow);
+}
+
+.titel {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.text {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink2);
+}

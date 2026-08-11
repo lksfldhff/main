@@ -1,0 +1,87 @@
+.abschnitt {
+  padding-block: clamp(3.5rem, 9vw, 7rem);
+}
+
+.innen {
+  width: 100%;
+  max-width: var(--breite);
+  margin-inline: auto;
+  padding-inline: var(--rand);
+}
+
+.kopf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  max-width: 38rem;
+}
+
+.marke {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-text);
+}
+
+/* Zwei Spalten ab mittlerer Breite; schmal steht die Demo ueber dem Text. */
+.zwei {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  align-items: start;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-width: 0;
+}
+
+.demo {
+  order: -1;
+  min-width: 0;
+}
+
+@media (min-width: 44rem) {
+  .zwei {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .demo {
+    order: 0;
+  }
+}
+
+/* Nur bei feinem Zeiger und viel Platz klebt das Telefon. */
+@media (min-width: 68rem) and (hover: hover) {
+  .klebrig {
+    position: sticky;
+    top: 6rem;
+  }
+}
+
+.punkte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.punkt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.punktTitel {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.punktText {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink2);
+}

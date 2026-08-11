@@ -1,0 +1,249 @@
+@import './tokens.css';
+
+/* ---------------------------------------------------------------- Schrift
+   Plus Jakarta Sans, selbst gehostet, variabel 400–700.
+   Die Fallback-Schrift bekommt die Metriken der echten Schrift aufgezwungen
+   (gemessen: unitsPerEm 1000, Ascender 1038, Descender −222, Linegap 0,
+   xAvgCharWidth 606 gegenüber 1038/2048 bei Arial). Dadurch ist die Zeilen-
+   höhe vor und nach dem Laden identisch — kein Layout-Shift bei `swap`. */
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/plus-jakarta-sans-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Jakarta Fallback';
+  src: local('Arial'), local('Helvetica'), local('Liberation Sans');
+  size-adjust: 119.57%;
+  ascent-override: 86.81%;
+  descent-override: 18.57%;
+  line-gap-override: 0%;
+}
+
+/* ------------------------------------------------------------ Basiswerte */
+
+:root {
+  --font: 'Plus Jakarta Sans', 'Jakarta Fallback', system-ui, sans-serif;
+
+  /* Genau zwei Schattenwerte auf der ganzen Seite. */
+  --shadow: 0 12px 34px rgba(44, 7, 53, 0.05);
+  --shadow-float: 0 14px 40px rgba(44, 7, 53, 0.1);
+
+  /* Flaeche und Schrift des Hauptknopfes. In den hellen Themes ist --primary
+     dunkel genug fuer helle Schrift; in den dunklen Themes ist es ein
+     Mittelton, auf dem weder helle noch dunkle Schrift 4,5:1 erreicht —
+     dort wird der Knopf deshalb umgedreht: helle Flaeche, dunkle Schrift. */
+  --knopf-flaeche: var(--primary);
+  --knopf-text: var(--card);
+
+  --r-row: 1.5rem;
+  --r-tile: 2rem;
+  --r-card: 2.25rem;
+  --r-sheet: 2.5rem;
+  --r-pill: 999px;
+
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4rem;
+  --s9: 6rem;
+
+  --breite: 76rem;
+  --rand: clamp(1rem, 4vw, 2.5rem);
+
+  color-scheme: light;
+}
+
+:root[data-telli-theme='blau-dunkel'],
+:root[data-telli-theme='rosa-dunkel'] {
+  color-scheme: dark;
+  --knopf-flaeche: var(--primary-text);
+  --knopf-text: var(--card);
+}
+
+/* Hinweis zu den Tonwerten: --ink3 bis --ink5 sind in den hellen Themes
+   fuer Text in normaler Groesse zu schwach (unter 4,5:1). Auf der Website
+   wird ruhiger Text deshalb durchgehend mit --ink2 gesetzt; die Hierarchie
+   kommt aus Groesse und Gewicht, nicht aus dem Tonwert. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* Platz fuer die schwebende Navigation beim Sprung zu einem Abschnitt. */
+  scroll-padding-top: 6rem;
+  scroll-padding-bottom: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.6;
+  letter-spacing: 0;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+ul,
+ol {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  border: 0;
+  background: none;
+  margin: 0;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 3px;
+  border-radius: var(--r-row);
+}
+
+::selection {
+  background: var(--primary-tint);
+  color: var(--on-tint);
+}
+
+/* --------------------------------------------------------- Typo-Bausteine
+   Tracking ist groessenabhaengig: Display eng, Fliesstext bei 0,
+   kleine Schrift minimal geoeffnet (apple-design.md §15). */
+
+.h2 {
+  font-size: clamp(1.75rem, 3.6vw, 2.625rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+.lead {
+  font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
+  line-height: 1.55;
+  letter-spacing: 0;
+  color: var(--ink2);
+}
+
+.nurLesbarFuerScreenreader {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Sprungmarke fuer die Tastatur. */
+.sprungmarke {
+  position: fixed;
+  top: var(--s3);
+  left: var(--s3);
+  z-index: 100;
+  transform: translateY(-150%);
+  background: var(--card);
+  color: var(--primary-text);
+  font-weight: 600;
+  padding: var(--s3) var(--s5);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-float);
+}
+
+.sprungmarke:focus {
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------- Themewechsel (200 ms)
+   Nur waehrend des Wechsels aktiv, damit sonst nichts nachlaeuft. */
+
+:root.themeWechsel,
+:root.themeWechsel *,
+:root.themeWechsel *::before,
+:root.themeWechsel *::after {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    fill 200ms ease,
+    stroke 200ms ease,
+    box-shadow 200ms ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.themeWechsel,
+  :root.themeWechsel *,
+  :root.themeWechsel *::before,
+  :root.themeWechsel *::after {
+    transition-duration: 120ms !important;
+  }
+}

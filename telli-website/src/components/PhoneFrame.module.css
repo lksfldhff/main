@@ -1,0 +1,81 @@
+.korpus {
+  position: relative;
+  width: 100%;
+  max-width: 20.5rem;
+  margin-inline: auto;
+  padding: 0.625rem;
+  background: var(--camera);
+  border-radius: 3.125rem;
+  box-shadow: var(--shadow-float);
+}
+
+.schirm {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2.5rem;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* Feste Geraeteproportion — Inhalt wird beschnitten. */
+.fest > .schirm {
+  aspect-ratio: 393 / 852;
+}
+
+/* Waechst mit dem Inhalt. */
+.frei > .schirm {
+  min-height: 24rem;
+}
+
+/* Hero: schmal ein vollbreiter Ausschnitt, sonst ein ganzes Geraet. */
+.hero > .schirm {
+  aspect-ratio: 393 / 852;
+}
+
+@media (max-width: 43.999rem) {
+  .hero {
+    max-width: none;
+  }
+
+  .hero > .schirm {
+    aspect-ratio: auto;
+    height: 22rem;
+  }
+}
+
+.insel {
+  position: absolute;
+  top: 0.625rem;
+  left: 50%;
+  translate: -50% 0;
+  width: 6.25rem;
+  height: 1.5rem;
+  border-radius: var(--r-pill);
+  background: var(--camera);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.griffleiste {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  translate: -50% 0;
+  width: 8.25rem;
+  height: 0.3125rem;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  opacity: 0.22;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.inhalt {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Platz fuer Insel und Griffleiste. */
+  padding: 2.75rem 0 1.75rem;
+}

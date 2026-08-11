@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" viewBox="0 0 1000 700" font-family="Plus Jakarta Sans, -apple-system, Helvetica, Arial, sans-serif">
+  <title>telli. — Dark Mode aus der Blau-Palette</title>
+  <rect width="1000" height="700" fill="#080D11"></rect>
+
+  <text x="48" y="58" font-size="13" font-weight="700" letter-spacing="1.6" fill="#8B9CA8">TELLI. DARK MODE</text>
+  <text x="48" y="98" font-size="30" font-weight="700" letter-spacing="-0.9" fill="#EAF1F7">Dunkelvariante der Blau-Palette</text>
+  <text x="48" y="128" font-size="14" font-weight="400" fill="#9DAEBA">#17301C trägt jetzt die Flächen, #EBF2FA den Text — die Rollen kehren sich um.</text>
+
+  <text x="48" y="176" font-size="12" font-weight="700" letter-spacing="1.2" fill="#8B9CA8">ORIGINAL</text>
+  <g>
+    <rect x="48" y="190" width="172" height="76" rx="18" fill="#064789"></rect>
+    <rect x="232" y="190" width="172" height="76" rx="18" fill="#427AA1"></rect>
+    <rect x="416" y="190" width="172" height="76" rx="18" fill="#EBF2FA"></rect>
+    <rect x="600" y="190" width="172" height="76" rx="18" fill="#17301C"></rect>
+    <rect x="784" y="190" width="168" height="76" rx="18" fill="#04724D"></rect>
+    <g font-size="12" font-weight="600" fill="#C3D0DA">
+      <text x="48" y="286">#064789</text>
+      <text x="232" y="286">#427AA1</text>
+      <text x="416" y="286">#EBF2FA</text>
+      <text x="600" y="286">#17301C</text>
+      <text x="784" y="286">#04724D</text>
+    </g>
+    <g font-size="11" font-weight="400" fill="#8B9CA8">
+      <text x="48" y="304">Button-Fläche</text>
+      <text x="232" y="304">bleibt Datenfarbe</text>
+      <text x="416" y="304">wird Textfarbe</text>
+      <text x="600" y="304">wird Flächenbasis</text>
+      <text x="784" y="304">Erfolg / Energie</text>
+    </g>
+  </g>
+
+  <text x="48" y="356" font-size="12" font-weight="700" letter-spacing="1.2" fill="#8B9CA8">FLÄCHEN — #17301C entsättigt und abgedunkelt</text>
+  <g>
+    <rect x="48" y="370" width="140" height="64" rx="16" fill="#080D11" stroke="#1E2A2F"></rect>
+    <rect x="200" y="370" width="140" height="64" rx="16" fill="#0D1418"></rect>
+    <rect x="352" y="370" width="140" height="64" rx="16" fill="#141D21"></rect>
+    <rect x="504" y="370" width="140" height="64" rx="16" fill="#0F1B22"></rect>
+    <rect x="656" y="370" width="140" height="64" rx="16" fill="#1C262B"></rect>
+    <rect x="808" y="370" width="144" height="64" rx="16" fill="#253136"></rect>
+    <g font-size="12" font-weight="600" fill="#C3D0DA">
+      <text x="48" y="454">#080D11</text>
+      <text x="200" y="454">#0D1418</text>
+      <text x="352" y="454">#141D21</text>
+      <text x="504" y="454">#0F1B22</text>
+      <text x="656" y="454">#1C262B</text>
+      <text x="808" y="454">#253136</text>
+    </g>
+    <g font-size="11" font-weight="400" fill="#8B9CA8">
+      <text x="48" y="472">page</text>
+      <text x="200" y="472">bg / Sheet</text>
+      <text x="352" y="472">card</text>
+      <text x="504" y="472">hero (blaustichig)</text>
+      <text x="656" y="472">surface2</text>
+      <text x="808" y="472">track</text>
+    </g>
+  </g>
+
+  <text x="48" y="524" font-size="12" font-weight="700" letter-spacing="1.2" fill="#8B9CA8">TEXT &amp; AKZENT</text>
+  <g>
+    <rect x="48" y="538" width="140" height="64" rx="16" fill="#EAF1F7"></rect>
+    <rect x="200" y="538" width="140" height="64" rx="16" fill="#C3D0DA"></rect>
+    <rect x="352" y="538" width="140" height="64" rx="16" fill="#8B9CA8"></rect>
+    <rect x="504" y="538" width="140" height="64" rx="16" fill="#3C6890"></rect>
+    <rect x="656" y="538" width="140" height="64" rx="16" fill="#8FB6CE"></rect>
+    <rect x="808" y="538" width="144" height="64" rx="16" fill="#4FA383"></rect>
+    <g font-size="12" font-weight="600" fill="#C3D0DA">
+      <text x="48" y="622">#EAF1F7</text>
+      <text x="200" y="622">#C3D0DA</text>
+      <text x="352" y="622">#8B9CA8</text>
+      <text x="504" y="622">#3C6890</text>
+      <text x="656" y="622">#8FB6CE</text>
+      <text x="808" y="622">#4FA383</text>
+    </g>
+    <g font-size="11" font-weight="400" fill="#8B9CA8">
+      <text x="48" y="640">ink · Headline (aus #EBF2FA)</text>
+      <text x="200" y="640">ink2 · Fließtext</text>
+      <text x="352" y="640">ink3 · Meta</text>
+      <text x="504" y="640">primary · Button (aus #064789)</text>
+      <text x="656" y="640">data · Text (aus #427AA1)</text>
+      <text x="808" y="640">energy (aus #04724D)</text>
+    </g>
+  </g>
+
+  <g>
+    <rect x="48" y="662" width="20" height="20" rx="6" fill="#1A2A2E"></rect>
+    <rect x="76" y="662" width="20" height="20" rx="6" fill="#A9C4CF"></rect>
+    <rect x="104" y="662" width="20" height="20" rx="6" fill="#182420"></rect>
+    <text x="136" y="677" font-size="11" font-weight="400" fill="#8B9CA8">Kein Signalrot: kritische Zustände über Fläche #1A2A2E + Text #A9C4CF. Erfolgsfläche #182420 mit #4FA383. #064789 und #17301C sind auf Dunkel zu dunkel für Text — nur als Fläche verwenden.</text>
+  </g>
+</svg>
