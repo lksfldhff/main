@@ -1,5 +1,9 @@
 # Word → Newsletter-HTML
 
+> Dieses Repository enthält ein zweites, eigenständiges Projekt:
+> [`telli-website/`](telli-website/) — die Produkt-Website der App telli.
+> (Vite + React). Der Rest dieser Datei beschreibt das Newsletter-Werkzeug.
+
 Wandelt eine Word-Datei in fertiges HTML für den CleverReach-Versand um —
 im bestehenden Layout des Newsletters (Kopfbild, gelbe Rubrik-Balken,
 Artikel mit CTA-Link, dreispaltige Fußzeile, Tracking-Pixel).

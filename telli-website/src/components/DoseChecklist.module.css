@@ -1,0 +1,125 @@
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.kopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding-inline: var(--s2);
+}
+
+.titel {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.zaehler {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--primary-text);
+  font-variant-numeric: tabular-nums;
+  will-change: transform;
+}
+
+.liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.zeile {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 3.25rem;
+  padding: var(--s3);
+  text-align: left;
+  background: var(--card);
+  border-radius: var(--r-row);
+  box-shadow: var(--shadow);
+}
+
+.kreis {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--r-pill);
+  background: var(--surface2);
+  overflow: hidden;
+}
+
+.fuellung {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+  will-change: transform;
+}
+
+.haken {
+  position: relative;
+  width: 1rem;
+  height: 1rem;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.nameZeile {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.name {
+  position: relative;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* Der Strich laeuft von links nach rechts. */
+.strich {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 55%;
+  height: 0.09375rem;
+  background: currentColor;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.zeit {
+  flex: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink2);
+  font-variant-numeric: tabular-nums;
+}
+
+.hinweis {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}

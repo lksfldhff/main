@@ -1,0 +1,114 @@
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4) var(--s4) var(--s3);
+  background: var(--card);
+  border-radius: var(--r-row);
+  box-shadow: var(--shadow);
+}
+
+.kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.beschriftung {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.stufe {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}
+
+.chip {
+  display: grid;
+  place-items: center;
+  min-width: 2.5rem;
+  height: 1.875rem;
+  padding-inline: var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--primary-tint);
+  color: var(--on-tint);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  will-change: transform;
+}
+
+.bahn {
+  position: relative;
+  height: 2.75rem;
+  /* Platz, damit der Griff an den Enden nicht anstoesst. */
+  margin-inline: 0.875rem;
+  /* Senkrecht darf die Seite weiterscrollen, waagerecht ziehen wir selbst. */
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.bahn[data-ziehend] {
+  cursor: grabbing;
+}
+
+.gleis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  translate: 0 -50%;
+  height: 0.625rem;
+  border-radius: var(--r-pill);
+  background: var(--surface2);
+  overflow: hidden;
+}
+
+.fuellung {
+  position: absolute;
+  inset: 0;
+  background: var(--primary);
+  will-change: transform;
+}
+
+.griff {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  translate: -50% -50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  /* Ohne Rahmen und ohne Schatten. */
+}
+
+.kern {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--r-pill);
+  background: var(--knob);
+}
+
+.marken {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}

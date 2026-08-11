@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="393" height="852" viewBox="0 0 393 852" font-family="Plus Jakarta Sans, -apple-system, Helvetica, Arial, sans-serif">
+  <title>telli. — Startscreen (blau-hell)</title>
+
+  
+  <defs>
+    <clipPath id="headerClip"><rect x="0" y="0" width="393" height="392" rx="0"></rect></clipPath>
+    <linearGradient id="fadeOut" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EBF2FA" stop-opacity="0"></stop>
+      <stop offset="1" stop-color="#EBF2FA" stop-opacity="1"></stop>
+    </linearGradient>
+  </defs>
+
+  <rect id="bg" width="393" height="852" fill="#EBF2FA"></rect>
+
+  <g id="header" clip-path="url(#headerClip)">
+    
+    <circle id="shape-large" cx="206" cy="266" r="122" fill="#D9E3EE"></circle>
+    <circle id="shape-medium" cx="72" cy="316" r="46" fill="#CFE0EC" fill-opacity="0.85"></circle>
+    <circle id="shape-small" cx="334" cy="150" r="26" fill="#DCE6F0"></circle>
+
+    
+    <g id="face" stroke="#064789" stroke-width="3.4" stroke-linecap="round" fill="none">
+      <path id="face-brow" d="M146 230c22-30 80-34 106-6"></path>
+      <path id="face-eye-left" d="M170 266c7-8 17-8 24 0"></path>
+      <path id="face-eye-right" d="M220 266c7-8 17-8 24 0"></path>
+      <path id="face-nose" d="M199 264v28c0 6-5 9-11 8"></path>
+      <path id="face-mouth" d="M176 314c12 12 34 13 48 1"></path>
+    </g>
+
+    
+    <g id="dots" fill="#064789" fill-opacity="0.9">
+      <circle id="dot-1" cx="120" cy="330" r="5"></circle>
+      <circle id="dot-2" cx="300" cy="300" r="7"></circle>
+      <circle id="dot-3" cx="60" cy="238" r="4"></circle>
+    </g>
+
+    <rect id="header-fade" x="0" y="272" width="393" height="120" fill="url(#fadeOut)"></rect>
+  </g>
+
+  <g id="header-text">
+    <text id="wordmark" x="32" y="98" font-size="52" font-weight="700" letter-spacing="-1.56" fill="#064789">telli.</text>
+    <text id="claim" x="32" y="146" font-size="24" font-weight="600" letter-spacing="-0.48" fill="#17301C">Deine Gesundheit.</text>
+    <text x="32" y="177" font-size="24" font-weight="600" letter-spacing="-0.48" fill="#17301C">Dein Überblick.</text>
+  </g>
+
+  <g id="body-copy" font-size="16" font-weight="400" fill="#3D5566">
+    <text x="24" y="586">Erfasse Migräne, Begleitsymptome und deinen</text>
+    <text x="24" y="610">Alltag in wenigen Sekunden. telli. zeigt dir</text>
+    <text x="24" y="634">mögliche Zusammenhänge – zum Beispiel mit</text>
+    <text x="24" y="658">Wetter, Schlaf oder Zyklus.</text>
+  </g>
+
+  <g id="cta">
+    <rect x="24" y="700" width="345" height="54" rx="27" fill="#064789"></rect>
+    <text x="196.5" y="733" text-anchor="middle" font-size="17" font-weight="600" fill="#FFFFFF">Loslegen</text>
+  </g>
+
+  <g id="secondary" text-anchor="middle">
+    <text x="196.5" y="784" font-size="15" font-weight="500" fill="#8095A3">Ich habe bereits ein Konto</text>
+    <text x="196.5" y="804" font-size="12" font-weight="400" fill="#93A6B3">In Vorbereitung – telli. funktioniert ohne Konto</text>
+  </g>
+</svg>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de" data-telli-theme="blau-hell">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>telli. — Dein Tagebuch für Tage, an denen nichts geht.</title>
+    <meta
+      name="description"
+      content="telli. erfasst Migräne, ME/CFS und Magen-Darm-Beschwerden in wenigen Sekunden — und zeigt dir, was damit zusammentraf. Alle Einträge bleiben auf deinem iPhone."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#10243D" />
+    <link rel="icon" href="/telli-app-icon-1024.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/telli-app-icon-1024.png" />
+    <link
+      rel="preload"
+      href="/fonts/plus-jakarta-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <script>
+      // Theme vor dem ersten Paint setzen, damit nichts umspringt.
+      (function () {
+        try {
+          var gespeichert = localStorage.getItem('telli-theme')
+          var erlaubt = ['blau-hell', 'rosa-hell', 'blau-dunkel', 'rosa-dunkel']
+          if (gespeichert && erlaubt.indexOf(gespeichert) !== -1) {
+            document.documentElement.setAttribute('data-telli-theme', gespeichert)
+            return
+          }
+          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-telli-theme', 'blau-dunkel')
+          }
+        } catch (e) {
+          /* Standard bleibt blau-hell */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

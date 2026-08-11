@@ -1,0 +1,138 @@
+.aufschluesselung {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.aufschluesselungPunkt {
+  padding: var(--s3) var(--s4);
+  background: var(--surface2);
+  border-radius: var(--r-row);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.nachsatz {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink2);
+  max-width: 32rem;
+}
+
+/* ------------------------------------------------------ Demo im Telefon */
+
+.buehne {
+  position: relative;
+  height: 100%;
+}
+
+.formular {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  padding: 0 var(--s4);
+}
+
+.formularKopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding-inline: var(--s2);
+}
+
+.formularTitel {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.formularZeit {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}
+
+.chipsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.chipsLabel {
+  padding-inline: var(--s2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chip {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--r-pill);
+  background: var(--surface2);
+  color: var(--ink2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  will-change: transform;
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--primary-tint);
+  color: var(--on-tint);
+}
+
+/* --------------------------------------------------- Gesichts-Sequenz */
+
+.erfolg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s4);
+  background: var(--bg);
+  /* Deckt die Eingabe nur optisch ab, sperrt sie aber nicht aus. */
+  pointer-events: none;
+}
+
+.zeichenBox {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 7.5rem;
+  height: 7.5rem;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-pill);
+  background: var(--primary-tint);
+  will-change: transform;
+}
+
+.zeichen {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+}
+
+.erfolgText {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}

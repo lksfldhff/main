@@ -1,0 +1,7 @@
+.sheet {
+  position: relative;
+  z-index: 1;
+  margin-top: -2.25rem;
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  background: var(--bg);
+}

@@ -1,0 +1,254 @@
+.karte {
+  background: var(--card);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.karteKopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+}
+
+.karteTitel {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------- Umschalter */
+
+.pille {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--surface2);
+  border-radius: var(--r-pill);
+}
+
+.tab {
+  position: relative;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--r-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ink2);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--primary-text);
+}
+
+.tabAktiv {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.tabText {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- Kennzahlen */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  border-radius: var(--r-tile);
+}
+
+.kennzahlen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: var(--s2);
+}
+
+.kachel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: var(--s3) var(--s4);
+  background: var(--surface2);
+  border-radius: var(--r-row);
+}
+
+.kachelWert {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.kachelLabel {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}
+
+/* ----------------------------------------------------------------- Charts */
+
+.spalten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--s5);
+  align-items: start;
+}
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.chartTitel {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.chartHinweis {
+  margin-top: -0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}
+
+/* Senkrechte Balken — wachsen aus der Grundlinie. */
+
+.wochen {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  padding-top: var(--s2);
+}
+
+.wochenSpalte {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.wochenGleis {
+  width: 100%;
+  height: 4.5rem;
+  display: flex;
+  align-items: flex-end;
+}
+
+.wochenBalken {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.25rem;
+  transform-origin: bottom center;
+  will-change: transform;
+}
+
+.wochenLabel {
+  font-size: 0.625rem;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+  font-variant-numeric: tabular-nums;
+  min-height: 0.9rem;
+}
+
+/* Waagerechte Balken — wachsen von links. */
+
+.faktoren {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.faktor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+}
+
+.faktorKopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.faktorName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.faktorWert {
+  flex: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink2);
+  font-variant-numeric: tabular-nums;
+}
+
+.faktorGleis {
+  height: 0.5rem;
+  border-radius: var(--r-pill);
+  background: var(--surface2);
+  overflow: hidden;
+}
+
+.faktorBalken {
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.faktorBezug {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+}
+
+.einordnung {
+  margin-top: var(--s1);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ink2);
+}
+
+.datenbasis {
+  padding: var(--s4);
+  background: var(--surface2);
+  border-radius: var(--r-row);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+  color: var(--ink2);
+}
+
+.datenbasisWert {
+  color: var(--primary-text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,62 @@
+.fuss {
+  background: var(--surface2);
+  /* Platz fuer die schwebende Navigation am unteren Rand. */
+  padding-block: clamp(2.5rem, 5vw, 3.5rem) calc(6rem + env(safe-area-inset-bottom, 0px));
+}
+
+.innen {
+  width: 100%;
+  max-width: var(--breite);
+  margin-inline: auto;
+  padding-inline: var(--rand);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3) var(--s6);
+}
+
+.marke {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--primary-text);
+}
+
+.links {
+  display: flex;
+  gap: var(--s5);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink2);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--primary-text);
+}
+
+.notiz {
+  flex: 1 1 18rem;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  color: var(--ink2);
+  text-align: right;
+}
+
+@media (max-width: 44rem) {
+  .notiz {
+    text-align: left;
+  }
+}
+
+@media (min-width: 44rem) {
+  .fuss {
+    padding-block: clamp(2.5rem, 5vw, 3.5rem);
+  }
+}

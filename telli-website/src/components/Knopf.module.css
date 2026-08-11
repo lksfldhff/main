@@ -1,0 +1,47 @@
+.knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: 3rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--r-pill);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: center;
+  text-decoration: none;
+  will-change: transform;
+}
+
+.breit {
+  width: 100%;
+}
+
+.primaer {
+  background: var(--knopf-flaeche);
+  color: var(--knopf-text);
+}
+
+.sekundaer {
+  background: var(--primary-tint);
+  color: var(--on-tint);
+}
+
+/* Auf dem dunklen Hero. */
+.hell {
+  background: var(--hero-ink);
+  color: var(--hero);
+}
+
+.leise {
+  background: color-mix(in srgb, var(--hero-ink) 14%, transparent);
+  color: var(--hero-ink);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .leise {
+    background: var(--hero-soft);
+    color: var(--hero);
+  }
+}
