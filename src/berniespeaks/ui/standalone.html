@@ -69,6 +69,7 @@
       <input type="password" id="schluessel" spellcheck="false" placeholder="API-Schlüssel eintragen">
       <span class="fussnote" id="anbietername"></span>
     </div>
+    <button class="knopf-zart" id="kopieren2" hidden>Text kopieren</button>
     <div class="schalter" id="motor">
       <button data-wert="modell" aria-pressed="true">Modell</button>
       <button data-wert="offline" aria-pressed="false">Mechanik</button>
@@ -306,23 +307,23 @@ function anweisungStil(text, staerke) {
       "- Saetze sind kurz: im Schnitt " + soll("woerter_je_satz").toFixed(0) + " Woerter.\n" +
       "- Selbstbezuege (ich, wir, mir, uns): " + soll("ich_wir_je_100_woerter").toFixed(0) + " je 100 Woerter.",
     "DIESE EMOJIS kommen im Material vor, andere nicht: " +
-      (p.emoji.haeufigste || []).slice(0, 14).map((e) => e[0]).join(" ") + "\n" +
+      (p.emoji.haeufigste || []).slice(0, 12).map((e) => e[0]).join(" ") + "\n" +
       "Typische Ketten: " + (p.emoji.ketten || []).slice(0, 6).map((e) => e[0]).join("  ") + "\n" +
       "Aufzaehlungszeilen beginnen mit: " +
       (p.struktur.aufzaehlungszeichen || []).slice(0, 5).map((e) => e[0]).join(" "),
     "WORTSCHATZ, der auffaellig oft vorkommt: " +
-      (p.lexikon.inhaltswoerter || []).slice(0, 35).map((e) => e.wort).join(", "),
+      (p.lexikon.inhaltswoerter || []).slice(0, 22).map((e) => e.wort).join(", "),
     "WIEDERKEHRENDE WENDUNGEN: " +
-      (p.lexikon.wendungen || []).slice(0, 14).map((e) => e.text).join("; "),
-    "SO FANGEN TEXTE AN: " + (p.lexikon.oeffner || []).slice(0, 6).join(" | ") + "\n" +
-      "SO HOEREN SIE AUF: " + (p.lexikon.schluesser || []).slice(0, 6).join(" | "),
+      (p.lexikon.wendungen || []).slice(0, 10).map((e) => e.text).join("; "),
+    "SO FANGEN TEXTE AN: " + (p.lexikon.oeffner || []).slice(0, 4).join(" | ") + "\n" +
+      "SO HOEREN SIE AUF: " + (p.lexikon.schluesser || []).slice(0, 4).join(" | "),
   ];
   const tags = (p.lexikon.hashtags || []).slice(0, 10).map((e) => e[0]).join(" ");
   if (tags) teile.push("HASHTAGS am Ende, klein geschrieben, nur wenn es passt: " + tags);
-  const orgs = (p.lexikon.organisationen || []).slice(0, 8).join("; ");
+  const orgs = (p.lexikon.organisationen || []).slice(0, 5).join("; ");
   if (orgs) teile.push("Genannte Einrichtungen (nur uebernehmen, wenn sie zum Inhalt passen): " + orgs);
 
-  const beispiele = aehnlichste(text, 3);
+  const beispiele = aehnlichste(text, 2);
   if (beispiele.length) {
     teile.push("SO KLINGT DAS im Original -- uebernimm Ton, Emoji-Dichte und Aufbau, nie den Inhalt:\n\n" +
       beispiele.join("\n\n---\n\n"));
@@ -611,6 +612,7 @@ async function uebersetzen() {
   zustand.laeuft = true;
   $("los").disabled = true;
   $("kopieren").hidden = true;
+  $("kopieren2").hidden = true;
   $("bewertung").hidden = true;
   $("ausgabe").innerHTML = '<p class="laedt">Er sattelt auf …</p>';
 
@@ -640,7 +642,16 @@ async function uebersetzen() {
       let auftragstext = text;
       const entwuerfe = [];
       for (let runde = 0; runde < 3; runde++) {
-        const entwurf = await frageModell(anweisung, auftragstext);
+        let entwurf;
+        try {
+          entwurf = await frageModell(anweisung, auftragstext);
+        } catch (stoerung) {
+          // Steht schon ein Entwurf, ist eine gescheiterte Nachbesserung kein
+          // Grund, alles wegzuwerfen -- der bisher beste wird ausgegeben.
+          if (!entwuerfe.length) throw stoerung;
+          hinweise.push("Nachbesserung abgebrochen: " + (stoerung.message || stoerung));
+          break;
+        }
         const b = bewerte(entwurf);
         entwuerfe.push([entwurf, b]);
         if (b.punkte >= SCHWELLE) break;
@@ -678,6 +689,7 @@ function zeigen(text, note, motor, runden, hinweise) {
     return p;
   }));
   $("kopieren").hidden = !text;
+  $("kopieren2").hidden = !text;
 
   if (note) {
     $("notenwert").textContent = Math.round(note.punkte);
@@ -727,6 +739,7 @@ schalterBinden($("richtung"), (wert) => {
   $("ausgabe").innerHTML = '<p class="leise">Die Übersetzung erscheint hier.</p>';
   $("bewertung").hidden = true;
   $("kopieren").hidden = true;
+  $("kopieren2").hidden = true;
 });
 schalterBinden($("motor"), (wert) => { zustand.motor = wert; });
 
@@ -737,13 +750,24 @@ $("staerke").addEventListener("input", (e) => {
 $("eingabe").addEventListener("input", () => {
   $("zaehler").textContent = $("eingabe").value.trim().length + " Zeichen";
 });
-$("kopieren").addEventListener("click", async () => {
+async function kopieren(knopf, beschriftung) {
   try {
     await navigator.clipboard.writeText(zustand.ausgabe);
-    $("kopieren").textContent = "Kopiert";
-    setTimeout(() => { $("kopieren").textContent = "Kopieren"; }, 1400);
-  } catch (e) { $("kopieren").textContent = "Ging nicht"; }
-});
+    knopf.textContent = "Kopiert";
+  } catch (e) {
+    // Ohne sicheren Kontext (http statt https) verweigert der Browser die
+    // Zwischenablage -- dann wenigstens den Text markieren.
+    knopf.textContent = "Ging nicht";
+    const bereich = document.createRange();
+    bereich.selectNodeContents($("ausgabe"));
+    const auswahl = window.getSelection();
+    auswahl.removeAllRanges();
+    auswahl.addRange(bereich);
+  }
+  setTimeout(() => { knopf.textContent = beschriftung; }, 1600);
+}
+$("kopieren").addEventListener("click", () => kopieren($("kopieren"), "Kopieren"));
+$("kopieren2").addEventListener("click", () => kopieren($("kopieren2"), "Text kopieren"));
 $("schluessel").addEventListener("input", () => {
   const wert = $("schluessel").value.trim();
   const a = anbieterZu(wert);

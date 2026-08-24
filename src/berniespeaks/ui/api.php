@@ -292,7 +292,9 @@ $bauen = static function (string $modell) use ($eintrag, $SCHLUESSEL, $system, $
         ['content-type: application/json', 'authorization: Bearer ' . $SCHLUESSEL],
         [
             'model' => $modell,
-            'max_tokens' => 2000,
+            // Knapp halten: kostenlose Kontingente rechnen den angeforderten
+            // Rahmen voll gegen das Minutenbudget, auch wenn er ungenutzt bleibt.
+            'max_tokens' => 1000,
             'messages' => [
                 ['role' => 'system', 'content' => $system],
                 ['role' => 'user', 'content' => $nutzer],
@@ -333,10 +335,24 @@ if ($status < 200 || $status >= 300) {
         401 => 'Der hinterlegte Schluessel wird nicht akzeptiert (401).',
         403 => 'Zugriff verweigert (403).',
         404 => 'Modell nicht gefunden (404).',
-        429 => 'Der Anbieter bremst gerade (429). Kurz warten.',
+        429 => 'Das Minutenkontingent ist aufgebraucht.',
         529 => 'Der Dienst ist ueberlastet (529).',
     ];
     $text = $texte[$status] ?? "Der Anbieter antwortete mit Status $status.";
+
+    // Bei einer Bremse nennt der Anbieter die Wartezeit -- die gehoert in die
+    // Antwort, damit die Seite etwas Sinnvolles anzeigen kann.
+    if ($status === 429) {
+        $sekunden = 0;
+        if (is_string($meldung) && preg_match('/try again in ([\d.]+)s/i', $meldung, $treffer)) {
+            $sekunden = (int) ceil((float) $treffer[1]);
+        }
+        antworten([
+            'fehler' => $text . ($sekunden > 0 ? " Noch $sekunden Sekunden." : ' Kurz warten.'),
+            'warten' => $sekunden,
+        ], 429);
+    }
+
     if (in_array($status, [400, 404], true)) {
         $namen = modelle_holen($eintrag, $SCHLUESSEL);
         if ($namen) {

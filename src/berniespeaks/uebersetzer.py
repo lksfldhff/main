@@ -39,7 +39,7 @@ SCHWELLE = 72.0
 # So oft wird hoechstens nachgeschaerft.
 NACHBESSERUNGEN = 2
 # So viele Stilbeispiele kommen in die Anweisung.
-BEISPIELE = 3
+BEISPIELE = 2
 
 
 @dataclass
@@ -132,6 +132,8 @@ class Uebersetzer:
                     "Inhalt und Fakten bleiben unveraendert."
                 )
         except LLMFehler as fehler:
+            # Ein schon erzeugter Entwurf ueberlebt eine gescheiterte
+            # Nachbesserung -- nur ohne jeden Entwurf wird umgeschaltet.
             if not entwuerfe:
                 entwurf = self.offline_stil(roh, staerke)
                 hinweise.append(f"Sprachmodell nicht erreichbar ({fehler}). Offline-Generator eingesprungen.")
@@ -193,15 +195,15 @@ class Uebersetzer:
         versal = p.soll("versal_wortanteil") * 100 * staerke
         satzlaenge = p.soll("woerter_je_satz")
         position = p.emoji.get("position", {})
-        haeufigste = " ".join(e for e, _ in p.emoji.get("haeufigste", [])[:14])
+        haeufigste = " ".join(e for e, _ in p.emoji.get("haeufigste", [])[:12])
         ketten = "  ".join(k for k, _ in p.emoji.get("ketten", [])[:6])
         marker = " ".join(z for z, _ in p.struktur.get("aufzaehlungszeichen", [])[:5])
-        woerter = ", ".join(p.inhaltswoerter[:35])
-        wendung = "; ".join(w["text"] for w in p.lexikon.get("wendungen", [])[:14])
-        oeffner = " | ".join(p.lexikon.get("oeffner", [])[:6])
-        schluesser = " | ".join(p.lexikon.get("schluesser", [])[:6])
+        woerter = ", ".join(p.inhaltswoerter[:22])
+        wendung = "; ".join(w["text"] for w in p.lexikon.get("wendungen", [])[:10])
+        oeffner = " | ".join(p.lexikon.get("oeffner", [])[:4])
+        schluesser = " | ".join(p.lexikon.get("schluesser", [])[:4])
         hashtags = " ".join(h for h, _ in p.lexikon.get("hashtags", [])[:10])
-        orgs = "; ".join(p.lexikon.get("organisationen", [])[:8])
+        orgs = "; ".join(p.lexikon.get("organisationen", [])[:5])
 
         teile = [
             f"Du schreibst wie {p.name or 'die Person'}. Dieser Schreibstil wurde aus "
