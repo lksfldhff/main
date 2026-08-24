@@ -210,6 +210,41 @@ Offline-Modus ist der Notnagel, nicht der Hauptweg.
 
 ---
 
+## Eine einzelne HTML-Datei zum Hochladen
+
+Wer keinen Python-Rechner nebenherlaufen lassen will, baut sich die
+eigenständige Fassung: **eine Datei**, die alles mitbringt — Profil,
+Messtechnik, Bewertung, Anweisungsbau und Offline-Generator. Kein Server,
+keine Installation. Sie lässt sich auf jeden Webspace legen.
+
+```bash
+python tools/html_erzeugen.py                              # mit dem Demo-Profil
+python tools/html_erzeugen.py -p korpus/stilprofil.json \
+                              -o Stil-Uebersetzer.html \
+                              -t "Bernie Speaks"           # mit dem eigenen Profil
+```
+
+Der API-Schlüssel steht **nicht** in der Datei. Er wird von der Person
+eingetragen, die die Seite benutzt, und bleibt in deren Browser
+(`localStorage`) — geschickt wird er nur an den gewählten Anbieter. Erkannt
+wird er am Präfix: `sk-ant-…` → Claude, `gsk_…` → Groq, `sk-or-…` →
+OpenRouter.
+
+Zwei Dinge unterscheiden sie von der Python-Fassung:
+
+* **Anglizismen** werden nicht gemessen — dafür bräuchte es die englische
+  Wortliste, die nur die Python-Fassung mitbringt. Die übrigen 18 Merkmale sind
+  identisch, die Note bedeutet dasselbe.
+* Per Doppelklick geöffnet (`file://`) blockieren manche Browser den Aufruf der
+  API. **Auf einem Webspace mit `https://` funktioniert es.**
+
+Wer die Datei öffentlich stellt: sie enthält das gelernte Profil, also
+Formulierungen und anonymisierte Beispieltexte. Für eine öffentliche Adresse
+besser das Demo-Profil nehmen — oder die Seite hinter einem Passwortschutz
+ablegen.
+
+---
+
 ## Ein Sprachmodell einrichten
 
 `python bernie.py anbieter` zeigt, was bereitliegt. Drei kostenlose Wege:
@@ -303,6 +338,7 @@ python bernie.py profil                           gelerntes Profil anzeigen
 python bernie.py lernen <quellen> --pruefen       neu lernen und prüfen
 python bernie.py anbieter                         Sprachmodelle anzeigen
 python bernie.py web --port 8080                  Oberfläche auf anderem Port
+python tools/html_erzeugen.py                     eigenständige HTML-Datei bauen
 ```
 
 Alle Befehle können mit `--json` maschinenlesbar ausgeben.
@@ -336,12 +372,15 @@ src/berniespeaks/
     inhalt.py                      Was steht drin: Aussage, Zahlen, Anliegen
     llm.py                         Anbindung an Claude, Groq, OpenRouter, Ollama
     uebersetzer.py                 beide Richtungen, Regelkreis, Offline-Generator
-    cli.py / web.py / ui/          Bedienung
+    cli.py / web.py                Bedienung
+    ui/index.html                  Oberfläche für den lokalen Server
+    ui/standalone.html             Vorlage der eigenständigen Fassung
     daten/hintergrund_de.json.gz   deutsche Normalhäufigkeiten (Referenz)
     daten/stilprofil.json          Demo-Profil aus dem Demo-Korpus
 tools/
     hintergrund_erzeugen.py        Referenzdaten neu bauen (braucht `wordfreq`)
     korpus_erzeugen.py             Korpus aus Word + Beitragsgrenzen bauen
+    html_erzeugen.py               eigenständige HTML-Datei bauen
 tests/test_stil.py                 56 Testfälle
 ```
 
