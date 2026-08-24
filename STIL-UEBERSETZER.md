@@ -224,19 +224,39 @@ python tools/html_erzeugen.py -p korpus/stilprofil.json \
                               -t "Bernie Speaks"           # mit dem eigenen Profil
 ```
 
-Der API-Schlüssel steht **nicht** in der Datei. Er wird von der Person
-eingetragen, die die Seite benutzt, und bleibt in deren Browser
-(`localStorage`) — geschickt wird er nur an den gewählten Anbieter. Erkannt
-wird er am Präfix: `sk-ant-…` → Claude, `gsk_…` → Groq, `sk-or-…` →
-OpenRouter.
+Dabei entsteht neben der HTML-Datei eine **`api.php`**. Beide gehören in
+denselben Ordner auf dem Webspace. Sie ist der Unterschied zwischen „geht" und
+„geht sofort":
 
-Zwei Dinge unterscheiden sie von der Python-Fassung:
+| | ohne `api.php` | mit `api.php` |
+| --- | --- | --- |
+| Schlüssel | jeder Besucher trägt seinen eigenen ein | liegt einmal auf dem Server |
+| Wo liegt er | im Browser des Besuchers | serverseitig, nie im Browser |
+| Aufruf | Browser → Anbieter (CORS-abhängig) | Browser → eigene Adresse → Anbieter |
+| Erster Eindruck | Feld ausfüllen, dann geht's | Text eintippen, fertig |
+
+Die Seite sucht die `api.php` beim Laden von selbst. Findet sie eine mit
+hinterlegtem Schlüssel, verschwindet das Schlüsselfeld. Findet sie keine, bleibt
+alles beim Alten — die Datei funktioniert auch allein.
+
+Eintragen lässt sich der Schlüssel oben in der `api.php` oder über die
+Umgebungsvariable `BERNIE_SCHLUESSEL`. Der Anbieter wird am Präfix erkannt:
+`sk-ant-…` → Claude, `gsk_…` → Groq, `sk-or-…` → OpenRouter.
+
+> **Wer die Adresse kennt, verbraucht das Guthaben.** Bei einer öffentlich
+> erreichbaren Seite in der `api.php` ein `BERNIE_ZUGANG` setzen — dann fragt
+> die Seite nach einem Zugangswort — oder die Seite hinter einen
+> Passwortschutz legen. Eingebaut ist außerdem eine Bremse von 60 Anfragen je
+> Stunde und Absender.
+
+Zwei Dinge unterscheiden die HTML- von der Python-Fassung:
 
 * **Anglizismen** werden nicht gemessen — dafür bräuchte es die englische
   Wortliste, die nur die Python-Fassung mitbringt. Die übrigen 18 Merkmale sind
   identisch, die Note bedeutet dasselbe.
-* Per Doppelklick geöffnet (`file://`) blockieren manche Browser den Aufruf der
-  API. **Auf einem Webspace mit `https://` funktioniert es.**
+* Per Doppelklick geöffnet (`file://`) läuft nur die Mechanik: `api.php` wird
+  nicht ausgeführt, und den direkten Aufruf des Anbieters blockieren manche
+  Browser. **Auf einem Webspace funktioniert beides.**
 
 Wer die Datei öffentlich stellt: sie enthält das gelernte Profil, also
 Formulierungen und anonymisierte Beispieltexte. Für eine öffentliche Adresse
@@ -375,6 +395,7 @@ src/berniespeaks/
     cli.py / web.py                Bedienung
     ui/index.html                  Oberfläche für den lokalen Server
     ui/standalone.html             Vorlage der eigenständigen Fassung
+    ui/api.php                     Vermittler für den Webspace (Schlüssel serverseitig)
     daten/hintergrund_de.json.gz   deutsche Normalhäufigkeiten (Referenz)
     daten/stilprofil.json          Demo-Profil aus dem Demo-Korpus
 tools/

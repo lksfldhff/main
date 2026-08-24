@@ -281,10 +281,10 @@ function anweisungStil(text, staerke) {
   const p = PROFIL, pos = p.emoji.position || {}, lauf = p.emoji.lauflaenge_verteilung || {};
   const prozent = (x) => (x * 100).toFixed(0);
   const teile = [
-    "Du schreibst wie " + (p.name || "die Person") + ", deren Schreibstil aus " + p.quelle.posts +
-      " eigenen Texten vermessen wurde. Du formulierst den Text des Nutzers in diesem Stil neu. " +
-      "Antworte immer auf Deutsch und gib ausschliesslich den fertigen Text aus -- keine Erklaerung, " +
-      "keine Ueberschrift, keine Anfuehrungszeichen um das Ganze.",
+    "Du schreibst wie " + (p.name || "die Person") + ". Dieser Schreibstil wurde aus " + p.quelle.posts +
+      " eigenen Texten vermessen; die Werte stehen unten. Du formulierst den Text des Nutzers in " +
+      "diesem Stil neu. Antworte immer auf Deutsch und gib ausschliesslich den fertigen Text aus -- " +
+      "keine Erklaerung, keine Ueberschrift, keine Anfuehrungszeichen um das Ganze.",
     "GEMESSENE WERTE, an die du dich haeltst:\n" +
       "- Emojis: rund " + (soll("emoji_je_100_woerter") * staerke).toFixed(0) + " je 100 Woerter, im Schnitt " +
         soll("emoji_lauflaenge").toFixed(1) + " je Emoji-Gruppe.\n" +
@@ -298,7 +298,7 @@ function anweisungStil(text, staerke) {
         "GROSSBUCHSTABEN (Betonung).\n" +
       "- Saetze sind kurz: im Schnitt " + soll("woerter_je_satz").toFixed(0) + " Woerter.\n" +
       "- Selbstbezuege (ich, wir, mir, uns): " + soll("ich_wir_je_100_woerter").toFixed(0) + " je 100 Woerter.",
-    "DIESE EMOJIS benutzt sie/er, andere nicht: " +
+    "DIESE EMOJIS kommen im Material vor, andere nicht: " +
       (p.emoji.haeufigste || []).slice(0, 14).map((e) => e[0]).join(" ") + "\n" +
       "Typische Ketten: " + (p.emoji.ketten || []).slice(0, 6).map((e) => e[0]).join("  ") + "\n" +
       "Aufzaehlungszeilen beginnen mit: " +
@@ -482,6 +482,38 @@ const ANBIETER = [
 ];
 const anbieterZu = (s) => ANBIETER.filter((a) => s.indexOf(a.praefix) === 0)[0] || null;
 
+/* Liegt neben dieser Datei eine api.php, dann laeuft der Aufruf darueber:
+   der Schluessel steht auf dem Server, Besucher brauchen keinen eigenen, und
+   es gibt kein CORS-Problem. Fehlt sie, traegt jeder seinen Schluessel ein. */
+const VERMITTLER = { bereit: false, zugangNoetig: false, anbieter: "", modell: "" };
+
+async function vermittlerPruefen() {
+  try {
+    const antwort = await fetch("./api.php", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ pruefen: true }),
+    });
+    if (!antwort.ok) return;
+    const daten = await antwort.json();
+    if (!daten || !daten.bereit) return;
+    VERMITTLER.bereit = true;
+    VERMITTLER.zugangNoetig = !!daten.zugang_noetig;
+    VERMITTLER.anbieter = daten.anbieter || "";
+    VERMITTLER.modell = daten.modell || "";
+  } catch (e) { /* keine api.php -- dann eben mit eigenem Schluessel */ }
+}
+
+async function ueberVermittler(system, nutzer) {
+  const antwort = await fetch("./api.php", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ system: system, nutzer: nutzer, zugang: $("schluessel").value.trim() }),
+  });
+  let daten = {};
+  try { daten = await antwort.json(); } catch (e) { /* keine JSON-Antwort */ }
+  if (!antwort.ok || daten.fehler) throw new Error(daten.fehler || ("Der Server antwortete mit Status " + antwort.status + "."));
+  return String(daten.text || "").trim();
+}
+
 const FEHLERTEXTE = {
   400: "Die Anfrage wurde abgelehnt (400). Meist stimmt der Modellname nicht.",
   401: "Der Schlüssel wird nicht akzeptiert (401). Falsch, widerrufen oder unvollständig kopiert.",
@@ -492,6 +524,8 @@ const FEHLERTEXTE = {
 };
 
 async function frageModell(system, nutzer) {
+  if (VERMITTLER.bereit) return ueberVermittler(system, nutzer);
+
   const schluessel = $("schluessel").value.trim();
   const anbieter = anbieterZu(schluessel);
   if (!anbieter) {
@@ -557,15 +591,19 @@ async function uebersetzen() {
   $("ausgabe").innerHTML = '<p class="laedt">Er sattelt auf …</p>';
 
   const staerke = Number($("staerke").value);
-  const hatSchluessel = !!$("schluessel").value.trim();
+  const kannModell = VERMITTLER.bereit
+    ? (!VERMITTLER.zugangNoetig || !!$("schluessel").value.trim())
+    : !!$("schluessel").value.trim();
   const hinweise = [];
 
   try {
     let ergebnis, note = null, runden = 1;
-    let motor = zustand.motor === "modell" && hatSchluessel ? "modell" : "offline";
-    if (zustand.motor === "modell" && !hatSchluessel) {
-      hinweise.push("Kein Schlüssel eingetragen — der Offline-Generator hat übernommen. " +
-        "Er trifft die Form, formuliert aber nicht neu.");
+    let motor = zustand.motor === "modell" && kannModell ? "modell" : "offline";
+    if (zustand.motor === "modell" && !kannModell) {
+      hinweise.push(VERMITTLER.bereit
+        ? "Zugangswort fehlt — der Offline-Generator hat übernommen."
+        : "Kein Schlüssel eingetragen — der Offline-Generator hat übernommen. " +
+          "Er trifft die Form, formuliert aber nicht neu.");
     }
 
     if (zustand.richtung === "zu_klartext") {
@@ -699,6 +737,17 @@ try {
   const gemerkt = localStorage.getItem("bernie.schluessel");
   if (gemerkt) { $("schluessel").value = gemerkt; $("schluessel").dispatchEvent(new Event("input")); }
 } catch (e) { /* privater Modus */ }
+
+vermittlerPruefen().then(() => {
+  if (!VERMITTLER.bereit) return;
+  $("anbietername").textContent = VERMITTLER.anbieter + " · " + VERMITTLER.modell;
+  if (VERMITTLER.zugangNoetig) {
+    $("schluessel").placeholder = "Zugangswort";
+    $("schluessel").value = "";
+  } else {
+    $("schluessel").hidden = true;
+  }
+});
 </script>
 </body>
 </html>

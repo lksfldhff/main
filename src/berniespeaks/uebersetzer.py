@@ -204,11 +204,11 @@ class Uebersetzer:
         orgs = "; ".join(p.lexikon.get("organisationen", [])[:8])
 
         teile = [
-            f"Du schreibst wie {p.name or 'die Person'}, deren Schreibstil aus "
-            f"{p.quelle.get('posts', 0)} eigenen Texten vermessen wurde. Du formulierst den Text des "
-            "Nutzers in diesem Stil neu. Antworte immer auf Deutsch und gib ausschliesslich den "
-            "fertigen Text aus -- keine Erklaerung, keine Ueberschrift, keine Anfuehrungszeichen "
-            "um das Ganze.",
+            f"Du schreibst wie {p.name or 'die Person'}. Dieser Schreibstil wurde aus "
+            f"{p.quelle.get('posts', 0)} eigenen Texten vermessen; die Werte stehen unten. Du "
+            "formulierst den Text des Nutzers in diesem Stil neu. Antworte immer auf Deutsch und gib "
+            "ausschliesslich den fertigen Text aus -- keine Erklaerung, keine Ueberschrift, keine "
+            "Anfuehrungszeichen um das Ganze.",
             "GEMESSENE WERTE, an die du dich haeltst:\n"
             f"- Emojis: rund {emoji_rate:.0f} je 100 Woerter, im Schnitt {kette:.1f} je Emoji-Gruppe.\n"
             f"- {p.soll('anteil_saetze_mit_emoji') * 100:.0f} Prozent der Saetze tragen mindestens ein Emoji.\n"
@@ -222,7 +222,7 @@ class Uebersetzer:
             f"- Selbstbezuege (ich, wir, mir, uns): {p.soll('ich_wir_je_100_woerter'):.0f} je 100 Woerter.\n"
             f"- Gedankenpunkte (…) und Ausrufezeichen kommen vor, aber sparsam: "
             f"{p.soll('ellipsen_je_100_woerter'):.1f} bzw. {p.soll('ausrufe_je_satz'):.2f} je Satz.",
-            f"DIESE EMOJIS benutzt sie/er, andere nicht: {haeufigste}\n"
+            f"DIESE EMOJIS kommen im Material vor, andere nicht: {haeufigste}\n"
             f"Typische Ketten: {ketten}\n"
             f"Aufzaehlungszeilen beginnen mit: {marker}",
             f"WORTSCHATZ, der auffaellig oft vorkommt: {woerter}",

@@ -26,6 +26,7 @@ from berniespeaks.analyse import Stilprofil, profil_suchen  # noqa: E402
 
 VORLAGE = WURZEL / "src" / "berniespeaks" / "ui" / "standalone.html"
 OBERFLAECHE = WURZEL / "src" / "berniespeaks" / "ui" / "index.html"
+VERMITTLER = WURZEL / "src" / "berniespeaks" / "ui" / "api.php"
 
 
 def stil_holen() -> str:
@@ -57,6 +58,8 @@ def main() -> int:
     parser.add_argument("-p", "--profil", help="Stilprofil (Standard: gefundenes Profil)")
     parser.add_argument("-o", "--ausgabe", default="Stil-Uebersetzer.html", help="Zieldatei")
     parser.add_argument("-t", "--titel", default="", help="Titel der Seite")
+    parser.add_argument("--ohne-vermittler", action="store_true",
+                        help="nur die HTML-Datei schreiben, keine api.php daneben")
     args = parser.parse_args()
 
     profil = Stilprofil.laden(args.profil or profil_suchen())
@@ -64,7 +67,14 @@ def main() -> int:
     ziel.write_text(bauen(profil, args.titel), encoding="utf-8")
     print(f"{ziel}  ({ziel.stat().st_size / 1024:.0f} kB, Profil: {profil.name}, "
           f"{profil.quelle.get('posts', 0)} Beitraege)")
-    print("Einfach doppelklicken oder auf einen Webspace legen.")
+
+    if not args.ohne_vermittler:
+        nachbar = ziel.parent / "api.php"
+        nachbar.write_text(VERMITTLER.read_text(encoding="utf-8"), encoding="utf-8")
+        print(f"{nachbar}  (Vermittler -- Schluessel dort eintragen, dann brauchen "
+              f"Besucher keinen eigenen)")
+
+    print("Beide Dateien in denselben Ordner auf den Webspace legen.")
     return 0
 
 
