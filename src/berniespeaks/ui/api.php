@@ -34,6 +34,13 @@ $ZUGANG = getenv('BERNIE_ZUGANG') ?: '';
 /** Abweichender Modellname; leer lassen fuer die Voreinstellung des Anbieters. */
 $MODELL = getenv('BERNIE_MODELL') ?: '';
 
+/**
+ * Nur bei Claude: wie gruendlich das Modell nachdenken soll -- und damit,
+ * was ein Aufruf kostet. 'low' reicht fuer das Umschreiben von Texten und
+ * ist am guenstigsten; 'medium' ist der Mittelweg, 'high' das Maximum.
+ */
+$AUFWAND = getenv('BERNIE_AUFWAND') ?: 'low';
+
 /** Hoechstens so viele Anfragen je Stunde und Absender. */
 $PRO_STUNDE = 60;
 
@@ -273,7 +280,7 @@ if (mb_strlen($system) + mb_strlen($nutzer) > $MAX_ZEICHEN) {
 $modell = modell_bestimmen($eintrag, $SCHLUESSEL, $MODELL);
 
 /** Baut Kopfzeilen und Rumpf fuer ein bestimmtes Modell. */
-$bauen = static function (string $modell) use ($eintrag, $SCHLUESSEL, $system, $nutzer): array {
+$bauen = static function (string $modell) use ($eintrag, $SCHLUESSEL, $system, $nutzer, $AUFWAND): array {
     if ($eintrag['format'] === 'anthropic') {
         return [
             ['content-type: application/json', 'x-api-key: ' . $SCHLUESSEL, 'anthropic-version: 2023-06-01'],
@@ -284,7 +291,7 @@ $bauen = static function (string $modell) use ($eintrag, $SCHLUESSEL, $system, $
                 'messages' => [['role' => 'user', 'content' => $nutzer]],
                 // Die aktuellen Claude-Modelle denken von sich aus mit; gesteuert
                 // wird das ueber den Aufwand. Temperatur gibt es dort nicht mehr.
-                'output_config' => ['effort' => 'medium'],
+                'output_config' => ['effort' => $AUFWAND],
             ],
         ];
     }
