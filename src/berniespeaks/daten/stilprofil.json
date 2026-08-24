@@ -1,0 +1,1044 @@
+{
+  "version": 1,
+  "name": "Demo-Profil",
+  "erzeugt": "2026-08-24",
+  "quelle": {
+    "dateien": [
+      "beispiel/demokorpus.jsonl"
+    ],
+    "posts": 14,
+    "woerter": 574,
+    "zeichen": 3517,
+    "personennamen_erkannt": 11,
+    "hintergrund": "wordfreq (Wikipedia, Untertitel, Nachrichten, Buecher, Social Media)"
+  },
+  "merkmale": {
+    "emoji_je_100_woerter": {
+      "mittel": 15.959436997159923,
+      "streuung": 7.2132662805820935,
+      "median": 17.427884615384617,
+      "p10": 6.70807453416149,
+      "p90": 23.61239288068557
+    },
+    "anteil_saetze_mit_emoji": {
+      "mittel": 0.610374149659864,
+      "streuung": 0.24476145335802552,
+      "median": 0.6666666666666666,
+      "p10": 0.3035714285714286,
+      "p90": 0.8233333333333334
+    },
+    "emoji_lauflaenge": {
+      "mittel": 1.4841269841269842,
+      "streuung": 0.4717497970325498,
+      "median": 1.6666666666666667,
+      "p10": 1.1,
+      "p90": 1.7850000000000001
+    },
+    "emoji_wiederholung": {
+      "mittel": 0.6071428571428571,
+      "streuung": 0.430056949242582,
+      "median": 0.75,
+      "p10": 0.0,
+      "p90": 1.0
+    },
+    "versal_wortanteil": {
+      "mittel": 0.0632409243174176,
+      "streuung": 0.08177201805796235,
+      "median": 0.03612903225806452,
+      "p10": 0.0,
+      "p90": 0.12172949002217295
+    },
+    "dehnung_je_1000": {
+      "mittel": 1.9305019305019306,
+      "streuung": 6.96052369780693,
+      "median": 0.0,
+      "p10": 0.0,
+      "p90": 0.0
+    },
+    "ausrufe_je_satz": {
+      "mittel": 0.10952380952380951,
+      "streuung": 0.12735313447920316,
+      "median": 0.05,
+      "p10": 0.0,
+      "p90": 0.3083333333333334
+    },
+    "doppelausruf_anteil": {
+      "mittel": 0.14285714285714285,
+      "streuung": 0.3499271061118826,
+      "median": 0.0,
+      "p10": 0.0,
+      "p90": 0.7000000000000011
+    },
+    "fragen_anteil": {
+      "mittel": 0.024999999999999998,
+      "streuung": 0.0674801558131828,
+      "median": 0.0,
+      "p10": 0.0,
+      "p90": 0.0700000000000001
+    },
+    "ellipsen_je_100_woerter": {
+      "mittel": 0.5359278767932364,
+      "streuung": 1.0990433502847823,
+      "median": 0.0,
+      "p10": 0.0,
+      "p90": 2.1550782672005835
+    },
+    "woerter_je_satz": {
+      "mittel": 7.071768707482994,
+      "streuung": 0.9426998843047576,
+      "median": 6.766666666666667,
+      "p10": 6.176666666666667,
+      "p90": 8.233333333333334
+    },
+    "woerter_je_zeile": {
+      "mittel": 8.613378684807255,
+      "streuung": 1.4406443389656989,
+      "median": 8.166666666666668,
+      "p10": 7.003333333333333,
+      "p90": 10.8
+    },
+    "wortlaenge": {
+      "mittel": 5.65976159107746,
+      "streuung": 0.37772209366419446,
+      "median": 5.717558651026393,
+      "p10": 5.144029850746269,
+      "p90": 6.144293478260869
+    },
+    "nominal_anteil": {
+      "mittel": 0.036332703587110056,
+      "streuung": 0.028169256462951462,
+      "median": 0.03485576923076923,
+      "p10": 0.0,
+      "p90": 0.061377506538796874
+    },
+    "anglizismus_je_100": {
+      "mittel": 1.1177838192684428,
+      "streuung": 1.739938536299537,
+      "median": 0.0,
+      "p10": 0.0,
+      "p90": 2.623599208965063
+    },
+    "hashtags_je_100_woerter": {
+      "mittel": 0.8526983806834553,
+      "streuung": 1.7948029941486834,
+      "median": 0.0,
+      "p10": 0.0,
+      "p90": 2.900363049616781
+    },
+    "aufzaehlungszeilen_anteil": {
+      "mittel": 0.05952380952380952,
+      "streuung": 0.14916623912073415,
+      "median": 0.0,
+      "p10": 0.0,
+      "p90": 0.23333333333333367
+    },
+    "zitat_je_100_woerter": {
+      "mittel": 0.3362708719851577,
+      "streuung": 0.9435242053079014,
+      "median": 0.0,
+      "p10": 0.0,
+      "p90": 0.7954545454545467
+    },
+    "ich_wir_je_100_woerter": {
+      "mittel": 6.433532149700258,
+      "streuung": 3.187497075836508,
+      "median": 6.15530303030303,
+      "p10": 3.6538461538461537,
+      "p90": 11.182432432432437
+    }
+  },
+  "emoji": {
+    "haeufigste": [
+      [
+        "🚀",
+        25
+      ],
+      [
+        "🙏",
+        6
+      ],
+      [
+        "🥇",
+        5
+      ],
+      [
+        "🤩",
+        4
+      ],
+      [
+        "🤝",
+        4
+      ],
+      [
+        "😎",
+        4
+      ],
+      [
+        "✊",
+        3
+      ],
+      [
+        "➡️",
+        3
+      ],
+      [
+        "🤗",
+        3
+      ],
+      [
+        "💪",
+        3
+      ],
+      [
+        "🥂",
+        2
+      ],
+      [
+        "💯",
+        2
+      ],
+      [
+        "‼️",
+        2
+      ],
+      [
+        "🏭",
+        2
+      ],
+      [
+        "⚡️",
+        2
+      ],
+      [
+        "🤔",
+        2
+      ],
+      [
+        "🤠",
+        1
+      ],
+      [
+        "🙈",
+        1
+      ],
+      [
+        "🛳️",
+        1
+      ],
+      [
+        "✈️",
+        1
+      ],
+      [
+        "🔔",
+        1
+      ],
+      [
+        "🌏",
+        1
+      ],
+      [
+        "💣",
+        1
+      ],
+      [
+        "📌",
+        1
+      ],
+      [
+        "😍",
+        1
+      ],
+      [
+        "👀",
+        1
+      ],
+      [
+        "⛴️",
+        1
+      ],
+      [
+        "😇",
+        1
+      ],
+      [
+        "☺️",
+        1
+      ],
+      [
+        "📄",
+        1
+      ],
+      [
+        "❌",
+        1
+      ],
+      [
+        "📰",
+        1
+      ],
+      [
+        "😊",
+        1
+      ]
+    ],
+    "vielfalt": 33,
+    "ketten": [
+      [
+        "🚀🚀🚀",
+        3
+      ],
+      [
+        "🤝🤝",
+        2
+      ],
+      [
+        "🚀🚀🚀🚀",
+        2
+      ],
+      [
+        "🚀🚀",
+        2
+      ],
+      [
+        "🥂🥂",
+        1
+      ],
+      [
+        "🙏🙏🙏",
+        1
+      ],
+      [
+        "😎🚀🚀🚀",
+        1
+      ],
+      [
+        "✊✊✊",
+        1
+      ],
+      [
+        "🏭🏭",
+        1
+      ],
+      [
+        "⚡️⚡️",
+        1
+      ],
+      [
+        "⛴️🚀",
+        1
+      ],
+      [
+        "🤔🤔",
+        1
+      ],
+      [
+        "☺️🤩",
+        1
+      ],
+      [
+        "💪💪",
+        1
+      ],
+      [
+        "📄❌",
+        1
+      ],
+      [
+        "🥇🥇",
+        1
+      ],
+      [
+        "🙏🤗",
+        1
+      ]
+    ],
+    "lauflaenge_verteilung": {
+      "1": 0.6071,
+      "2": 0.25,
+      "3": 0.0893,
+      "4": 0.0536
+    },
+    "position": {
+      "zeilenanfang": 0.125,
+      "satzende": 0.1786,
+      "innen": 0.6964
+    }
+  },
+  "struktur": {
+    "aufzaehlungszeichen": [
+      [
+        "🥇",
+        3
+      ],
+      [
+        "➡️",
+        3
+      ],
+      [
+        "💣",
+        1
+      ]
+    ],
+    "namensblock_zeilenanteil": 0.0,
+    "zeilen_gesamt": 67
+  },
+  "lexikon": {
+    "schluesselwoerter": [
+      {
+        "wort": "voller",
+        "n": 5,
+        "z": 9.33,
+        "zipf": 4.82
+      },
+      {
+        "wort": "zuversicht",
+        "n": 2,
+        "z": 7.15,
+        "zipf": 3.66
+      },
+      {
+        "wort": "mittelstand",
+        "n": 2,
+        "z": 7.12,
+        "zipf": 3.75
+      },
+      {
+        "wort": "familienunternehmen",
+        "n": 2,
+        "z": 7.1,
+        "zipf": 3.47
+      },
+      {
+        "wort": "transformation",
+        "n": 2,
+        "z": 7.04,
+        "zipf": 3.84
+      },
+      {
+        "wort": "wirtschaftsförderung",
+        "n": 2,
+        "z": 6.68,
+        "zipf": 3.19
+      },
+      {
+        "wort": "region",
+        "n": 3,
+        "z": 5.81,
+        "zipf": 5.01
+      },
+      {
+        "wort": "freue",
+        "n": 2,
+        "z": 5.39,
+        "zipf": 4.61
+      },
+      {
+        "wort": "schöner",
+        "n": 2,
+        "z": 5.33,
+        "zipf": 4.63
+      },
+      {
+        "wort": "nehme",
+        "n": 2,
+        "z": 5.1,
+        "zipf": 4.71
+      },
+      {
+        "wort": "industrie",
+        "n": 2,
+        "z": 5.05,
+        "zipf": 4.73
+      },
+      {
+        "wort": "auftrag",
+        "n": 2,
+        "z": 5.02,
+        "zipf": 4.74
+      },
+      {
+        "wort": "verantwortung",
+        "n": 2,
+        "z": 5.02,
+        "zipf": 4.74
+      },
+      {
+        "wort": "zugleich",
+        "n": 2,
+        "z": 4.96,
+        "zipf": 4.76
+      },
+      {
+        "wort": "starke",
+        "n": 2,
+        "z": 4.87,
+        "zipf": 4.79
+      },
+      {
+        "wort": "willkommen",
+        "n": 2,
+        "z": 4.78,
+        "zipf": 4.82
+      },
+      {
+        "wort": "offen",
+        "n": 2,
+        "z": 4.28,
+        "zipf": 4.99
+      },
+      {
+        "wort": "liebe",
+        "n": 3,
+        "z": 4.11,
+        "zipf": 5.48
+      },
+      {
+        "wort": "spass",
+        "n": 2,
+        "z": 3.6,
+        "zipf": 5.22
+      },
+      {
+        "wort": "jede",
+        "n": 2,
+        "z": 3.36,
+        "zipf": 5.3
+      },
+      {
+        "wort": "kommen",
+        "n": 3,
+        "z": 3.29,
+        "zipf": 5.71
+      },
+      {
+        "wort": "wir",
+        "n": 8,
+        "z": 3.16,
+        "zipf": 6.54
+      },
+      {
+        "wort": "tage",
+        "n": 2,
+        "z": 3.13,
+        "zipf": 5.38
+      },
+      {
+        "wort": "woche",
+        "n": 2,
+        "z": 3.13,
+        "zipf": 5.38
+      },
+      {
+        "wort": "sondern",
+        "n": 3,
+        "z": 3.08,
+        "zipf": 5.77
+      },
+      {
+        "wort": "wer",
+        "n": 3,
+        "z": 2.77,
+        "zipf": 5.86
+      },
+      {
+        "wort": "uns",
+        "n": 4,
+        "z": 2.72,
+        "zipf": 6.11
+      },
+      {
+        "wort": "zusammen",
+        "n": 2,
+        "z": 2.64,
+        "zipf": 5.55
+      },
+      {
+        "wort": "beim",
+        "n": 3,
+        "z": 2.5,
+        "zipf": 5.94
+      },
+      {
+        "wort": "gemacht",
+        "n": 2,
+        "z": 2.36,
+        "zipf": 5.65
+      },
+      {
+        "wort": "genau",
+        "n": 2,
+        "z": 2.36,
+        "zipf": 5.65
+      },
+      {
+        "wort": "sehen",
+        "n": 2,
+        "z": 2.24,
+        "zipf": 5.69
+      },
+      {
+        "wort": "eine",
+        "n": 9,
+        "z": 2.22,
+        "zipf": 6.8
+      },
+      {
+        "wort": "bitte",
+        "n": 2,
+        "z": 2.22,
+        "zipf": 5.7
+      },
+      {
+        "wort": "ich",
+        "n": 14,
+        "z": 2.21,
+        "zipf": 7.08
+      },
+      {
+        "wort": "ist",
+        "n": 14,
+        "z": 2.21,
+        "zipf": 7.08
+      },
+      {
+        "wort": "gut",
+        "n": 3,
+        "z": 2.01,
+        "zipf": 6.09
+      },
+      {
+        "wort": "dabei",
+        "n": 2,
+        "z": 1.94,
+        "zipf": 5.8
+      },
+      {
+        "wort": "was",
+        "n": 5,
+        "z": 1.87,
+        "zipf": 6.49
+      },
+      {
+        "wort": "für",
+        "n": 9,
+        "z": 1.8,
+        "zipf": 6.88
+      },
+      {
+        "wort": "heute",
+        "n": 2,
+        "z": 1.73,
+        "zipf": 5.88
+      },
+      {
+        "wort": "menschen",
+        "n": 2,
+        "z": 1.7,
+        "zipf": 5.89
+      },
+      {
+        "wort": "kein",
+        "n": 2,
+        "z": 1.65,
+        "zipf": 5.91
+      },
+      {
+        "wort": "einfach",
+        "n": 2,
+        "z": 1.54,
+        "zipf": 5.95
+      },
+      {
+        "wort": "große",
+        "n": 2,
+        "z": 1.47,
+        "zipf": 0.0
+      },
+      {
+        "wort": "heißt",
+        "n": 2,
+        "z": 1.47,
+        "zipf": 0.0
+      },
+      {
+        "wort": "hier",
+        "n": 3,
+        "z": 1.47,
+        "zipf": 6.26
+      },
+      {
+        "wort": "mich",
+        "n": 3,
+        "z": 1.47,
+        "zipf": 6.26
+      },
+      {
+        "wort": "hat",
+        "n": 5,
+        "z": 1.43,
+        "zipf": 6.6
+      },
+      {
+        "wort": "viel",
+        "n": 2,
+        "z": 1.41,
+        "zipf": 6.0
+      },
+      {
+        "wort": "geht",
+        "n": 2,
+        "z": 1.41,
+        "zipf": 6.0
+      },
+      {
+        "wort": "mir",
+        "n": 3,
+        "z": 1.29,
+        "zipf": 6.32
+      },
+      {
+        "wort": "und",
+        "n": 20,
+        "z": 1.24,
+        "zipf": 7.42
+      },
+      {
+        "wort": "bin",
+        "n": 2,
+        "z": 1.16,
+        "zipf": 6.1
+      },
+      {
+        "wort": "alle",
+        "n": 2,
+        "z": 1.03,
+        "zipf": 6.15
+      },
+      {
+        "wort": "sind",
+        "n": 4,
+        "z": 0.95,
+        "zipf": 6.6
+      },
+      {
+        "wort": "diese",
+        "n": 2,
+        "z": 0.91,
+        "zipf": 6.2
+      },
+      {
+        "wort": "ihr",
+        "n": 2,
+        "z": 0.86,
+        "zipf": 6.22
+      },
+      {
+        "wort": "wie",
+        "n": 4,
+        "z": 0.78,
+        "zipf": 6.65
+      },
+      {
+        "wort": "zur",
+        "n": 2,
+        "z": 0.74,
+        "zipf": 6.27
+      },
+      {
+        "wort": "mal",
+        "n": 2,
+        "z": 0.71,
+        "zipf": 6.28
+      },
+      {
+        "wort": "das",
+        "n": 10,
+        "z": 0.64,
+        "zipf": 7.16
+      },
+      {
+        "wort": "habe",
+        "n": 2,
+        "z": 0.59,
+        "zipf": 6.33
+      },
+      {
+        "wort": "schon",
+        "n": 2,
+        "z": 0.57,
+        "zipf": 6.34
+      },
+      {
+        "wort": "einem",
+        "n": 2,
+        "z": 0.55,
+        "zipf": 6.35
+      },
+      {
+        "wort": "dem",
+        "n": 4,
+        "z": 0.41,
+        "zipf": 6.76
+      },
+      {
+        "wort": "zum",
+        "n": 2,
+        "z": 0.4,
+        "zipf": 6.41
+      },
+      {
+        "wort": "mit",
+        "n": 6,
+        "z": 0.32,
+        "zipf": 6.98
+      },
+      {
+        "wort": "man",
+        "n": 2,
+        "z": 0.29,
+        "zipf": 6.46
+      },
+      {
+        "wort": "ein",
+        "n": 5,
+        "z": 0.26,
+        "zipf": 6.91
+      },
+      {
+        "wort": "wenn",
+        "n": 2,
+        "z": 0.17,
+        "zipf": 6.51
+      },
+      {
+        "wort": "war",
+        "n": 2,
+        "z": 0.12,
+        "zipf": 6.53
+      },
+      {
+        "wort": "nach",
+        "n": 2,
+        "z": 0.05,
+        "zipf": 6.56
+      },
+      {
+        "wort": "auf",
+        "n": 4,
+        "z": -0.02,
+        "zipf": 6.89
+      },
+      {
+        "wort": "sie",
+        "n": 3,
+        "z": -0.18,
+        "zipf": 6.82
+      },
+      {
+        "wort": "als",
+        "n": 2,
+        "z": -0.3,
+        "zipf": 6.71
+      },
+      {
+        "wort": "nicht",
+        "n": 3,
+        "z": -0.73,
+        "zipf": 7.01
+      },
+      {
+        "wort": "die",
+        "n": 11,
+        "z": -0.89,
+        "zipf": 7.48
+      },
+      {
+        "wort": "den",
+        "n": 2,
+        "z": -1.01,
+        "zipf": 7.0
+      },
+      {
+        "wort": "der",
+        "n": 9,
+        "z": -1.15,
+        "zipf": 7.46
+      }
+    ],
+    "inhaltswoerter": [
+      {
+        "wort": "zuversicht",
+        "n": 2,
+        "z": 7.15,
+        "zipf": 3.66
+      },
+      {
+        "wort": "mittelstand",
+        "n": 2,
+        "z": 7.12,
+        "zipf": 3.75
+      },
+      {
+        "wort": "familienunternehmen",
+        "n": 2,
+        "z": 7.1,
+        "zipf": 3.47
+      },
+      {
+        "wort": "transformation",
+        "n": 2,
+        "z": 7.04,
+        "zipf": 3.84
+      },
+      {
+        "wort": "wirtschaftsförderung",
+        "n": 2,
+        "z": 6.68,
+        "zipf": 3.19
+      },
+      {
+        "wort": "freue",
+        "n": 2,
+        "z": 5.39,
+        "zipf": 4.61
+      },
+      {
+        "wort": "schöner",
+        "n": 2,
+        "z": 5.33,
+        "zipf": 4.63
+      },
+      {
+        "wort": "nehme",
+        "n": 2,
+        "z": 5.1,
+        "zipf": 4.71
+      },
+      {
+        "wort": "industrie",
+        "n": 2,
+        "z": 5.05,
+        "zipf": 4.73
+      },
+      {
+        "wort": "auftrag",
+        "n": 2,
+        "z": 5.02,
+        "zipf": 4.74
+      },
+      {
+        "wort": "verantwortung",
+        "n": 2,
+        "z": 5.02,
+        "zipf": 4.74
+      },
+      {
+        "wort": "zugleich",
+        "n": 2,
+        "z": 4.96,
+        "zipf": 4.76
+      },
+      {
+        "wort": "starke",
+        "n": 2,
+        "z": 4.87,
+        "zipf": 4.79
+      },
+      {
+        "wort": "große",
+        "n": 2,
+        "z": 1.47,
+        "zipf": 0.0
+      },
+      {
+        "wort": "heißt",
+        "n": 2,
+        "z": 1.47,
+        "zipf": 0.0
+      }
+    ],
+    "wendungen": [
+      {
+        "text": "was für ein",
+        "n": 2
+      },
+      {
+        "text": "viel spass gemacht",
+        "n": 2
+      },
+      {
+        "text": "nehme ich mit",
+        "n": 2
+      },
+      {
+        "text": "was für eine",
+        "n": 2
+      }
+    ],
+    "treffer_je_100": {
+      "mittel": 7.564680612665896,
+      "streuung": 6.944131849163966,
+      "median": 3.696236559139785,
+      "p10": 2.5181278839815424,
+      "p90": 17.754704737183648
+    },
+    "oeffner": [
+      "WIR SCHAFFEN ARBEIT(sPLATZ) …",
+      "Ein kraftvoller Vormittag, wie ich ihn liebe ✊✊✊ kritisch-konstruktiv in der Sache, voller Zuversicht mit Mut und Tatendrang 🚀🚀🚀",
+      "Es ist einfach SOOO UNGLAUBLICH gut, was hier entsteht 😍",
+      "Dankbar für den Tag und die Eindrücke 🙏",
+      "Das hat MIR richtig viel SPASS gemacht 🚀🚀",
+      "Freue mich, wenn wir uns am 22. September beim Regionalforum sehen 🚀🚀",
+      "Schon zum zweiten Mal innerhalb weniger Tage darf ich eine Wertschätzungsoffensive erleben 🤗",
+      "Der erste Satz des Beitrags ist mir Auftrag und Leitmotiv zugleich … im Job, im Leben, im Ehrenamt.",
+      "Liebes TEAM!"
+    ],
+    "schluesser": [
+      "#bettertogether #musterland",
+      "Kreativität, regionaler Spirit und jede Menge Motivation sind willkommen 😎🚀🚀🚀",
+      "In der halben Stunde konnte man die Stecknadel 📌 fallen hören. Faszinierend 💯",
+      "Ich freue mich auf jede und jeden Einzelnen 🤗",
+      "#standortstärken",
+      "MUSTERLAND AT ITS BEST 😇",
+      "WER IST BEIM NÄCHSTEN MAL DABEI? 🤔🤔",
+      "Es lohnt sich ‼️",
+      "Das nehme ich mit in die nächste Woche 🙏",
+      "#handwerkzählt #regionvoraus",
+      "Ich bin gespannt, wie es weitergeht 😊",
+      "Dem ist nichts hinzuzufügen 🙏🤗",
+      "Viele Grüße"
+    ],
+    "hashtags": [
+      [
+        "#bettertogether",
+        1
+      ],
+      [
+        "#musterland",
+        1
+      ],
+      [
+        "#standortstärken",
+        1
+      ],
+      [
+        "#handwerkzählt",
+        1
+      ],
+      [
+        "#regionvoraus",
+        1
+      ]
+    ],
+    "organisationen": []
+  },
+  "beispiele": [
+    "In einem vorhergehenden [Name] habe ich vom Besuch im Medienhaus berichtet. Heute die Fortsetzung 📰\nDigitalisierung heißt hier nicht Abbau, sondern UMBAU. Respekt für diesen Weg 🥇🥇\nIch bin gespannt, wie es weitergeht 😊",
+    "WIR SCHAFFEN ARBEIT(sPLATZ) …\nWer hat Lust, zu uns an Bord zu kommen 🛳️ ✈️ 🔔\n\nUnser Auftrag: REGIONALES STANDORTMARKETING 🌏 💯\nUnd das treibst Du aktiv und operativ mit voran.\nEs ist eine neu geschaffene Stelle!\nKreativität, regionaler Spirit und jede Menge Motivation sind willkommen 😎🚀🚀🚀",
+    "Was für ein schöner, erfrischender und WERTSCHÄTZENDER [Name] ☺️🤩\nGenau so geht Zusammenarbeit: zuhören, ernst nehmen, gemeinsam anpacken 🤝🤝\nDas nehme ich mit in die nächste Woche 🙏",
+    "Was für ein Abend beim Jahresempfang der Wirtschaftsförderung [Name] 🥂🥂\nUnd ich 🤠 mittendrin 🤩 … es war mir eine Ehre und eine große Freude zugleich!\n\nGanz lieben Dank für die herzliche Einladung 🙏🙏🙏 Es hat unheimlich viel SPASS gemacht, und es ist spät geworden 🙈\n\nDrei Dinge nehme ich mit:\n🥇 Der Mittelstand hält diese Region zusammen\n🥇 Fachkräfte kommen, wo man sie WILLKOMMEN heißt\n🥇 Zusammen geht mehr als allein 🤝🤝\n\nDaran werden WIR festhalten 🚀🚀🚀🚀\n#bettertogether #musterland",
+    "Liebe [Name]!\nHier bieten wir als Projektpartnerin eine TOLLE MÖGLICHKEIT zur kostenfreien Teilnahme an unserem Halbtagesseminar PERSONAL 🤩\nAnmelden, kommen, teilnehmen, dabei sein 😎 auf geht's 🚀🚀🚀🚀\nIch freue mich auf jede und jeden Einzelnen 🤗",
+    "Schon zum zweiten Mal innerhalb weniger Tage darf ich eine Wertschätzungsoffensive erleben 🤗\nHandwerk, [Name], Industrie — alle ziehen an einem Strang 💪💪\n\nUnd genau davon profitiert unsere Region. Das ist gelebte Standortpolitik, kein Papier 📄❌\n\n#handwerkzählt #regionvoraus"
+  ]
+}

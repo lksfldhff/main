@@ -9,4 +9,11 @@ venv/
 # Erzeugte Newsletter
 *.html
 !templates/*.html
+!src/berniespeaks/ui/*.html
 *_bilder/
+
+# Eigenes Textmaterial und daraus gelernte Profile bleiben lokal.
+# Es enthaelt Namen realer Personen und interne Nachrichten -- das gehoert
+# nicht in ein oeffentliches Repository. Siehe korpus/LIESMICH.md.
+korpus/*
+!korpus/LIESMICH.md
