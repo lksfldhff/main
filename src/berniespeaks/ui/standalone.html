@@ -49,9 +49,6 @@
     </div>
     <div class="ausgabe" id="ausgabe"><p class="leise">Die Übersetzung erscheint hier.</p></div>
     <div class="bewertung" id="bewertung" hidden>
-      <div class="note"><b id="notenwert">–</b><span id="notentext"></span></div>
-      <div class="balken"><i id="notenbalken" style="width:0%"></i></div>
-      <ul class="maengel" id="maengel"></ul>
       <div class="hinweis" id="hinweis" hidden></div>
     </div>
   </section>
@@ -323,9 +320,9 @@ function anweisungStil(text, staerke) {
   const orgs = (p.lexikon.organisationen || []).slice(0, 5).join("; ");
   if (orgs) teile.push("Genannte Einrichtungen (nur uebernehmen, wenn sie zum Inhalt passen): " + orgs);
 
-  const beispiele = aehnlichste(text, 2);
+  const beispiele = aehnlichste(text, 1);
   if (beispiele.length) {
-    teile.push("SO KLINGT DAS im Original -- uebernimm Ton, Emoji-Dichte und Aufbau, nie den Inhalt:\n\n" +
+    teile.push("SO KLINGT EIN ORIGINAL -- uebernimm Ton, Emoji-Dichte und Aufbau, nie den Inhalt:\n\n" +
       beispiele.join("\n\n---\n\n"));
   }
   teile.push("PFLICHTEN: Die Aussage des Originals bleibt erhalten, ebenso alle Zahlen, Daten und Namen. " +
@@ -604,9 +601,10 @@ async function frageModell(system, nutzer) {
 /* ---------------------------------------------------- Uebersetzung ----- */
 
 const zustand = { richtung: "zu_bernie", motor: "modell", laeuft: false, ausgabe: "" };
-// Eigene Beitraege erreichen im Schnitt 77.5 Punkte (Streuung 8.8) -- wer 68
-// schafft, liegt in dieser Spanne. Jede weitere Runde kostet einen Aufruf.
-const SCHWELLE = 68;
+// Ab hier wird ein zweiter Aufruf gewagt. Eigene Beitraege erreichen im
+// Schnitt 77.5 Punkte bei einer Streuung von 8.8; wer unter 55 bleibt, liegt
+// mehr als zwei Streuungen darunter -- dann lohnt der zusaetzliche Aufruf.
+const NACHBESSERN_UNTER = 55;
 
 async function uebersetzen() {
   const text = $("eingabe").value.trim();
@@ -625,7 +623,7 @@ async function uebersetzen() {
   const hinweise = [];
 
   try {
-    let ergebnis, note = null, runden = 1;
+    let ergebnis;
     let motor = zustand.motor === "modell" && kannModell ? "modell" : "offline";
     if (zustand.motor === "modell" && !kannModell) {
       hinweise.push(VERMITTLER.bereit
@@ -638,39 +636,26 @@ async function uebersetzen() {
       ergebnis = motor === "modell" ? await frageModell(anweisungKlartext(), text) : offlineKlartext(text);
     } else if (motor === "offline") {
       ergebnis = offlineStil(text, staerke);
-      note = bewerte(ergebnis);
     } else {
+      // Sparsam: ein Aufruf. Nachgebessert wird nur, wenn der Entwurf klar
+      // danebenliegt -- gemessen wird weiterhin, nur nicht mehr angezeigt.
       const anweisung = anweisungStil(text, staerke);
-      let auftragstext = text;
-      const entwuerfe = [];
-      for (let runde = 0; runde < 3; runde++) {
-        let entwurf;
+      ergebnis = await frageModell(anweisung, text);
+      const note = bewerte(ergebnis);
+      if (note.punkte < NACHBESSERN_UNTER) {
         try {
-          entwurf = await frageModell(anweisung, auftragstext);
+          const zweiter = await frageModell(anweisung,
+            text + "\n\nDein bisheriger Entwurf:\n" + ergebnis +
+            "\n\nDer Entwurf liegt noch daneben. Gemessen wurde:\n" + auftrag(note) +
+            "\n\nSchreibe ihn neu und gleiche genau diese Punkte aus. " +
+            "Inhalt und Fakten bleiben unverändert.");
+          if (bewerte(zweiter).punkte > note.punkte) ergebnis = zweiter;
         } catch (stoerung) {
-          // Steht schon ein Entwurf, ist eine gescheiterte Nachbesserung kein
-          // Grund, alles wegzuwerfen -- der bisher beste wird ausgegeben.
-          if (!entwuerfe.length) throw stoerung;
           hinweise.push("Nachbesserung abgebrochen: " + (stoerung.message || stoerung));
-          break;
         }
-        const b = bewerte(entwurf);
-        entwuerfe.push([entwurf, b]);
-        if (b.punkte >= SCHWELLE) break;
-        auftragstext = text + "\n\nDein bisheriger Entwurf:\n" + entwurf +
-          "\n\nDer Entwurf liegt noch daneben. Gemessen wurde:\n" + auftrag(b) +
-          "\n\nSchreibe ihn neu und gleiche genau diese Punkte aus. Inhalt und Fakten bleiben unverändert.";
-      }
-      runden = entwuerfe.length;
-      entwuerfe.sort((a, b) => b[1].punkte - a[1].punkte);
-      ergebnis = entwuerfe[0][0];
-      note = entwuerfe[0][1];
-      if (note.punkte < SCHWELLE) {
-        hinweise.push("Beste Note " + note.punkte.toFixed(0) + " von 100 — unter der Schwelle. " +
-          "Ein längerer Ausgangstext oder ein größeres Modell hilft meist.");
       }
     }
-    zeigen(ergebnis, note, motor, runden, hinweise);
+    zeigen(ergebnis, hinweise);
   } catch (fehler) {
     $("ausgabe").innerHTML = "";
     const p = document.createElement("p");
@@ -683,7 +668,7 @@ async function uebersetzen() {
   }
 }
 
-function zeigen(text, note, motor, runden, hinweise) {
+function zeigen(text, hinweise) {
   zustand.ausgabe = text;
   $("ausgabe").replaceChildren.apply($("ausgabe"), text.split(/\n{2,}/).map((teil) => {
     const p = document.createElement("p");
@@ -693,28 +678,10 @@ function zeigen(text, note, motor, runden, hinweise) {
   $("kopieren").hidden = !text;
   $("kopieren2").hidden = !text;
 
-  if (note) {
-    $("notenwert").textContent = Math.round(note.punkte);
-    $("notentext").textContent = "von 100 — " + note.urteil + " · " +
-      (motor === "offline" ? "Offline-Generator" : "Sprachmodell") +
-      (runden > 1 ? " · " + runden + " Runden" : "");
-    $("notenbalken").style.width = Math.max(2, Math.min(100, note.punkte)) + "%";
-    $("maengel").replaceChildren.apply($("maengel"), note.maengel(4).map((m) => {
-      const li = document.createElement("li");
-      const s = document.createElement("span");
-      s.textContent = m.titel + ": " + m.ist + " statt " + m.soll;
-      const em = document.createElement("em");
-      em.textContent = m.richtung;
-      li.append(s, em);
-      return li;
-    }));
-    $("bewertung").hidden = false;
-  }
-
   const zeile = hinweise.join(" ");
   $("hinweis").textContent = zeile;
   $("hinweis").hidden = !zeile;
-  if (zeile && !note) $("bewertung").hidden = false;
+  $("bewertung").hidden = !zeile;
 }
 
 /* --------------------------------------------------------- Bedienung --- */
@@ -753,21 +720,32 @@ $("eingabe").addEventListener("input", () => {
   $("zaehler").textContent = $("eingabe").value.trim().length + " Zeichen";
 });
 async function kopieren(knopf, beschriftung) {
-  try {
-    await navigator.clipboard.writeText(zustand.ausgabe);
-    knopf.textContent = "Kopiert";
-  } catch (e) {
-    // Ohne sicheren Kontext (http statt https) verweigert der Browser die
-    // Zwischenablage -- dann wenigstens den Text markieren.
-    knopf.textContent = "Ging nicht";
-    const bereich = document.createRange();
-    bereich.selectNodeContents($("ausgabe"));
-    const auswahl = window.getSelection();
-    auswahl.removeAllRanges();
-    auswahl.addRange(bereich);
+  let geschafft = false;
+  // Die moderne Zwischenablage gibt es nur im sicheren Kontext (https).
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(zustand.ausgabe);
+      geschafft = true;
+    } catch (e) { /* weiter zum alten Weg */ }
   }
+  if (!geschafft) {
+    // Alter Weg: unsichtbares Feld fuellen, markieren, kopieren. Funktioniert
+    // auch ueber http und in aelteren Browsern.
+    const feld = document.createElement("textarea");
+    feld.value = zustand.ausgabe;
+    feld.setAttribute("readonly", "");
+    feld.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+    document.body.appendChild(feld);
+    feld.focus();
+    feld.select();
+    feld.setSelectionRange(0, feld.value.length);  // iOS braucht das
+    try { geschafft = document.execCommand("copy"); } catch (e) { geschafft = false; }
+    document.body.removeChild(feld);
+  }
+  knopf.textContent = geschafft ? "Kopiert" : "Bitte von Hand markieren";
   setTimeout(() => { knopf.textContent = beschriftung; }, 1600);
 }
+
 $("kopieren").addEventListener("click", () => kopieren($("kopieren"), "Kopieren"));
 $("kopieren2").addEventListener("click", () => kopieren($("kopieren2"), "Text kopieren"));
 $("schluessel").addEventListener("input", () => {
