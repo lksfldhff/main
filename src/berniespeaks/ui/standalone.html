@@ -604,7 +604,9 @@ async function frageModell(system, nutzer) {
 /* ---------------------------------------------------- Uebersetzung ----- */
 
 const zustand = { richtung: "zu_bernie", motor: "modell", laeuft: false, ausgabe: "" };
-const SCHWELLE = 72;
+// Eigene Beitraege erreichen im Schnitt 77.5 Punkte (Streuung 8.8) -- wer 68
+// schafft, liegt in dieser Spanne. Jede weitere Runde kostet einen Aufruf.
+const SCHWELLE = 68;
 
 async function uebersetzen() {
   const text = $("eingabe").value.trim();

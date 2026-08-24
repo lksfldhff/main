@@ -34,8 +34,11 @@ from .korpus import Korpus
 from .llm import Klient, LLMFehler
 from .score import Bewertung, bewerte
 
-# Ab dieser Note gilt ein Entwurf als gut genug.
-SCHWELLE = 72.0
+# Ab dieser Note gilt ein Entwurf als gut genug. Der Wert stammt aus der
+# Kalibrierung: eigene Beitraege erreichen im Schnitt 77.5 Punkte bei einer
+# Streuung von 8.8. Wer 68 erreicht, liegt innerhalb dieser Spanne -- eine
+# weitere Runde kostet dann mehr, als sie bringt.
+SCHWELLE = 68.0
 # So oft wird hoechstens nachgeschaerft.
 NACHBESSERUNGEN = 2
 # So viele Stilbeispiele kommen in die Anweisung.
