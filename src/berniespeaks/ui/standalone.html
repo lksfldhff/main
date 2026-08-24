@@ -24,7 +24,7 @@
   <div class="marke">🐎</div>
   <div style="min-width:0">
     <h1>{{TITEL}}</h1>
-    <p class="unterzeile" id="unterzeile">–</p>
+    <p class="unterzeile" id="unterzeile" hidden></p>
   </div>
   <div class="rechts">
     <div class="schalter" id="richtung">
@@ -96,6 +96,9 @@
  * ===================================================================== */
 
 const PROFIL = {{PROFIL}};
+
+/* Zeile unter dem Titel. Leer = keine Zeile. Wird beim Bauen gesetzt. */
+const UNTERZEILE = {{UNTERZEILE}};
 
 const $ = (id) => document.getElementById(id);
 
@@ -752,8 +755,10 @@ window.addEventListener("keydown", (e) => {
 });
 $("los").addEventListener("click", uebersetzen);
 
-$("unterzeile").textContent = PROFIL.name + " · gelernt aus " + PROFIL.quelle.posts +
-  " Beiträgen (" + PROFIL.quelle.woerter + " Wörter)";
+if (UNTERZEILE) {
+  $("unterzeile").textContent = UNTERZEILE;
+  $("unterzeile").hidden = false;
+}
 try {
   const gemerkt = localStorage.getItem("bernie.schluessel");
   if (gemerkt) { $("schluessel").value = gemerkt; $("schluessel").dispatchEvent(new Event("input")); }

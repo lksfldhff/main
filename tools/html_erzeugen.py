@@ -43,11 +43,12 @@ def stil_holen() -> str:
     return treffer.group(1)
 
 
-def bauen(profil: Stilprofil, titel: str = "") -> str:
+def bauen(profil: Stilprofil, titel: str = "", unterzeile: str = "") -> str:
     seite = VORLAGE.read_text(encoding="utf-8")
     daten = json.dumps(profil.als_dict(), ensure_ascii=False, separators=(",", ":"))
     seite = seite.replace("{{STIL}}", stil_holen())
     seite = seite.replace("{{TITEL}}", titel or "Bernie Speaks")
+    seite = seite.replace("{{UNTERZEILE}}", json.dumps(unterzeile, ensure_ascii=False))
     # Der Profiltext kann Zeichenfolgen enthalten, die den Skriptblock
     # vorzeitig beenden wuerden.
     return seite.replace("{{PROFIL}}", daten.replace("</script", "<\\/script"))
@@ -58,13 +59,15 @@ def main() -> int:
     parser.add_argument("-p", "--profil", help="Stilprofil (Standard: gefundenes Profil)")
     parser.add_argument("-o", "--ausgabe", default="Stil-Uebersetzer.html", help="Zieldatei")
     parser.add_argument("-t", "--titel", default="", help="Titel der Seite")
+    parser.add_argument("-u", "--unterzeile", default="",
+                        help="Zeile unter dem Titel; ohne Angabe bleibt sie weg")
     parser.add_argument("--ohne-vermittler", action="store_true",
                         help="nur die HTML-Datei schreiben, keine api.php daneben")
     args = parser.parse_args()
 
     profil = Stilprofil.laden(args.profil or profil_suchen())
     ziel = Path(args.ausgabe)
-    ziel.write_text(bauen(profil, args.titel), encoding="utf-8")
+    ziel.write_text(bauen(profil, args.titel, args.unterzeile), encoding="utf-8")
     print(f"{ziel}  ({ziel.stat().st_size / 1024:.0f} kB, Profil: {profil.name}, "
           f"{profil.quelle.get('posts', 0)} Beitraege)")
 

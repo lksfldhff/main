@@ -104,6 +104,119 @@ function bremse_frei(int $pro_stunde): bool
     return true;
 }
 
+/** Schickt eine Anfrage an den Anbieter und liefert [Status, Daten, Netzfehler]. */
+function anbieter_anfragen(string $adresse, array $kopf, ?array $koerper): array
+{
+    $verbindung = curl_init($adresse);
+    $einstellungen = [
+        CURLOPT_HTTPHEADER => $kopf,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 120,
+    ];
+    if ($koerper !== null) {
+        $einstellungen[CURLOPT_POST] = true;
+        $einstellungen[CURLOPT_POSTFIELDS] = json_encode($koerper, JSON_UNESCAPED_UNICODE);
+    }
+    curl_setopt_array($verbindung, $einstellungen);
+    $antwort = curl_exec($verbindung);
+    $status = (int) curl_getinfo($verbindung, CURLINFO_RESPONSE_CODE);
+    $netzfehler = curl_error($verbindung);
+    curl_close($verbindung);
+    if ($antwort === false) {
+        return [0, null, $netzfehler];
+    }
+    return [$status, json_decode((string) $antwort, true), ''];
+}
+
+/**
+ * Fragt den Anbieter, welche Modelle es gibt.
+ *
+ * Anbieter tauschen ihre Modelle regelmaessig aus; ein fest eingetragener
+ * Name veraltet. Statt zu raten, wird nachgeschaut.
+ */
+function modelle_holen(array $eintrag, string $schluessel): array
+{
+    $adresse = preg_replace('#/(chat/completions|messages)$#', '/models', $eintrag['adresse']);
+    $kopf = $eintrag['format'] === 'anthropic'
+        ? ['x-api-key: ' . $schluessel, 'anthropic-version: 2023-06-01']
+        : ['authorization: Bearer ' . $schluessel];
+    [$status, $daten] = anbieter_anfragen((string) $adresse, $kopf, null);
+    if ($status < 200 || $status >= 300 || !is_array($daten)) {
+        return [];
+    }
+    $liste = $daten['data'] ?? [];
+    $namen = [];
+    foreach ($liste as $modell) {
+        $name = is_array($modell) ? (string) ($modell['id'] ?? '') : (string) $modell;
+        if ($name !== '') {
+            $namen[] = $name;
+        }
+    }
+    return $namen;
+}
+
+/**
+ * Waehlt aus einer Modellliste das brauchbarste Sprachmodell.
+ *
+ * Aussortiert wird, was keinen Text schreibt (Spracherkennung, Sprachausgabe,
+ * Einbettungen, Schutzfilter). Bevorzugt werden grosse Instruktionsmodelle.
+ */
+function modell_waehlen(array $namen): string
+{
+    $raus = ['whisper', 'tts', 'guard', 'embed', 'moderation', 'rerank', 'vision-preview', 'distil-whisper'];
+    $punkte = ['405b' => 9, '120b' => 8, '70b' => 7, 'maverick' => 7, 'large' => 6, 'k2' => 6,
+               '32b' => 5, 'scout' => 5, 'versatile' => 4, '20b' => 3, 'instruct' => 2, '8b' => 1];
+    $beste = '';
+    $bestwert = -1;
+    foreach ($namen as $name) {
+        $klein = strtolower($name);
+        foreach ($raus as $wort) {
+            if (str_contains($klein, $wort)) {
+                continue 2;
+            }
+        }
+        $wert = 0;
+        foreach ($punkte as $wort => $gewicht) {
+            if (str_contains($klein, $wort)) {
+                $wert += $gewicht;
+            }
+        }
+        if ($wert > $bestwert) {
+            $bestwert = $wert;
+            $beste = $name;
+        }
+    }
+    return $beste;
+}
+
+/**
+ * Bestimmt das Modell, das wirklich benutzt wird.
+ *
+ * Ist keins fest eingetragen, wird beim Anbieter nachgesehen: existiert die
+ * Voreinstellung noch, bleibt es dabei, sonst wird das naechstbeste genommen.
+ * Das Ergebnis haelt eine Stunde, damit nicht jeder Seitenaufruf nachfragt.
+ */
+function modell_bestimmen(array $eintrag, string $schluessel, string $fest): string
+{
+    if ($fest !== '') {
+        return $fest;
+    }
+    $datei = sys_get_temp_dir() . '/bernie-modell-' . hash('sha256', $eintrag['name'] . $schluessel) . '.txt';
+    if (is_readable($datei) && filemtime($datei) > time() - 3600) {
+        $gemerkt = trim((string) file_get_contents($datei));
+        if ($gemerkt !== '') {
+            return $gemerkt;
+        }
+    }
+    $gewaehlt = $eintrag['modell'];
+    $namen = modelle_holen($eintrag, $schluessel);
+    if ($namen && !in_array($eintrag['modell'], $namen, true)) {
+        $gewaehlt = modell_waehlen($namen) ?: $eintrag['modell'];
+    }
+    @file_put_contents($datei, $gewaehlt, LOCK_EX);
+    return $gewaehlt;
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     antworten(['fehler' => 'Nur POST.'], 405);
 }
@@ -122,7 +235,7 @@ if (!empty($anfrage['pruefen'])) {
     antworten([
         'bereit' => $bereit,
         'anbieter' => $bereit ? $eintrag['name'] : '',
-        'modell' => $bereit ? ($MODELL ?: $eintrag['modell']) : '',
+        'modell' => $bereit ? modell_bestimmen($eintrag, $SCHLUESSEL, $MODELL) : '',
         'zugang_noetig' => $ZUGANG !== '',
         'grund' => $bereit ? '' : 'Auf dem Server ist kein Schluessel hinterlegt (api.php, Zeile "SCHLUESSEL").',
     ]);
@@ -130,6 +243,16 @@ if (!empty($anfrage['pruefen'])) {
 
 if (!$bereit) {
     antworten(['fehler' => 'Auf dem Server ist kein gueltiger Schluessel hinterlegt.'], 503);
+}
+
+// Zum Nachsehen, welche Modelle das eigene Konto anbietet.
+if (!empty($anfrage['modelle'])) {
+    $namen = modelle_holen($eintrag, $SCHLUESSEL);
+    antworten([
+        'anbieter' => $eintrag['name'],
+        'modelle' => $namen,
+        'vorschlag' => modell_waehlen($namen),
+    ]);
 }
 if ($ZUGANG !== '' && !hash_equals($ZUGANG, (string) ($anfrage['zugang'] ?? ''))) {
     antworten(['fehler' => 'Falsches Zugangswort.'], 401);
@@ -147,56 +270,66 @@ if (mb_strlen($system) + mb_strlen($nutzer) > $MAX_ZEICHEN) {
     antworten(['fehler' => 'Der Text ist zu lang.'], 413);
 }
 
-$modell = $MODELL ?: $eintrag['modell'];
-if ($eintrag['format'] === 'anthropic') {
-    $kopf = [
-        'content-type: application/json',
-        'x-api-key: ' . $SCHLUESSEL,
-        'anthropic-version: 2023-06-01',
-    ];
-    // Die aktuellen Claude-Modelle denken von sich aus mit; gesteuert wird das
-    // ueber den Aufwand. Temperatur gibt es dort nicht mehr.
-    $koerper = [
-        'model' => $modell,
-        'max_tokens' => 8000,
-        'system' => $system,
-        'messages' => [['role' => 'user', 'content' => $nutzer]],
-        'output_config' => ['effort' => 'medium'],
-    ];
-} else {
-    $kopf = ['content-type: application/json', 'authorization: Bearer ' . $SCHLUESSEL];
-    $koerper = [
-        'model' => $modell,
-        'max_tokens' => 2000,
-        'messages' => [
-            ['role' => 'system', 'content' => $system],
-            ['role' => 'user', 'content' => $nutzer],
+$modell = modell_bestimmen($eintrag, $SCHLUESSEL, $MODELL);
+
+/** Baut Kopfzeilen und Rumpf fuer ein bestimmtes Modell. */
+$bauen = static function (string $modell) use ($eintrag, $SCHLUESSEL, $system, $nutzer): array {
+    if ($eintrag['format'] === 'anthropic') {
+        return [
+            ['content-type: application/json', 'x-api-key: ' . $SCHLUESSEL, 'anthropic-version: 2023-06-01'],
+            [
+                'model' => $modell,
+                'max_tokens' => 8000,
+                'system' => $system,
+                'messages' => [['role' => 'user', 'content' => $nutzer]],
+                // Die aktuellen Claude-Modelle denken von sich aus mit; gesteuert
+                // wird das ueber den Aufwand. Temperatur gibt es dort nicht mehr.
+                'output_config' => ['effort' => 'medium'],
+            ],
+        ];
+    }
+    return [
+        ['content-type: application/json', 'authorization: Bearer ' . $SCHLUESSEL],
+        [
+            'model' => $modell,
+            'max_tokens' => 2000,
+            'messages' => [
+                ['role' => 'system', 'content' => $system],
+                ['role' => 'user', 'content' => $nutzer],
+            ],
         ],
     ];
+};
+
+[$kopf, $koerper] = $bauen($modell);
+[$status, $daten, $netzfehler] = anbieter_anfragen($eintrag['adresse'], $kopf, $koerper);
+
+// Anbieter mustern ihre Modelle regelmaessig aus. Statt mit einem veralteten
+// Namen zu scheitern, wird einmal nachgeschaut und das Passende genommen.
+$gewechselt = false;
+$meldung = $daten['error']['message'] ?? '';
+if (
+    $MODELL === ''
+    && in_array($status, [400, 404], true)
+    && (is_string($meldung) ? stripos($meldung, 'model') !== false : true)
+) {
+    $ersatz = modell_waehlen(modelle_holen($eintrag, $SCHLUESSEL));
+    if ($ersatz !== '' && $ersatz !== $modell) {
+        $modell = $ersatz;
+        $gewechselt = true;
+        [$kopf, $koerper] = $bauen($modell);
+        [$status, $daten, $netzfehler] = anbieter_anfragen($eintrag['adresse'], $kopf, $koerper);
+    }
 }
 
-$verbindung = curl_init($eintrag['adresse']);
-curl_setopt_array($verbindung, [
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => $kopf,
-    CURLOPT_POSTFIELDS => json_encode($koerper, JSON_UNESCAPED_UNICODE),
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 120,
-]);
-$antwort = curl_exec($verbindung);
-$status = (int) curl_getinfo($verbindung, CURLINFO_RESPONSE_CODE);
-$netzfehler = curl_error($verbindung);
-curl_close($verbindung);
-
-if ($antwort === false) {
+if ($status === 0) {
     antworten(['fehler' => 'Keine Verbindung zum Anbieter: ' . $netzfehler], 502);
 }
 
-$daten = json_decode((string) $antwort, true);
 if ($status < 200 || $status >= 300) {
     $meldung = $daten['error']['message'] ?? $daten['error'] ?? '';
     $texte = [
-        400 => 'Die Anfrage wurde abgelehnt (400). Meist stimmt der Modellname nicht.',
+        400 => 'Die Anfrage wurde abgelehnt (400).',
         401 => 'Der hinterlegte Schluessel wird nicht akzeptiert (401).',
         403 => 'Zugriff verweigert (403).',
         404 => 'Modell nicht gefunden (404).',
@@ -204,6 +337,13 @@ if ($status < 200 || $status >= 300) {
         529 => 'Der Dienst ist ueberlastet (529).',
     ];
     $text = $texte[$status] ?? "Der Anbieter antwortete mit Status $status.";
+    if (in_array($status, [400, 404], true)) {
+        $namen = modelle_holen($eintrag, $SCHLUESSEL);
+        if ($namen) {
+            $text .= ' Verfuegbar waeren: ' . implode(', ', array_slice($namen, 0, 8))
+                . '. Eintragen in api.php unter MODELL.';
+        }
+    }
     antworten(['fehler' => $text . (is_string($meldung) && $meldung !== '' ? ' Meldung: ' . $meldung : '')], 502);
 }
 
@@ -222,4 +362,9 @@ if (trim($text) === '') {
     antworten(['fehler' => 'Die Antwort des Modells war leer.'], 502);
 }
 
-antworten(['text' => trim($text), 'anbieter' => $eintrag['name'], 'modell' => $modell]);
+antworten([
+    'text' => trim($text),
+    'anbieter' => $eintrag['name'],
+    'modell' => $modell,
+    'modell_gewechselt' => $gewechselt,
+]);
