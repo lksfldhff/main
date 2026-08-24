@@ -12,6 +12,10 @@
     letter-spacing: 0.02em; color: oklch(0.34 0.012 60); outline: none;
   }
   .schluesselzeile input:focus { border-color: var(--akzent); }
+  .fussnote.warnung { color: var(--warnung); }
+  .fussnote.verbunden::before {
+    content: "●"; color: var(--gut); margin-right: 5px; font-size: 10px; vertical-align: 1px;
+  }
 </style>
 </head>
 <body>
@@ -485,22 +489,39 @@ const anbieterZu = (s) => ANBIETER.filter((a) => s.indexOf(a.praefix) === 0)[0] 
 /* Liegt neben dieser Datei eine api.php, dann laeuft der Aufruf darueber:
    der Schluessel steht auf dem Server, Besucher brauchen keinen eigenen, und
    es gibt kein CORS-Problem. Fehlt sie, traegt jeder seinen Schluessel ein. */
-const VERMITTLER = { bereit: false, zugangNoetig: false, anbieter: "", modell: "" };
+const VERMITTLER = { bereit: false, zustand: "unbekannt", zugangNoetig: false, anbieter: "", modell: "", grund: "" };
 
 async function vermittlerPruefen() {
+  let antwort;
   try {
-    const antwort = await fetch("./api.php", {
+    antwort = await fetch("./api.php", {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ pruefen: true }),
     });
-    if (!antwort.ok) return;
-    const daten = await antwort.json();
-    if (!daten || !daten.bereit) return;
+  } catch (e) {
+    VERMITTLER.zustand = "fehlt";
+    return;
+  }
+  if (antwort.status === 404) { VERMITTLER.zustand = "fehlt"; return; }
+
+  const roh = await antwort.text();
+  // Wird PHP nicht ausgefuehrt, liefert der Server den Quelltext aus -- und
+  // damit stuende der Schluessel offen im Netz. Das muss auffallen.
+  if (roh.trim().indexOf("<?php") === 0) { VERMITTLER.zustand = "kein_php"; return; }
+
+  let daten;
+  try { daten = JSON.parse(roh); } catch (e) { VERMITTLER.zustand = "fehlt"; return; }
+
+  if (daten && daten.bereit) {
     VERMITTLER.bereit = true;
+    VERMITTLER.zustand = "bereit";
     VERMITTLER.zugangNoetig = !!daten.zugang_noetig;
     VERMITTLER.anbieter = daten.anbieter || "";
     VERMITTLER.modell = daten.modell || "";
-  } catch (e) { /* keine api.php -- dann eben mit eigenem Schluessel */ }
+  } else {
+    VERMITTLER.zustand = "ohne_schluessel";
+    VERMITTLER.grund = (daten && daten.grund) || "";
+  }
 }
 
 async function ueberVermittler(system, nutzer) {
@@ -739,13 +760,25 @@ try {
 } catch (e) { /* privater Modus */ }
 
 vermittlerPruefen().then(() => {
-  if (!VERMITTLER.bereit) return;
-  $("anbietername").textContent = VERMITTLER.anbieter + " · " + VERMITTLER.modell;
-  if (VERMITTLER.zugangNoetig) {
-    $("schluessel").placeholder = "Zugangswort";
-    $("schluessel").value = "";
-  } else {
-    $("schluessel").hidden = true;
+  const anzeige = $("anbietername");
+  anzeige.className = "fussnote";
+  if (VERMITTLER.zustand === "bereit") {
+    anzeige.className = "fussnote verbunden";
+    anzeige.textContent = "api.php verbunden · " + VERMITTLER.anbieter + " · " + VERMITTLER.modell;
+    if (VERMITTLER.zugangNoetig) {
+      $("schluessel").placeholder = "Zugangswort";
+      $("schluessel").value = "";
+    } else {
+      $("schluessel").hidden = true;
+    }
+  } else if (VERMITTLER.zustand === "kein_php") {
+    anzeige.className = "fussnote warnung";
+    anzeige.textContent = "api.php wird nicht ausgeführt — Schlüssel wäre offen sichtbar! Datei entfernen.";
+  } else if (VERMITTLER.zustand === "ohne_schluessel") {
+    anzeige.className = "fussnote warnung";
+    anzeige.textContent = VERMITTLER.grund || "api.php gefunden, aber ohne Schlüssel.";
+  } else if (!$("schluessel").value.trim()) {
+    anzeige.textContent = "keine api.php gefunden — Schlüssel hier eintragen";
   }
 });
 </script>
