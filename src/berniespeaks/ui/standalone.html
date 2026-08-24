@@ -283,31 +283,37 @@ function aehnlichste(text, anzahl) {
 }
 
 function anweisungStil(text, staerke) {
-  const p = PROFIL, pos = p.emoji.position || {}, lauf = p.emoji.lauflaenge_verteilung || {};
-  const prozent = (x) => (x * 100).toFixed(0);
+  const p = PROFIL, pos = p.emoji.position || {};
+  const anteil = (w) => (w * 100).toFixed(0);
+  // Emojis nach Verbreitung ueber die Beitraege statt nach roher Haeufigkeit:
+  // so faellt auch auf, was regelmaessig, aber sparsam benutzt wird.
+  const verbreitet = (p.emoji.verbreitet && p.emoji.verbreitet.length)
+    ? p.emoji.verbreitet : (p.emoji.haeufigste || []);
+
   const teile = [
     "Du schreibst wie " + (p.name || "die Person") + ". Dieser Schreibstil wurde aus " + p.quelle.posts +
-      " eigenen Texten vermessen; die Werte stehen unten. Du formulierst den Text des Nutzers in " +
+      " eigenen Texten vermessen; die Werte stehen unten. Du schreibst den Text des Nutzers in " +
       "diesem Stil neu. Antworte immer auf Deutsch und gib ausschliesslich den fertigen Text aus -- " +
       "keine Erklaerung, keine Ueberschrift, keine Anfuehrungszeichen um das Ganze.",
-    "GEMESSENE WERTE, an die du dich haeltst:\n" +
-      "- Emojis: rund " + (soll("emoji_je_100_woerter") * staerke).toFixed(0) + " je 100 Woerter, im Schnitt " +
-        soll("emoji_lauflaenge").toFixed(1) + " je Emoji-Gruppe.\n" +
-      "- " + prozent(soll("anteil_saetze_mit_emoji")) + " Prozent der Saetze tragen mindestens ein Emoji.\n" +
-      "- Emoji-Gruppen stehen zu " + prozent(pos.innen || 0) + " Prozent mitten im Satz, zu " +
-        prozent(pos.satzende || 0) + " Prozent am Satzende, zu " + prozent(pos.zeilenanfang || 0) +
-        " Prozent am Zeilenanfang.\n" +
-      "- " + prozent(lauf["1"] || 0) + " Prozent der Gruppen sind ein einzelnes Emoji, der Rest sind Ketten -- " +
-        "meist dasselbe Emoji wiederholt, nicht gemischt.\n" +
-      "- " + prozent(soll("versal_wortanteil") * staerke) + " Prozent der Woerter stehen komplett in " +
-        "GROSSBUCHSTABEN (Betonung).\n" +
-      "- Saetze sind kurz: im Schnitt " + soll("woerter_je_satz").toFixed(0) + " Woerter.\n" +
-      "- Selbstbezuege (ich, wir, mir, uns): " + soll("ich_wir_je_100_woerter").toFixed(0) + " je 100 Woerter.",
+    "GEMESSENE WERTE:\n" +
+      "- Emojis: rund " + (soll("emoji_je_100_woerter") * staerke).toFixed(0) + " je 100 Woerter; " +
+        anteil(soll("anteil_saetze_mit_emoji")) + " Prozent der Saetze tragen eins. Im Schnitt " +
+        soll("emoji_lauflaenge").toFixed(1) + " je Gruppe, " + anteil(pos.innen || 0) +
+        " Prozent davon mitten im Satz.\n" +
+      "- Ketten aus demselben Emoji, nicht gemischt: " +
+        (p.emoji.ketten || []).slice(0, 5).map((e) => e[0]).join("  ") + "\n" +
+      "- " + anteil(soll("versal_wortanteil") * staerke) + " Prozent der Woerter komplett in " +
+        "GROSSBUCHSTABEN (Betonung), einzelne Woerter, nie ganze Saetze.\n" +
+      "- Saetze kurz: im Schnitt " + soll("woerter_je_satz").toFixed(0) +
+        " Woerter, oft als eigene Zeile.\n" +
+      "- Selbstbezuege (ich, wir, mir, uns): " + soll("ich_wir_je_100_woerter").toFixed(0) +
+        " je 100 Woerter.\n" +
+      "- Gedankenpunkte … kommen vor: " + soll("ellipsen_je_100_woerter").toFixed(1) + " je 100 Woerter.",
     "DIESE EMOJIS kommen im Material vor, andere nicht: " +
-      (p.emoji.haeufigste || []).slice(0, 12).map((e) => e[0]).join(" ") + "\n" +
-      "Typische Ketten: " + (p.emoji.ketten || []).slice(0, 6).map((e) => e[0]).join("  ") + "\n" +
+      verbreitet.slice(0, 14).map((e) => e[0]).join(" ") + "\n" +
       "Aufzaehlungszeilen beginnen mit: " +
       (p.struktur.aufzaehlungszeichen || []).slice(0, 5).map((e) => e[0]).join(" "),
+    aufbauBeschreiben(),
     "WORTSCHATZ, der auffaellig oft vorkommt: " +
       (p.lexikon.inhaltswoerter || []).slice(0, 22).map((e) => e.wort).join(", "),
     "WIEDERKEHRENDE WENDUNGEN: " +
@@ -315,20 +321,73 @@ function anweisungStil(text, staerke) {
     "SO FANGEN TEXTE AN: " + (p.lexikon.oeffner || []).slice(0, 4).join(" | ") + "\n" +
       "SO HOEREN SIE AUF: " + (p.lexikon.schluesser || []).slice(0, 4).join(" | "),
   ];
-  const tags = (p.lexikon.hashtags || []).slice(0, 10).map((e) => e[0]).join(" ");
-  if (tags) teile.push("HASHTAGS am Ende, klein geschrieben, nur wenn es passt: " + tags);
+
+  const tags = (p.lexikon.hashtags || []).slice(0, 8).map((e) => e[0]).join(" ");
+  if (tags) teile.push("HASHTAGS ganz am Ende, klein geschrieben, nur wenn es passt: " + tags);
   const orgs = (p.lexikon.organisationen || []).slice(0, 5).join("; ");
-  if (orgs) teile.push("Genannte Einrichtungen (nur uebernehmen, wenn sie zum Inhalt passen): " + orgs);
+  if (orgs) teile.push("Einrichtungen aus seinem Umfeld (nur wenn sie zum Inhalt passen): " + orgs);
+  if (p.eigenheiten) teile.push("DIE FIGUR:\n" + p.eigenheiten);
+  teile.push(intensitaet(staerke));
 
   const beispiele = aehnlichste(text, 1);
   if (beispiele.length) {
-    teile.push("SO KLINGT EIN ORIGINAL -- uebernimm Ton, Emoji-Dichte und Aufbau, nie den Inhalt:\n\n" +
+    teile.push("SO KLINGT EIN ORIGINAL -- uebernimm Ton, Dichte und Aufbau, nie den Inhalt:\n\n" +
       beispiele.join("\n\n---\n\n"));
   }
-  teile.push("PFLICHTEN: Die Aussage des Originals bleibt erhalten, ebenso alle Zahlen, Daten und Namen. " +
-    "Erfinde keine Personen, keine Zitate und keine Termine. [Name] in den Beispielen ist ein Platzhalter -- " +
-    "uebernimm ihn nicht. Hoechstens doppelt so lang wie das Original.");
+  teile.push("PFLICHTEN: Aussage, Zahlen, Daten und Namen des Originals bleiben erhalten. Erfinde " +
+    "keine Termine, keine Zahlen und keine Personen. [Name] in den Beispielen ist ein Platzhalter -- " +
+    "uebernimm ihn nicht.");
   return teile.join("\n\n");
+}
+
+/* Aufbau eines Beitrags -- aus den gemessenen Anteilen. Ohne diesen Abschnitt
+   uebersetzt das Modell brav Satz fuer Satz, statt einen Beitrag zu bauen.  */
+function aufbauBeschreiben() {
+  const p = PROFIL;
+  const anteil = (w) => (w * 100).toFixed(0);
+  const zeilen = [
+    "AUFBAU UND AUSBAU -- so sind seine Texte gebaut:",
+    "- Der Text darf deutlich laenger werden als die Vorlage. Er uebersetzt nicht Satz fuer Satz, " +
+      "sondern macht daraus einen fertigen Beitrag.",
+    "- Kurze Zeilen, oft eine Aussage je Zeile, dazwischen Leerzeilen.",
+  ];
+  if (soll("aufzaehlungszeilen_anteil") > 0.02) {
+    zeilen.push("- Etwa " + anteil(soll("aufzaehlungszeilen_anteil")) +
+      " Prozent der Zeilen sind Aufzaehlungen mit einem Emoji davor.");
+  }
+  if (soll("zitat_je_100_woerter") > 0.05) {
+    zeilen.push("- Sagt jemand etwas, wird er woertlich in deutschen Anfuehrungszeichen \u201eso\u201c " +
+      "zitiert und anschliessend kommentiert oder bewertet.");
+  }
+  zeilen.push("- Er ordnet ein: eine Beobachtung, eine Wertung, ein Bekenntnis zur Sache. Das ist " +
+    "Haltung, keine neue Tatsache -- erfundene Fakten bleiben verboten.");
+  zeilen.push("- Zum Schluss Dank oder Vorfreude, an die Beteiligten gerichtet.");
+  const endblock = (p.struktur || {}).endet_mit_namensblock || 0;
+  if (endblock > 0.15) {
+    zeilen.push("- In " + anteil(endblock) + " Prozent der Faelle steht ganz am Ende ein Block aus " +
+      "Namen und Einrichtungen, unverbunden aneinandergereiht. Nur die Namen benutzen, die im " +
+      "Ausgangstext stehen -- keine erfinden.");
+  }
+  return zeilen.join("\n");
+}
+
+/* Wie dick die Figur aufgetragen wird -- gesteuert vom Staerkeregler. */
+function intensitaet(staerke) {
+  const stufen = [
+    [0.7, "ZURUECKHALTEND: Ein einziges Bild aus der Pferdewelt im ganzen Text, hoechstens eine " +
+          "Ueberzeugung, kein Hashtag-Block. Die Aussage steht im Vordergrund."],
+    [1.1, "NORMAL: Ein bis zwei Pferdebilder, eine Ueberzeugung oder Lebensweisheit, am Ende ein " +
+          "kurzer Hashtag-Block."],
+    [1.4, "DEUTLICH: In jedem Absatz ein Bild aus der Pferdewelt, zwei bis drei Ueberzeugungen, " +
+          "eine Formel in Grossbuchstaben, Hashtag-Block am Ende."],
+    [99, "VOLL AUFGEDREHT: Fast jeder Gedanke bekommt ein Pferdebild, dazu mehrere Ueberzeugungen, " +
+         "eine Lebensweisheit, eine Formel in Grossbuchstaben und ein langer Hashtag-Block. Die " +
+         "Aussage des Originals bleibt trotzdem erkennbar."],
+  ];
+  for (const [grenze, text] of stufen) {
+    if (staerke < grenze) return "WIE DICK AUFGETRAGEN WIRD -- " + text;
+  }
+  return "WIE DICK AUFGETRAGEN WIRD -- " + stufen[stufen.length - 1][1];
 }
 
 function anweisungKlartext() {

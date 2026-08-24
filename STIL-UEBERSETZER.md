@@ -125,6 +125,29 @@ werden sie durch `[Name]` ersetzt. Das Profil hält nur ihre *Anzahl* fest.
 Das ist eine Heuristik, kein Ersatz für eine Durchsicht — aber es verhindert,
 dass echte Namen aus fremden Beiträgen in erfundene Texte wandern.
 
+### 5. Was sich nicht messen lässt
+
+Aus 22 Beiträgen lässt sich die *Form* zuverlässig messen — Dichten, Längen,
+Verteilungen. Die *Figur* dahinter nicht: politische Prägung, Steckenpferde,
+wiederkehrende Bekenntnisse, der Tonfall des wohlmeinenden Ratgebers. Das sind
+Zuschreibungen, keine Messwerte.
+
+Dafür hat das Profil ein eigenes Feld, `eigenheiten` — freier Text, der
+unverändert in die Anweisung geht und sauber vom gemessenen Teil getrennt
+bleibt:
+
+```json
+{ "eigenheiten": "PFERDE: Sein Steckenpferd. Bilder aus Reitsport und Stall …" }
+```
+
+Der Stärkeregler steuert nicht nur Emoji-Dichte und Großschreibung, sondern
+auch, wie dick die Figur aufgetragen wird — von einem einzigen Bild im ganzen
+Text bis zu einem in jedem Absatz.
+
+Der Unterschied ist wichtig: die gemessenen Werte machen, dass es nach **ihm**
+klingt; die Figur macht, dass es *charakteristisch* klingt. Ohne die Messwerte
+käme ein beliebiger Wichtigtuer heraus, ohne die Figur eine brave Kopie.
+
 ---
 
 ## Der Beweis, dass die Erkennung trägt

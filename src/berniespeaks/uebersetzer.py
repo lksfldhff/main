@@ -186,73 +186,138 @@ class Uebersetzer:
     def anweisung_stil(self, roh: str, staerke: float = 1.0) -> str:
         """Baut die Systemanweisung aus den gemessenen Werten des Profils.
 
-        Kein Satz darin ist von Hand geschrieben worden: Emoji-Dichte,
-        Kettenlaenge, Grossschreibungsquote, Satzlaenge, Wortschatz und
-        Beispiele kommen alle aus der Analyse. Ein anderes Profil ergibt
-        automatisch eine andere Anweisung.
+        Bis auf das Feld *eigenheiten* ist kein Satz darin von Hand
+        geschrieben: Emoji-Dichte, Kettenlaenge, Grossschreibungsquote,
+        Satzlaenge, Aufbau, Wortschatz und Beispiele kommen aus der Analyse.
+        Ein anderes Profil ergibt automatisch eine andere Anweisung.
         """
 
         p = self.profil
         emoji_rate = p.soll("emoji_je_100_woerter") * staerke
-        kette = p.soll("emoji_lauflaenge")
-        versal = p.soll("versal_wortanteil") * 100 * staerke
-        satzlaenge = p.soll("woerter_je_satz")
         position = p.emoji.get("position", {})
-        haeufigste = " ".join(e for e, _ in p.emoji.get("haeufigste", [])[:12])
-        ketten = "  ".join(k for k, _ in p.emoji.get("ketten", [])[:6])
+        anteil = lambda wert: f"{wert * 100:.0f}"  # noqa: E731
+
+        # Emojis nach Verbreitung ueber die Beitraege: so faellt auch auf, was
+        # regelmaessig, aber sparsam benutzt wird.
+        verbreitet = p.emoji.get("verbreitet") or p.emoji.get("haeufigste", [])
+        emojis = " ".join(e for e, _ in verbreitet[:14])
+        ketten = "  ".join(k for k, _ in p.emoji.get("ketten", [])[:5])
         marker = " ".join(z for z, _ in p.struktur.get("aufzaehlungszeichen", [])[:5])
-        woerter = ", ".join(p.inhaltswoerter[:22])
-        wendung = "; ".join(w["text"] for w in p.lexikon.get("wendungen", [])[:10])
-        oeffner = " | ".join(p.lexikon.get("oeffner", [])[:4])
-        schluesser = " | ".join(p.lexikon.get("schluesser", [])[:4])
-        hashtags = " ".join(h for h, _ in p.lexikon.get("hashtags", [])[:10])
-        orgs = "; ".join(p.lexikon.get("organisationen", [])[:5])
 
         teile = [
             f"Du schreibst wie {p.name or 'die Person'}. Dieser Schreibstil wurde aus "
             f"{p.quelle.get('posts', 0)} eigenen Texten vermessen; die Werte stehen unten. Du "
-            "formulierst den Text des Nutzers in diesem Stil neu. Antworte immer auf Deutsch und gib "
+            "schreibst den Text des Nutzers in diesem Stil neu. Antworte immer auf Deutsch und gib "
             "ausschliesslich den fertigen Text aus -- keine Erklaerung, keine Ueberschrift, keine "
             "Anfuehrungszeichen um das Ganze.",
-            "GEMESSENE WERTE, an die du dich haeltst:\n"
-            f"- Emojis: rund {emoji_rate:.0f} je 100 Woerter, im Schnitt {kette:.1f} je Emoji-Gruppe.\n"
-            f"- {p.soll('anteil_saetze_mit_emoji') * 100:.0f} Prozent der Saetze tragen mindestens ein Emoji.\n"
-            f"- Emoji-Gruppen stehen zu {position.get('innen', 0) * 100:.0f} Prozent mitten im Satz, "
-            f"zu {position.get('satzende', 0) * 100:.0f} Prozent am Satzende, "
-            f"zu {position.get('zeilenanfang', 0) * 100:.0f} Prozent am Zeilenanfang.\n"
-            f"- {p.emoji.get('lauflaenge_verteilung', {}).get('1', 0) * 100:.0f} Prozent der Gruppen sind "
-            f"ein einzelnes Emoji, der Rest sind Ketten -- meist dasselbe Emoji wiederholt, nicht gemischt.\n"
-            f"- {versal:.0f} Prozent der Woerter stehen komplett in GROSSBUCHSTABEN (Betonung).\n"
-            f"- Saetze sind kurz: im Schnitt {satzlaenge:.0f} Woerter.\n"
+            "GEMESSENE WERTE:\n"
+            f"- Emojis: rund {emoji_rate:.0f} je 100 Woerter; {anteil(p.soll('anteil_saetze_mit_emoji'))} "
+            f"Prozent der Saetze tragen eins. Im Schnitt {p.soll('emoji_lauflaenge'):.1f} je Gruppe, "
+            f"{anteil(position.get('innen', 0))} Prozent davon mitten im Satz.\n"
+            f"- Ketten aus demselben Emoji, nicht gemischt: {ketten}\n"
+            f"- {anteil(p.soll('versal_wortanteil') * staerke)} Prozent der Woerter komplett in "
+            "GROSSBUCHSTABEN (Betonung), einzelne Woerter, nie ganze Saetze.\n"
+            f"- Saetze kurz: im Schnitt {p.soll('woerter_je_satz'):.0f} Woerter, oft als eigene Zeile.\n"
             f"- Selbstbezuege (ich, wir, mir, uns): {p.soll('ich_wir_je_100_woerter'):.0f} je 100 Woerter.\n"
-            f"- Gedankenpunkte (…) und Ausrufezeichen kommen vor, aber sparsam: "
-            f"{p.soll('ellipsen_je_100_woerter'):.1f} bzw. {p.soll('ausrufe_je_satz'):.2f} je Satz.",
-            f"DIESE EMOJIS kommen im Material vor, andere nicht: {haeufigste}\n"
-            f"Typische Ketten: {ketten}\n"
+            f"- Gedankenpunkte … kommen vor: {p.soll('ellipsen_je_100_woerter'):.1f} je 100 Woerter.",
+            f"DIESE EMOJIS kommen im Material vor, andere nicht: {emojis}\n"
             f"Aufzaehlungszeilen beginnen mit: {marker}",
-            f"WORTSCHATZ, der auffaellig oft vorkommt: {woerter}",
-            f"WIEDERKEHRENDE WENDUNGEN: {wendung}",
-            f"SO FANGEN TEXTE AN: {oeffner}\nSO HOEREN SIE AUF: {schluesser}",
+            self._aufbau_beschreiben(),
+            f"WORTSCHATZ, der auffaellig oft vorkommt: {', '.join(p.inhaltswoerter[:22])}",
+            "WIEDERKEHRENDE WENDUNGEN: "
+            + "; ".join(w["text"] for w in p.lexikon.get("wendungen", [])[:10]),
+            f"SO FANGEN TEXTE AN: {' | '.join(p.lexikon.get('oeffner', [])[:4])}\n"
+            f"SO HOEREN SIE AUF: {' | '.join(p.lexikon.get('schluesser', [])[:4])}",
         ]
+
+        hashtags = " ".join(h for h, _ in p.lexikon.get("hashtags", [])[:8])
         if hashtags:
-            teile.append(f"HASHTAGS am Ende, klein geschrieben, nur wenn es passt: {hashtags}")
+            teile.append(f"HASHTAGS ganz am Ende, klein geschrieben, nur wenn es passt: {hashtags}")
+        orgs = "; ".join(p.lexikon.get("organisationen", [])[:5])
         if orgs:
-            teile.append(f"Genannte Einrichtungen (nur uebernehmen, wenn sie zum Inhalt passen): {orgs}")
+            teile.append(f"Einrichtungen aus seinem Umfeld (nur wenn sie zum Inhalt passen): {orgs}")
+        if p.eigenheiten:
+            teile.append("DIE FIGUR:\n" + p.eigenheiten)
+        teile.append(self._intensitaet(staerke))
 
         beispiele = self.beispiele_waehlen(roh)
         if beispiele:
             teile.append(
-                "SO KLINGT DAS im Original -- uebernimm Ton, Emoji-Dichte und Aufbau, "
-                "nie den Inhalt:\n\n" + "\n\n---\n\n".join(beispiele)
+                "SO KLINGT EIN ORIGINAL -- uebernimm Ton, Dichte und Aufbau, nie den Inhalt:\n\n"
+                + "\n\n---\n\n".join(beispiele)
             )
 
         teile.append(
-            "PFLICHTEN: Die Aussage des Originals bleibt erhalten, ebenso alle Zahlen, Daten und "
-            "Namen. Erfinde keine Personen, keine Zitate und keine Termine. [Name] in den "
-            "Beispielen ist ein Platzhalter -- uebernimm ihn nicht. Hoechstens doppelt so lang "
-            "wie das Original."
+            "PFLICHTEN: Aussage, Zahlen, Daten und Namen des Originals bleiben erhalten. Erfinde "
+            "keine Termine, keine Zahlen und keine Personen. [Name] in den Beispielen ist ein "
+            "Platzhalter -- uebernimm ihn nicht."
         )
         return "\n\n".join(teile)
+
+    def _aufbau_beschreiben(self) -> str:
+        """Beschreibt den Aufbau eines Beitrags -- aus den gemessenen Anteilen.
+
+        Ohne diesen Abschnitt uebersetzt das Modell brav Satz fuer Satz. Seine
+        Beitraege sind aber laenger als ihr Anlass: sie ordnen ein, zitieren
+        und danken. Genau das steht hier, mit den gemessenen Haeufigkeiten.
+        """
+
+        p = self.profil
+        anteil = lambda wert: f"{wert * 100:.0f}"  # noqa: E731
+        zeilen = [
+            "AUFBAU UND AUSBAU -- so sind seine Texte gebaut:",
+            "- Der Text darf deutlich laenger werden als die Vorlage. Er uebersetzt nicht Satz fuer "
+            "Satz, sondern macht daraus einen fertigen Beitrag.",
+            "- Kurze Zeilen, oft eine Aussage je Zeile, dazwischen Leerzeilen.",
+        ]
+        if p.soll("aufzaehlungszeilen_anteil") > 0.02:
+            zeilen.append(
+                f"- Etwa {anteil(p.soll('aufzaehlungszeilen_anteil'))} Prozent der Zeilen sind "
+                "Aufzaehlungen mit einem Emoji davor."
+            )
+        if p.soll("zitat_je_100_woerter") > 0.05:
+            zeilen.append(
+                "- Sagt jemand etwas, wird er woertlich in deutschen Anfuehrungszeichen "
+                "\u201eso\u201c zitiert und anschliessend kommentiert oder bewertet."
+            )
+        zeilen.append(
+            "- Er ordnet ein: eine Beobachtung, eine Wertung, ein Bekenntnis zur Sache. Das ist "
+            "Haltung, keine neue Tatsache -- erfundene Fakten bleiben verboten."
+        )
+        zeilen.append("- Zum Schluss Dank oder Vorfreude, an die Beteiligten gerichtet.")
+        endblock = p.struktur.get("endet_mit_namensblock", 0)
+        if endblock > 0.15:
+            zeilen.append(
+                f"- In {anteil(endblock)} Prozent der Faelle steht ganz am Ende ein Block aus Namen "
+                "und Einrichtungen, unverbunden aneinandergereiht. Nur die Namen benutzen, die im "
+                "Ausgangstext stehen -- keine erfinden."
+            )
+        return "\n".join(zeilen)
+
+    @staticmethod
+    def _intensitaet(staerke: float) -> str:
+        """Wie dick die Figur aufgetragen wird -- gesteuert vom Staerkeregler.
+
+        Der Regler skaliert nicht nur Emojis und Grossschreibung, sondern auch
+        die Persona: von zurueckhaltend bis voll aufgedreht.
+        """
+
+        stufen = [
+            (0.7, "ZURUECKHALTEND: Ein einziges Bild aus der Pferdewelt im ganzen Text, "
+                  "hoechstens eine Ueberzeugung, kein Hashtag-Block. Die Aussage steht im "
+                  "Vordergrund."),
+            (1.1, "NORMAL: Ein bis zwei Pferdebilder, eine Ueberzeugung oder Lebensweisheit, "
+                  "am Ende ein kurzer Hashtag-Block."),
+            (1.4, "DEUTLICH: In jedem Absatz ein Bild aus der Pferdewelt, zwei bis drei "
+                  "Ueberzeugungen, eine Formel in Grossbuchstaben, Hashtag-Block am Ende."),
+            (99.0, "VOLL AUFGEDREHT: Fast jeder Gedanke bekommt ein Pferdebild, dazu mehrere "
+                   "Ueberzeugungen, eine Lebensweisheit, eine Formel in Grossbuchstaben und ein "
+                   "langer Hashtag-Block. Die Aussage des Originals bleibt trotzdem erkennbar."),
+        ]
+        for grenze, text in stufen:
+            if staerke < grenze:
+                return "WIE DICK AUFGETRAGEN WIRD -- " + text
+        return "WIE DICK AUFGETRAGEN WIRD -- " + stufen[-1][1]
 
     def anweisung_klartext(self) -> str:
         """Die Gegenrichtung: Stil abziehen, Aussage behalten."""

@@ -461,6 +461,10 @@ class Stilprofil:
     struktur: dict = field(default_factory=dict)
     lexikon: dict = field(default_factory=dict)
     beispiele: list[str] = field(default_factory=list)
+    # Von Hand gepflegt: Eigenheiten, die sich nicht aus 22 Beitraegen messen
+    # lassen -- Steckenpferde, wiederkehrende Bekenntnisse, Lieblingsbilder.
+    # Geht unveraendert in die Anweisung an das Sprachmodell.
+    eigenheiten: str = ""
 
     def als_dict(self) -> dict:
         return {
@@ -473,6 +477,7 @@ class Stilprofil:
             "struktur": self.struktur,
             "lexikon": self.lexikon,
             "beispiele": self.beispiele,
+            "eigenheiten": self.eigenheiten,
         }
 
     @classmethod
@@ -487,6 +492,7 @@ class Stilprofil:
             struktur=daten.get("struktur", {}),
             lexikon=daten.get("lexikon", {}),
             beispiele=daten.get("beispiele", []),
+            eigenheiten=daten.get("eigenheiten", ""),
         )
 
     def speichern(self, pfad: str | Path) -> Path:
@@ -595,6 +601,14 @@ def analysiere(korpus: Korpus, name: str = "", hintergrund: Hintergrund | None =
                 laufpositionen["innen"] += 1
         hashtags.update(t.hashtags(text))
 
+    # Wie viele *verschiedene* Beitraege benutzen ein Emoji? Ein Zeichen, das
+    # einmal in fuenf Beitraegen auftaucht, gehoert eher zur Handschrift als
+    # eines, das fuenfmal im selben Beitrag steht. Nur so faellt auf, was
+    # regelmaessig, aber sparsam benutzt wird.
+    streuung: Counter[str] = Counter()
+    for text in texte:
+        streuung.update(set(t.emojis(text)))
+
     lauf_gesamt = max(sum(lauflaengen.values()), 1)
     positionen_gesamt = max(sum(laufpositionen.values()), 1)
 
@@ -620,6 +634,10 @@ def analysiere(korpus: Korpus, name: str = "", hintergrund: Hintergrund | None =
         emoji={
             "haeufigste": [[e, n] for e, n in alle_emojis.most_common(40)],
             "vielfalt": len(alle_emojis),
+            "verbreitet": [
+                [e, n] for e, n in streuung.most_common(24)
+                if n >= 2 and e not in ("®", "™", "©")
+            ],
             "ketten": [[k, n] for k, n in ketten.most_common(25)],
             "lauflaenge_verteilung": {
                 str(laenge): round(anzahl / lauf_gesamt, 4) for laenge, anzahl in sorted(lauflaengen.items())
@@ -631,6 +649,10 @@ def analysiere(korpus: Korpus, name: str = "", hintergrund: Hintergrund | None =
         struktur={
             "aufzaehlungszeichen": [[z, n] for z, n in aufzaehlungszeichen.most_common(10)],
             "namensblock_zeilenanteil": round(namensblockzeilen / max(zeilen_gesamt, 1), 4),
+            "endet_mit_namensblock": round(
+                sum(1 for text in texte if t.zeilen(text) and namensblock(t.zeilen(text)[-1], hg))
+                / max(len(texte), 1), 4
+            ),
             "zeilen_gesamt": zeilen_gesamt,
         },
         lexikon={
