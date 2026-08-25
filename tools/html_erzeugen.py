@@ -27,6 +27,7 @@ from berniespeaks.analyse import Stilprofil, profil_suchen  # noqa: E402
 VORLAGE = WURZEL / "src" / "berniespeaks" / "ui" / "standalone.html"
 OBERFLAECHE = WURZEL / "src" / "berniespeaks" / "ui" / "index.html"
 VERMITTLER = WURZEL / "src" / "berniespeaks" / "ui" / "api.php"
+PROTOKOLL = WURZEL / "src" / "berniespeaks" / "ui" / "log.php"
 
 
 def stil_holen() -> str:
@@ -76,6 +77,9 @@ def main() -> int:
         nachbar.write_text(VERMITTLER.read_text(encoding="utf-8"), encoding="utf-8")
         print(f"{nachbar}  (Vermittler -- Schluessel dort eintragen, dann brauchen "
               f"Besucher keinen eigenen)")
+        schau = ziel.parent / "log.php"
+        schau.write_text(PROTOKOLL.read_text(encoding="utf-8"), encoding="utf-8")
+        print(f"{schau}  (Protokoll ansehen -- Passwort dort eintragen)")
 
     print("Beide Dateien in denselben Ordner auf den Webspace legen.")
     return 0

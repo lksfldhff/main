@@ -41,6 +41,16 @@ $MODELL = getenv('BERNIE_MODELL') ?: '';
  */
 $AUFWAND = getenv('BERNIE_AUFWAND') ?: 'low';
 
+/**
+ * Protokoll: schreibt jede Anfrage samt Ergebnis mit. Ansehen laesst es sich
+ * mit log.php -- dafuer muss dort ein Passwort gesetzt sein.
+ * Auf false setzen, wenn nichts mitgeschrieben werden soll.
+ */
+$PROTOKOLL = true;
+
+/** So viele Eintraege werden aufgehoben; aeltere fallen weg. */
+$PROTOKOLL_EINTRAEGE = 500;
+
 /** Hoechstens so viele Anfragen je Stunde und Absender. */
 $PRO_STUNDE = 60;
 
@@ -109,6 +119,40 @@ function bremse_frei(int $pro_stunde): bool
     $zeiten[] = $jetzt;
     @file_put_contents($datei, json_encode(array_values($zeiten)), LOCK_EX);
     return true;
+}
+
+/** Pfad der Protokolldatei -- liegt neben dieser Datei. */
+function protokoll_datei(): string
+{
+    return __DIR__ . '/bernie-log.php';
+}
+
+/**
+ * Schreibt einen Eintrag ins Protokoll.
+ *
+ * Die Datei traegt die Endung .php und beginnt mit einem exit -- wer sie
+ * direkt im Browser aufruft, bekommt eine leere Seite statt der Inhalte.
+ * Das schuetzt auch auf Webspaces ohne .htaccess.
+ */
+function protokollieren(array $eintrag, int $grenze): void
+{
+    $datei = protokoll_datei();
+    $kopf = "<?php exit; // Protokoll des Stil-Uebersetzers -- ansehen mit log.php ?>\n";
+
+    $zeilen = [];
+    if (is_readable($datei)) {
+        $alle = file($datei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+        foreach ($alle as $zeile) {
+            if (!str_starts_with($zeile, '<?php')) {
+                $zeilen[] = $zeile;
+            }
+        }
+    }
+    $zeilen[] = json_encode($eintrag, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if (count($zeilen) > $grenze) {
+        $zeilen = array_slice($zeilen, -$grenze);
+    }
+    @file_put_contents($datei, $kopf . implode("\n", $zeilen) . "\n", LOCK_EX);
 }
 
 /** Schickt eine Anfrage an den Anbieter und liefert [Status, Daten, Netzfehler]. */
@@ -277,6 +321,7 @@ if (mb_strlen($system) + mb_strlen($nutzer) > $MAX_ZEICHEN) {
     antworten(['fehler' => 'Der Text ist zu lang.'], 413);
 }
 
+$beginn = microtime(true);
 $modell = modell_bestimmen($eintrag, $SCHLUESSEL, $MODELL);
 
 /** Baut Kopfzeilen und Rumpf fuer ein bestimmtes Modell. */
@@ -347,6 +392,18 @@ if ($status < 200 || $status >= 300) {
     ];
     $text = $texte[$status] ?? "Der Anbieter antwortete mit Status $status.";
 
+    if ($PROTOKOLL) {
+        protokollieren([
+            'zeit' => date('c'),
+            'gelungen' => false,
+            'fehler' => $text,
+            'status' => $status,
+            'modell' => $modell,
+            'eingabe' => $nutzer,
+            'absender' => substr(hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . $modell), 0, 8),
+        ], $PROTOKOLL_EINTRAEGE);
+    }
+
     // Bei einer Bremse nennt der Anbieter die Wartezeit -- die gehoert in die
     // Antwort, damit die Seite etwas Sinnvolles anzeigen kann.
     if ($status === 429) {
@@ -383,6 +440,27 @@ if (isset($daten['content']) && is_array($daten['content'])) {
 
 if (trim($text) === '') {
     antworten(['fehler' => 'Die Antwort des Modells war leer.'], 502);
+}
+
+// Der Anbieter meldet den tatsaechlichen Verbrauch mit -- der gehoert ins
+// Protokoll, damit sich die Kosten nachrechnen lassen.
+$verbrauch = $daten['usage'] ?? [];
+$hinein = (int) ($verbrauch['input_tokens'] ?? $verbrauch['prompt_tokens'] ?? 0);
+$heraus = (int) ($verbrauch['output_tokens'] ?? $verbrauch['completion_tokens'] ?? 0);
+
+if ($PROTOKOLL) {
+    protokollieren([
+        'zeit' => date('c'),
+        'gelungen' => true,
+        'modell' => $modell,
+        'anbieter' => $eintrag['name'],
+        'eingabe' => $nutzer,
+        'ausgabe' => trim($text),
+        'tokens_hinein' => $hinein,
+        'tokens_heraus' => $heraus,
+        'dauer' => round(microtime(true) - $beginn, 1),
+        'absender' => substr(hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . $modell), 0, 8),
+    ], $PROTOKOLL_EINTRAEGE);
 }
 
 antworten([

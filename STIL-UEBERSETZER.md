@@ -272,6 +272,29 @@ Umgebungsvariable `BERNIE_SCHLUESSEL`. Der Anbieter wird am Präfix erkannt:
 > Passwortschutz legen. Eingebaut ist außerdem eine Bremse von 60 Anfragen je
 > Stunde und Absender.
 
+### Protokoll: was wurde eingegeben?
+
+Neben `api.php` entsteht eine **`log.php`**. Die `api.php` schreibt jede Anfrage
+mit — Zeitpunkt, Eingabe, Ergebnis, Modell, verbrauchte Tokens, Dauer —, und
+`log.php` zeigt das an, mit überschlagenen Kosten je Eintrag.
+
+```php
+$PASSWORT = getenv('BERNIE_LOG_PASSWORT') ?: 'dein-wort';   // log.php, Zeile 20
+```
+
+**Ohne Passwort bleibt das Protokoll gesperrt** — das ist die Voreinstellung.
+Die Einträge enthalten alles, was Leute eingetippt haben; das gehört nicht
+offen ins Netz.
+
+Geschrieben wird nach `bernie-log.php`. Die Endung ist Absicht: die Datei
+beginnt mit `<?php exit;`, wer sie direkt aufruft, bekommt eine leere Seite.
+Das schützt auch auf Webspaces ohne `.htaccess`. Aufgehoben werden die letzten
+500 Einträge. Wer gar nichts mitschreiben will, setzt in `api.php`
+`$PROTOKOLL = false;`.
+
+Von der Absenderadresse wird nur eine achtstellige Kurzform gespeichert — genug,
+um Anfragen einer Person zuzuordnen, zu wenig für eine Rückverfolgung.
+
 Zwei Dinge unterscheiden die HTML- von der Python-Fassung:
 
 * **Anglizismen** werden nicht gemessen — dafür bräuchte es die englische
@@ -419,6 +442,7 @@ src/berniespeaks/
     ui/index.html                  Oberfläche für den lokalen Server
     ui/standalone.html             Vorlage der eigenständigen Fassung
     ui/api.php                     Vermittler für den Webspace (Schlüssel serverseitig)
+    ui/log.php                     Protokoll ansehen (passwortgeschützt)
     daten/hintergrund_de.json.gz   deutsche Normalhäufigkeiten (Referenz)
     daten/stilprofil.json          Demo-Profil aus dem Demo-Korpus
 tools/
