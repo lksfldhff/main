@@ -1,5 +1,10 @@
 # Word → Newsletter-HTML
 
+> **In diesem Repository liegen zwei Werkzeuge.** Dieses hier wandelt Word in
+> Newsletter-HTML. Das zweite lernt einen Schreibstil aus vorhandenen Texten
+> und übersetzt Texte in diesen Stil:
+> **[STIL-UEBERSETZER.md](STIL-UEBERSETZER.md)** (`python bernie.py`).
+
 Wandelt eine Word-Datei in fertiges HTML für den CleverReach-Versand um —
 im bestehenden Layout des Newsletters (Kopfbild, gelbe Rubrik-Balken,
 Artikel mit CTA-Link, dreispaltige Fußzeile, Tracking-Pixel).

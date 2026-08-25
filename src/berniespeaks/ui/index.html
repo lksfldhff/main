@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bernie Speaks</title>
+<style>
+  :root {
+    --grund: oklch(0.968 0.008 80);
+    --flaeche: oklch(0.99 0.004 80);
+    --linie: oklch(0.89 0.008 70);
+    --linie-zart: oklch(0.925 0.008 70);
+    --schrift: oklch(0.24 0.012 60);
+    --schrift-leise: oklch(0.56 0.012 60);
+    --schrift-zart: oklch(0.68 0.012 70);
+    --akzent: oklch(0.47 0.085 50);
+    --akzent-dunkel: oklch(0.38 0.09 50);
+    --warnung: oklch(0.48 0.12 25);
+    --gut: oklch(0.52 0.11 150);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--grund); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    color: var(--schrift);
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+  header, footer {
+    flex: none; display: flex; align-items: center; gap: 14px; padding: 0 24px;
+    background: rgba(255,255,255,0.62); backdrop-filter: blur(24px) saturate(180%);
+  }
+  header { height: 68px; border-bottom: 1px solid var(--linie); z-index: 2; }
+  footer { min-height: 66px; border-top: 1px solid var(--linie); flex-wrap: wrap; padding-block: 10px; }
+  .marke {
+    width: 38px; height: 38px; flex: none; border-radius: 11px; background: var(--akzent);
+    display: grid; place-items: center; font-size: 20px; line-height: 1;
+    box-shadow: 0 1px 2px oklch(0.3 0.05 50 / 0.28);
+  }
+  h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.019em; line-height: 1.15; }
+  .unterzeile { margin: 0; font-size: 12.5px; color: var(--schrift-leise); line-height: 1.2; }
+  .rechts { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+  .schalter { display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--linie-zart); }
+  .schalter button {
+    border: none; border-radius: 7px; padding: 5px 12px; font: inherit; font-size: 12.5px;
+    font-weight: 500; color: var(--schrift-leise); background: transparent; cursor: pointer;
+    transition: background 120ms ease-out, color 120ms ease-out;
+  }
+  .schalter button[aria-pressed="true"] {
+    font-weight: 550; color: oklch(0.28 0.03 50); background: #fff;
+    box-shadow: 0 1px 2px oklch(0.3 0.02 60 / 0.16);
+  }
+
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1px 1fr; }
+  section { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+  .teiler { background: var(--linie); }
+  .ausgabeseite { background: rgba(255,255,255,0.46); }
+  .beschriftung {
+    padding: 22px 28px 6px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: oklch(0.62 0.012 60);
+    display: flex; align-items: center; gap: 12px;
+  }
+  textarea {
+    flex: 1; width: 100%; border: none; resize: none; background: transparent;
+    padding: 10px 28px 28px; font: inherit; font-size: 17px; line-height: 1.62;
+    letter-spacing: -0.004em; color: inherit; caret-color: var(--akzent);
+  }
+  textarea:focus { outline: none; }
+  textarea::placeholder { color: var(--schrift-zart); }
+  .ausgabe {
+    flex: 1; min-height: 0; overflow-y: auto; padding: 10px 28px 28px;
+    font-size: 17px; line-height: 1.62; letter-spacing: -0.004em; white-space: pre-wrap;
+  }
+  .ausgabe p { margin: 0 0 1em; text-wrap: pretty; }
+  .leise { color: var(--schrift-zart); max-width: 34ch; }
+  .fehler { color: var(--warnung); }
+  .laedt { color: var(--schrift-leise); animation: traben 1.4s ease-in-out infinite; }
+  @keyframes traben { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+  .knopf-zart {
+    margin-left: auto; border: 1px solid oklch(0.87 0.01 70); background: rgba(255,255,255,0.7);
+    color: oklch(0.4 0.015 60); font: inherit; font-size: 12.5px; font-weight: 500;
+    padding: 5px 11px; border-radius: 8px; cursor: pointer;
+    transition: transform 100ms ease-out, background 120ms ease-out;
+  }
+  .knopf-zart:hover { background: #fff; }
+  .knopf-zart:active { transform: scale(0.96); }
+  .knopf {
+    border: none; border-radius: 10px; padding: 11px 20px; font: inherit; font-size: 15px;
+    font-weight: 590; letter-spacing: -0.006em; color: oklch(0.985 0.004 80);
+    background: var(--akzent); cursor: pointer; box-shadow: 0 1px 2px oklch(0.3 0.05 50 / 0.3);
+    transition: transform 100ms ease-out, background 140ms ease-out;
+  }
+  .knopf:hover:not(:disabled) { background: var(--akzent-dunkel); }
+  .knopf:active:not(:disabled) { transform: scale(0.972); }
+  .knopf:disabled { opacity: 0.5; cursor: default; }
+
+  .zaehler, .fussnote { font-size: 12.5px; color: var(--schrift-leise); }
+  .fussnote { color: var(--schrift-zart); }
+  .regler { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--schrift-leise); }
+  .regler input { width: 96px; accent-color: var(--akzent); }
+
+  /* Bewertung: der Nachweis, wie nah der Entwurf am gelernten Stil liegt. */
+  .bewertung { border-top: 1px solid var(--linie); padding: 14px 28px 18px; flex: none; background: rgba(255,255,255,0.5); }
+  .note { display: flex; align-items: baseline; gap: 10px; }
+  .note b { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+  .note span { font-size: 12.5px; color: var(--schrift-leise); }
+  .balken { height: 5px; border-radius: 3px; background: var(--linie-zart); overflow: hidden; margin: 8px 0 12px; }
+  .balken i { display: block; height: 100%; background: var(--akzent); transition: width 300ms ease-out; }
+  .maengel { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .maengel li { font-size: 12.5px; color: var(--schrift-leise); display: flex; gap: 8px; }
+  .maengel li em { font-style: normal; color: var(--schrift-zart); }
+  .hinweis { font-size: 12.5px; color: var(--warnung); margin-top: 10px; }
+
+  @media (max-width: 820px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 1fr 1px 1fr; }
+    body { overflow: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marke">🐎</div>
+  <div style="min-width:0">
+    <h1>Bernie Speaks</h1>
+    <p class="unterzeile" id="unterzeile">Profil wird geladen …</p>
+  </div>
+  <div class="rechts">
+    <div class="schalter" id="richtung">
+      <button data-wert="zu_bernie" aria-pressed="true">In seinen Stil</button>
+      <button data-wert="zu_klartext" aria-pressed="false">In Klartext</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="beschriftung" id="eingabetitel">Dein Text</div>
+    <textarea id="eingabe" spellcheck="false" placeholder="Schreib hier ganz normal auf Deutsch. Zum Beispiel: Ich schaffe die Präsentation nicht bis Freitag."></textarea>
+  </section>
+
+  <div class="teiler"></div>
+
+  <section class="ausgabeseite">
+    <div class="beschriftung">
+      <span id="ausgabetitel">So würde er es sagen</span>
+      <button class="knopf-zart" id="kopieren" hidden>Kopieren</button>
+    </div>
+    <div class="ausgabe" id="ausgabe"><p class="leise">Die Übersetzung erscheint hier.</p></div>
+    <div class="bewertung" id="bewertung" hidden>
+      <div class="note"><b id="notenwert">–</b><span id="notentext"></span></div>
+      <div class="balken"><i id="notenbalken" style="width:0%"></i></div>
+      <ul class="maengel" id="maengel"></ul>
+      <div class="hinweis" id="hinweis" hidden></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span class="zaehler" id="zaehler">0 Zeichen</span>
+  <div class="regler" id="staerkeregler">
+    <label for="staerke">Stärke</label>
+    <input type="range" id="staerke" min="0.5" max="1.5" step="0.1" value="1">
+    <span id="staerkewert">normal</span>
+  </div>
+  <div class="rechts">
+    <div class="schalter" id="motor">
+      <button data-wert="modell" aria-pressed="true">Modell</button>
+      <button data-wert="offline" aria-pressed="false">Mechanik</button>
+    </div>
+    <span class="fussnote" id="motorhinweis"></span>
+    <span class="fussnote">⌘ + ↩</span>
+    <button class="knopf" id="los">Übersetzen</button>
+  </div>
+</footer>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const zustand = { richtung: "zu_bernie", motor: "modell", laeuft: false, ausgabe: "" };
+
+function schalterBinden(wurzel, beiWahl) {
+  wurzel.addEventListener("click", (e) => {
+    const knopf = e.target.closest("button[data-wert]");
+    if (!knopf) return;
+    [...wurzel.querySelectorAll("button")].forEach((b) =>
+      b.setAttribute("aria-pressed", String(b === knopf)));
+    beiWahl(knopf.dataset.wert);
+  });
+}
+
+schalterBinden($("richtung"), (wert) => {
+  zustand.richtung = wert;
+  const zuBernie = wert === "zu_bernie";
+  $("eingabetitel").textContent = zuBernie ? "Dein Text" : "Sein Text";
+  $("ausgabetitel").textContent = zuBernie ? "So würde er es sagen" : "Was eigentlich gemeint ist";
+  $("eingabe").placeholder = zuBernie
+    ? "Schreib hier ganz normal auf Deutsch. Zum Beispiel: Ich schaffe die Präsentation nicht bis Freitag."
+    : "Seinen Text hier einfügen — der Inhalt wird herausgelöst.";
+  $("staerkeregler").style.visibility = zuBernie ? "visible" : "hidden";
+  leeren();
+});
+
+schalterBinden($("motor"), (wert) => { zustand.motor = wert; });
+
+$("staerke").addEventListener("input", (e) => {
+  const v = Number(e.target.value);
+  $("staerkewert").textContent = v < 0.8 ? "zurückhaltend" : v > 1.2 ? "voll aufgedreht" : "normal";
+});
+
+$("eingabe").addEventListener("input", () => {
+  $("zaehler").textContent = $("eingabe").value.trim().length + " Zeichen";
+});
+
+$("kopieren").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(zustand.ausgabe);
+    $("kopieren").textContent = "Kopiert";
+    setTimeout(() => ($("kopieren").textContent = "Kopieren"), 1400);
+  } catch (e) { $("kopieren").textContent = "Ging nicht"; }
+});
+
+window.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); uebersetzen(); }
+});
+$("los").addEventListener("click", uebersetzen);
+
+function leeren() {
+  $("ausgabe").innerHTML = '<p class="leise">Die Übersetzung erscheint hier.</p>';
+  $("bewertung").hidden = true;
+  $("kopieren").hidden = true;
+  zustand.ausgabe = "";
+}
+
+function absaetze(text) {
+  return text.split(/\n{2,}/).map((teil) => {
+    const p = document.createElement("p");
+    p.textContent = teil;
+    return p;
+  });
+}
+
+async function uebersetzen() {
+  const text = $("eingabe").value.trim();
+  if (!text || zustand.laeuft) return;
+  zustand.laeuft = true;
+  $("los").disabled = true;
+  $("kopieren").hidden = true;
+  $("bewertung").hidden = true;
+  $("ausgabe").innerHTML = '<p class="laedt">Er sattelt auf …</p>';
+
+  try {
+    const antwort = await fetch("/api/uebersetzen", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        text,
+        richtung: zustand.richtung,
+        motor: zustand.motor,
+        staerke: Number($("staerke").value),
+      }),
+    });
+    const daten = await antwort.json();
+    if (!antwort.ok) throw new Error(daten.fehler || "Unbekannter Fehler");
+    zeigen(daten);
+  } catch (fehler) {
+    $("ausgabe").innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "fehler";
+    p.textContent = String(fehler.message || fehler);
+    $("ausgabe").append(p);
+  } finally {
+    zustand.laeuft = false;
+    $("los").disabled = false;
+  }
+}
+
+function zeigen(daten) {
+  zustand.ausgabe = daten.text || "";
+  $("ausgabe").replaceChildren(...absaetze(zustand.ausgabe));
+  $("kopieren").hidden = !zustand.ausgabe;
+
+  const b = daten.bewertung;
+  if (b) {
+    $("notenwert").textContent = Math.round(b.punkte);
+    $("notentext").textContent =
+      `von 100 — ${b.urteil} · ${daten.motor === "modell" ? "Sprachmodell" : "Offline-Generator"}` +
+      (daten.runden > 1 ? ` · ${daten.runden} Runden` : "");
+    $("notenbalken").style.width = Math.max(2, Math.min(100, b.punkte)) + "%";
+    const daneben = b.merkmale
+      .filter((m) => m.richtung !== "passt")
+      .sort((x, y) => Math.abs(y.z) - Math.abs(x.z))
+      .slice(0, 4);
+    $("maengel").replaceChildren(...daneben.map((m) => {
+      const li = document.createElement("li");
+      const stark = document.createElement("span");
+      stark.textContent = `${m.titel}: ${m.ist} statt ${m.soll}`;
+      const em = document.createElement("em");
+      em.textContent = m.richtung;
+      li.append(stark, em);
+      return li;
+    }));
+    $("bewertung").hidden = false;
+  }
+
+  const hinweise = (daten.hinweise || []).join(" ");
+  $("hinweis").textContent = hinweise;
+  $("hinweis").hidden = !hinweise;
+  if (hinweise && !b) $("bewertung").hidden = false;
+}
+
+(async function start() {
+  try {
+    const s = await (await fetch("/api/status")).json();
+    $("unterzeile").textContent =
+      `${s.profil.name} · gelernt aus ${s.profil.posts} Beiträgen (${s.profil.woerter} Wörter)`;
+    const modellknopf = $("motor").querySelector('button[data-wert="modell"]');
+    if (s.bereit) {
+      modellknopf.textContent = s.beschriftung.split(" – ")[0] || "Modell";
+      $("motorhinweis").textContent = s.modell;
+    } else {
+      modellknopf.textContent = "Modell";
+      modellknopf.disabled = true;
+      modellknopf.setAttribute("aria-pressed", "false");
+      $("motor").querySelector('button[data-wert="offline"]').setAttribute("aria-pressed", "true");
+      zustand.motor = "offline";
+      $("motorhinweis").textContent = "kein Sprachmodell eingerichtet — siehe README";
+    }
+  } catch (e) {
+    $("unterzeile").textContent = "Profil konnte nicht geladen werden";
+  }
+})();
+</script>
+</body>
+</html>

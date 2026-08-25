@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITEL}}</title>
+<style>{{STIL}}
+  .schluesselzeile { display: flex; align-items: center; gap: 8px; }
+  .schluesselzeile input {
+    width: 200px; border: 1px solid oklch(0.87 0.01 70); border-radius: 8px;
+    background: rgba(255,255,255,0.7); padding: 7px 10px; font: inherit; font-size: 12.5px;
+    letter-spacing: 0.02em; color: oklch(0.34 0.012 60); outline: none;
+  }
+  .schluesselzeile input:focus { border-color: var(--akzent); }
+  .fussnote.warnung { color: var(--warnung); }
+  .fussnote.verbunden::before {
+    content: "●"; color: var(--gut); margin-right: 5px; font-size: 10px; vertical-align: 1px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marke">🐎</div>
+  <div style="min-width:0">
+    <h1>{{TITEL}}</h1>
+    <p class="unterzeile" id="unterzeile" hidden></p>
+  </div>
+  <div class="rechts">
+    <div class="schalter" id="richtung">
+      <button data-wert="zu_bernie" aria-pressed="true">In seinen Stil</button>
+      <button data-wert="zu_klartext" aria-pressed="false">In Klartext</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="beschriftung" id="eingabetitel">Dein Text</div>
+    <textarea id="eingabe" spellcheck="false" placeholder="Schreib hier ganz normal auf Deutsch. Zum Beispiel: Ich schaffe die Präsentation nicht bis Freitag."></textarea>
+  </section>
+
+  <div class="teiler"></div>
+
+  <section class="ausgabeseite">
+    <div class="beschriftung">
+      <span id="ausgabetitel">So würde er es sagen</span>
+      <button class="knopf-zart" id="kopieren" hidden>Kopieren</button>
+    </div>
+    <div class="ausgabe" id="ausgabe"><p class="leise">Die Übersetzung erscheint hier.</p></div>
+    <div class="bewertung" id="bewertung" hidden>
+      <div class="hinweis" id="hinweis" hidden></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span class="zaehler" id="zaehler">0 Zeichen</span>
+  <div class="regler" id="staerkeregler">
+    <label for="staerke">Stärke</label>
+    <input type="range" id="staerke" min="0.5" max="1.5" step="0.1" value="1">
+    <span id="staerkewert">normal</span>
+  </div>
+  <div class="rechts">
+    <div class="schluesselzeile">
+      <input type="password" id="schluessel" spellcheck="false" placeholder="API-Schlüssel eintragen">
+      <span class="fussnote" id="anbietername"></span>
+    </div>
+    <button class="knopf-zart" id="kopieren2" hidden>Text kopieren</button>
+    <div class="schalter" id="motor">
+      <button data-wert="modell" aria-pressed="true">Modell</button>
+      <button data-wert="offline" aria-pressed="false">Mechanik</button>
+    </div>
+    <button class="knopf" id="los">Übersetzen</button>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ===================================================================== *
+ *  Eigenstaendige Fassung des Stil-Uebersetzers.
+ *
+ *  Profil, Messtechnik, Bewertung, Anweisungsbau und Offline-Generator
+ *  stecken in dieser einen Datei -- kein Server, keine Installation. Die
+ *  Datei laesst sich auf jeden Webspace legen.
+ *
+ *  Der API-Schluessel wird vom Besucher eingetragen und bleibt in dessen
+ *  Browser (localStorage). Er steht NICHT in dieser Datei und wird nirgends
+ *  hin uebertragen ausser an den gewaehlten Anbieter.
+ *
+ *  Erzeugt von tools/html_erzeugen.py -- Aenderungen dort bzw. in
+ *  src/berniespeaks/ui/standalone.html vornehmen, nicht in der Ausgabe.
+ * ===================================================================== */
+
+const PROFIL = {{PROFIL}};
+
+/* Zeile unter dem Titel. Leer = keine Zeile. Wird beim Bauen gesetzt. */
+const UNTERZEILE = {{UNTERZEILE}};
+
+const $ = (id) => document.getElementById(id);
+
+/* ------------------------------------------------------- Messtechnik --- */
+/* Port von text.py und merkmale.py. Dieselben 19 Kennzahlen, damit die
+   Note hier dasselbe bedeutet wie in der Python-Fassung.                */
+
+const EMOJI_QUELLE =
+  "(?:\\p{RI}\\p{RI}|(?:\\p{Extended_Pictographic}|[#*0-9]\\uFE0F?\\u20E3)" +
+  "(?:\\uFE0F|\\p{Emoji_Modifier})*(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})*)*)";
+const EMOJI = new RegExp(EMOJI_QUELLE, "gu");
+const EMOJI_LAUF = new RegExp("(?:" + EMOJI_QUELLE + ")+", "gu");
+const WORT = /[^\W\d_][^\W\d_'’-]*(?:[-'’][^\W\d_][^\W\d_'’-]*)*/gu;
+const HASHTAG = /#[^\W\d_][\wÀ-ɏ]*/gu;
+const NOMINAL = /(?:ung|ungen|heit|heiten|keit|keiten|schaft|schaften|tion|tionen|ismus|tät|nis|nisse|tum|erei|barkeit|lichkeit)$/i;
+const ICH_WIR = /\b(?:ich|mir|mich|mein\w*|wir|uns|unser\w*)\b/giu;
+const ZITAT = /[„“”"»«][\s\S]{4,}?[„“”"»«]/g;
+const AUFZAEHLUNG = new RegExp("^\\s*(?:[-*•▪▫‣·]|\\d+[.)]|" + EMOJI_QUELLE + ")\\s*\\S", "u");
+const DEHNUNG = /([^\W\d_])\1{2,}/u;
+const VERSAL = /^[^\W\d_]{2,}$/u;
+const ORDNUNGSZAHL = /\b(\d{1,2})\.(?=\s+[A-ZÄÖÜ0-9])/g;
+const ABKUERZUNGEN = ["Prof.", "Dr.", "Dipl.", "Ing.", "e.V.", "z.B.", "u.a.", "ggf.", "bzw.",
+  "inkl.", "ca.", "Nr.", "Mio.", "Mrd.", "Str.", "Abs.", "evtl.", "usw.", "etc.", "St.", "Co.", "sog."];
+const MASKE = "";
+
+const alle = (text, muster) => text.match(new RegExp(muster.source, muster.flags)) || [];
+
+function normalisieren(t) {
+  return (t || "").normalize("NFC").replace(/\r\n?/g, "\n")
+    .replace(/[   ]/g, " ")
+    .replace(/[﻿​‌-]/g, "")
+    .replace(/\bHashtag(?=#)/g, "")
+    .replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+const emojis = (t) => alle(t, EMOJI);
+const ohneEmojis = (t) => t.replace(EMOJI_LAUF, " ");
+const woerter = (t) => alle(ohneEmojis(t).replace(HASHTAG, " "), WORT);
+const hashtags = (t) => alle(t, HASHTAG).map((h) => h.toLowerCase());
+const zeilen = (t) => t.split("\n").map((z) => z.trim()).filter(Boolean);
+const laeufe = (t) => alle(t, EMOJI_LAUF).map((lauf) => emojis(lauf));
+
+function saetze(text) {
+  const ergebnis = [];
+  for (const zeile of text.split("\n")) {
+    let maskiert = zeile.replace(ORDNUNGSZAHL, "$1" + MASKE);
+    for (const abk of ABKUERZUNGEN) maskiert = maskiert.split(abk).join(abk.replace(/\./g, MASKE));
+    for (const satz of maskiert.split(/(?<=[.!?…‼⁉])\s+/)) {
+      const sauber = satz.split(MASKE).join(".").trim();
+      if (sauber) ergebnis.push(sauber);
+    }
+  }
+  return ergebnis;
+}
+
+const teilen = (a, b) => (b ? a / b : 0);
+
+function messen(roh) {
+  const t = normalisieren(roh);
+  const w = woerter(t), s = saetze(t), z = zeilen(t), l = laeufe(t);
+  const alleEmojis = l.reduce((a, x) => a.concat(x), []);
+  const ohne = ohneEmojis(t);
+  const einfach = (ohne.match(/!/g) || []).length;
+  const doppelt = (t.match(/‼/g) || []).length;
+  const mehrfach = l.filter((x) => x.length > 1);
+  return {
+    emoji_je_100_woerter: 100 * teilen(alleEmojis.length, w.length),
+    anteil_saetze_mit_emoji: teilen(s.filter((x) => emojis(x).length).length, s.length),
+    emoji_lauflaenge: teilen(alleEmojis.length, l.length),
+    emoji_wiederholung: teilen(mehrfach.filter((x) => new Set(x).size === 1).length, mehrfach.length),
+    versal_wortanteil: teilen(w.filter((x) => VERSAL.test(x) && x === x.toUpperCase()).length, w.length),
+    dehnung_je_1000: 1000 * teilen(w.filter((x) => DEHNUNG.test(x)).length, w.length),
+    ausrufe_je_satz: teilen(einfach + doppelt, s.length),
+    doppelausruf_anteil: teilen(doppelt, einfach + doppelt),
+    fragen_anteil: teilen(s.filter((x) => ohneEmojis(x).trim().endsWith("?")).length, s.length),
+    ellipsen_je_100_woerter: 100 * teilen((t.match(/…/g) || []).length + (t.match(/\.\.\./g) || []).length, w.length),
+    woerter_je_satz: teilen(w.length, s.length),
+    woerter_je_zeile: teilen(w.length, z.length),
+    wortlaenge: teilen(w.reduce((a, x) => a + x.length, 0), w.length),
+    nominal_anteil: teilen(w.filter((x) => x.length > 5 && NOMINAL.test(x)).length, w.length),
+    hashtags_je_100_woerter: 100 * teilen(hashtags(t).length, w.length),
+    aufzaehlungszeilen_anteil: teilen(z.filter((x) => AUFZAEHLUNG.test(x)).length, z.length),
+    zitat_je_100_woerter: 100 * teilen((t.match(ZITAT) || []).length, w.length),
+    ich_wir_je_100_woerter: 100 * teilen((ohne.match(ICH_WIR) || []).length, w.length),
+  };
+}
+
+/* -------------------------------------------------------- Bewertung ---- */
+/* Glockenkurve um den Sollwert, Breite = beobachtete Streuung.
+   Anglizismen fehlen hier: dafuer braeuchte es die englische Wortliste,
+   die nur die Python-Fassung mitbringt.                                 */
+
+const GEWICHTE = {
+  emoji_je_100_woerter: 2.0, anteil_saetze_mit_emoji: 1.5, emoji_lauflaenge: 1.5,
+  emoji_wiederholung: 0.7, versal_wortanteil: 1.5, dehnung_je_1000: 0.6, ausrufe_je_satz: 1.0,
+  doppelausruf_anteil: 0.5, fragen_anteil: 0.4, ellipsen_je_100_woerter: 0.6, woerter_je_satz: 1.2,
+  woerter_je_zeile: 0.8, wortlaenge: 0.8, nominal_anteil: 0.8,
+  hashtags_je_100_woerter: 0.8, aufzaehlungszeilen_anteil: 0.6, zitat_je_100_woerter: 0.4,
+  ich_wir_je_100_woerter: 1.0,
+};
+const BESCHRIFTUNG = {
+  emoji_je_100_woerter: ["Emoji-Dichte", "Emojis je 100 Wörter"],
+  anteil_saetze_mit_emoji: ["Emojis je Satz", "Anteil der Sätze mit Emoji"],
+  emoji_lauflaenge: ["Emoji-Ketten", "Emojis je zusammenhängendem Lauf"],
+  emoji_wiederholung: ["Emoji-Wiederholung", "Anteil der Läufe aus demselben Emoji"],
+  versal_wortanteil: ["GROSSSCHREIBUNG", "Anteil komplett großgeschriebener Wörter"],
+  dehnung_je_1000: ["Wortdehnung", "gedehnte Wörter je 1000"],
+  ausrufe_je_satz: ["Ausrufezeichen", "Ausrufezeichen je Satz"],
+  doppelausruf_anteil: ["Doppelausruf", "Anteil ‼️ an allen Ausrufezeichen"],
+  fragen_anteil: ["Fragen", "Anteil der Fragesätze"],
+  ellipsen_je_100_woerter: ["Gedankenpunkte", "… je 100 Wörter"],
+  woerter_je_satz: ["Satzlänge", "Wörter je Satz"],
+  woerter_je_zeile: ["Zeilenlänge", "Wörter je Zeile"],
+  wortlaenge: ["Wortlänge", "Buchstaben je Wort"],
+  nominal_anteil: ["Substantivierungen", "Anteil Wörter auf -ung, -heit …"],
+  hashtags_je_100_woerter: ["Hashtags", "Hashtags je 100 Wörter"],
+  aufzaehlungszeilen_anteil: ["Aufzählungen", "Anteil Zeilen mit Aufzählungszeichen"],
+  zitat_je_100_woerter: ["Zitate", "Zitatzeichen je 100 Wörter"],
+  ich_wir_je_100_woerter: ["Ich und Wir", "Selbstbezüge je 100 Wörter"],
+};
+
+const soll = (n) => (PROFIL.merkmale[n] || {}).mittel || 0;
+const streuung = (n) => (PROFIL.merkmale[n] || {}).streuung || 0;
+const breite = (n) => Math.max(streuung(n), Math.abs(soll(n)) * 0.35, 0.02);
+
+function bewerte(text) {
+  const ist = messen(text);
+  const merkmale = Object.keys(GEWICHTE).map((n) => {
+    const z = (ist[n] - soll(n)) / breite(n);
+    return {
+      merkmal: n, titel: BESCHRIFTUNG[n][0], einheit: BESCHRIFTUNG[n][1],
+      ist: Math.round(ist[n] * 100) / 100, soll: Math.round(soll(n) * 100) / 100,
+      z: z, punkte: Math.exp(-0.5 * Math.min(z * z, 60)), gewicht: GEWICHTE[n],
+      richtung: Math.abs(z) < 0.75 ? "passt" : (z < 0 ? "zu wenig" : "zu viel"),
+    };
+  });
+  const summe = merkmale.reduce((a, m) => a + m.gewicht, 0);
+  const form = 100 * merkmale.reduce((a, m) => a + m.punkte * m.gewicht, 0) / summe;
+
+  const liste = (PROFIL.lexikon.inhaltswoerter || []).map((e) => e.wort);
+  const wendungen = (PROFIL.lexikon.wendungen || []).map((e) => e.text);
+  const klein = normalisieren(text).toLowerCase();
+  const marken = woerter(klein).map((w) => w.toLowerCase());
+  const menge = new Set(marken);
+  const treffer = liste.filter((w) => menge.has(w)).length
+    + 2 * wendungen.filter((w) => klein.indexOf(w) > -1).length;
+  const trefferSoll = (PROFIL.lexikon.treffer_je_100 || {}).mittel || 0;
+  const wortschatz = trefferSoll <= 0 ? 100
+    : 100 * Math.pow(Math.min(1, (100 * treffer / (marken.length || 1)) / trefferSoll), 0.7);
+
+  const punkte = 0.75 * form + 0.25 * wortschatz;
+  return {
+    punkte: punkte, form: form, wortschatz: wortschatz, merkmale: merkmale,
+    urteil: punkte >= 80 ? "klingt nach ihm" : punkte >= 62 ? "geht in die Richtung"
+          : punkte >= 40 ? "erkennbar angelehnt" : "klingt nach jemand anderem",
+    maengel: (anzahl) => merkmale.filter((m) => m.richtung !== "passt")
+      .sort((a, b) => (1 - b.punkte) * b.gewicht - (1 - a.punkte) * a.gewicht)
+      .slice(0, anzahl || 5),
+  };
+}
+
+const auftrag = (b) => b.maengel(5)
+  .map((m) => "- " + m.titel + ": " + m.ist.toFixed(1) + " statt " + m.soll.toFixed(1) +
+              " (" + m.einheit + ") -- " + m.richtung)
+  .join("\n");
+
+/* ------------------------------------------------------ Anweisungen ---- */
+/* Kein Satz davon ist von Hand geschrieben: alle Zahlen, Woerter und
+   Beispiele kommen aus dem gemessenen Profil.                           */
+
+function aehnlichste(text, anzahl) {
+  const quelle = PROFIL.beispiele || [];
+  if (quelle.length <= anzahl) return quelle;
+  const menge = (t) => new Set(woerter(ohneEmojis(t)).filter((w) => w.length > 3).map((w) => w.toLowerCase()));
+  const gesucht = menge(text);
+  if (!gesucht.size) return quelle.slice(0, anzahl);
+  return quelle
+    .map((b) => {
+      const m = menge(b);
+      const gemeinsam = Array.from(gesucht).filter((w) => m.has(w)).length;
+      return { b: b, wert: m.size ? gemeinsam / Math.sqrt(gesucht.size * m.size) : 0 };
+    })
+    .sort((a, b) => b.wert - a.wert).slice(0, anzahl).map((e) => e.b);
+}
+
+function anweisungStil(text, staerke) {
+  const p = PROFIL, pos = p.emoji.position || {};
+  const anteil = (w) => (w * 100).toFixed(0);
+  // Emojis nach Verbreitung ueber die Beitraege statt nach roher Haeufigkeit:
+  // so faellt auch auf, was regelmaessig, aber sparsam benutzt wird.
+  const verbreitet = (p.emoji.verbreitet && p.emoji.verbreitet.length)
+    ? p.emoji.verbreitet : (p.emoji.haeufigste || []);
+
+  const teile = [
+    "Du schreibst wie " + (p.name || "die Person") + ". Dieser Schreibstil wurde aus " + p.quelle.posts +
+      " eigenen Texten vermessen; die Werte stehen unten. Du schreibst den Text des Nutzers in " +
+      "diesem Stil neu. Antworte immer auf Deutsch und gib ausschliesslich den fertigen Text aus -- " +
+      "keine Erklaerung, keine Ueberschrift, keine Anfuehrungszeichen um das Ganze.",
+    "GEMESSENE WERTE:\n" +
+      "- Emojis: rund " + (soll("emoji_je_100_woerter") * staerke).toFixed(0) + " je 100 Woerter; " +
+        anteil(soll("anteil_saetze_mit_emoji")) + " Prozent der Saetze tragen eins. Im Schnitt " +
+        soll("emoji_lauflaenge").toFixed(1) + " je Gruppe, " + anteil(pos.innen || 0) +
+        " Prozent davon mitten im Satz.\n" +
+      "- Ketten aus demselben Emoji, nicht gemischt: " +
+        (p.emoji.ketten || []).slice(0, 5).map((e) => e[0]).join("  ") + "\n" +
+      "- " + anteil(soll("versal_wortanteil") * staerke) + " Prozent der Woerter komplett in " +
+        "GROSSBUCHSTABEN (Betonung), einzelne Woerter, nie ganze Saetze.\n" +
+      "- Saetze kurz: im Schnitt " + soll("woerter_je_satz").toFixed(0) +
+        " Woerter, oft als eigene Zeile.\n" +
+      "- Selbstbezuege (ich, wir, mir, uns): " + soll("ich_wir_je_100_woerter").toFixed(0) +
+        " je 100 Woerter.\n" +
+      "- Gedankenpunkte … kommen vor: " + soll("ellipsen_je_100_woerter").toFixed(1) + " je 100 Woerter.",
+    "DIESE EMOJIS kommen im Material vor, andere nicht: " +
+      verbreitet.slice(0, 14).map((e) => e[0]).join(" ") + "\n" +
+      "Aufzaehlungszeilen beginnen mit: " +
+      (p.struktur.aufzaehlungszeichen || []).slice(0, 5).map((e) => e[0]).join(" "),
+    aufbauBeschreiben(),
+    "WORTSCHATZ, der auffaellig oft vorkommt: " +
+      (p.lexikon.inhaltswoerter || []).slice(0, 22).map((e) => e.wort).join(", "),
+    "WIEDERKEHRENDE WENDUNGEN: " +
+      (p.lexikon.wendungen || []).slice(0, 10).map((e) => e.text).join("; "),
+    "SO FANGEN TEXTE AN: " + (p.lexikon.oeffner || []).slice(0, 4).join(" | ") + "\n" +
+      "SO HOEREN SIE AUF: " + (p.lexikon.schluesser || []).slice(0, 4).join(" | "),
+  ];
+
+  const tags = (p.lexikon.hashtags || []).slice(0, 8).map((e) => e[0]).join(" ");
+  if (tags) teile.push("HASHTAGS ganz am Ende, klein geschrieben, nur wenn es passt: " + tags);
+  const orgs = (p.lexikon.organisationen || []).slice(0, 5).join("; ");
+  if (orgs) teile.push("Einrichtungen aus seinem Umfeld (nur wenn sie zum Inhalt passen): " + orgs);
+  if (p.eigenheiten) teile.push("DIE FIGUR:\n" + p.eigenheiten);
+  teile.push(intensitaet(staerke));
+
+  const beispiele = aehnlichste(text, 1);
+  if (beispiele.length) {
+    teile.push("SO KLINGT EIN ORIGINAL -- uebernimm Ton, Dichte und Aufbau, nie den Inhalt:\n\n" +
+      beispiele.join("\n\n---\n\n"));
+  }
+  teile.push("PFLICHTEN: Aussage, Zahlen, Daten und Namen des Originals bleiben erhalten. Erfinde " +
+    "keine Termine, keine Zahlen und keine Personen. [Name] in den Beispielen ist ein Platzhalter -- " +
+    "uebernimm ihn nicht.");
+  return teile.join("\n\n");
+}
+
+/* Aufbau eines Beitrags -- aus den gemessenen Anteilen. Ohne diesen Abschnitt
+   uebersetzt das Modell brav Satz fuer Satz, statt einen Beitrag zu bauen.  */
+function aufbauBeschreiben() {
+  const p = PROFIL;
+  const anteil = (w) => (w * 100).toFixed(0);
+  const zeilen = [
+    "AUFBAU UND AUSBAU -- so sind seine Texte gebaut:",
+    "- Der Text darf deutlich laenger werden als die Vorlage. Er uebersetzt nicht Satz fuer Satz, " +
+      "sondern macht daraus einen fertigen Beitrag.",
+    "- Kurze Zeilen, oft eine Aussage je Zeile, dazwischen Leerzeilen.",
+  ];
+  if (soll("aufzaehlungszeilen_anteil") > 0.02) {
+    zeilen.push("- Etwa " + anteil(soll("aufzaehlungszeilen_anteil")) +
+      " Prozent der Zeilen sind Aufzaehlungen mit einem Emoji davor.");
+  }
+  if (soll("zitat_je_100_woerter") > 0.05) {
+    zeilen.push("- Sagt jemand etwas, wird er woertlich in deutschen Anfuehrungszeichen \u201eso\u201c " +
+      "zitiert und anschliessend kommentiert oder bewertet.");
+  }
+  zeilen.push("- Er ordnet ein: eine Beobachtung, eine Wertung, ein Bekenntnis zur Sache. Das ist " +
+    "Haltung, keine neue Tatsache -- erfundene Fakten bleiben verboten.");
+  zeilen.push("- Zum Schluss Dank oder Vorfreude, an die Beteiligten gerichtet.");
+  const endblock = (p.struktur || {}).endet_mit_namensblock || 0;
+  if (endblock > 0.15) {
+    zeilen.push("- In " + anteil(endblock) + " Prozent der Faelle steht ganz am Ende ein Block aus " +
+      "Namen und Einrichtungen, unverbunden aneinandergereiht. Nur die Namen benutzen, die im " +
+      "Ausgangstext stehen -- keine erfinden.");
+  }
+  return zeilen.join("\n");
+}
+
+/* Wie dick die Figur aufgetragen wird -- gesteuert vom Staerkeregler. */
+function intensitaet(staerke) {
+  const stufen = [
+    [0.7, "ZURUECKHALTEND: Ein einziges Bild aus der Pferdewelt im ganzen Text, hoechstens eine " +
+          "Ueberzeugung, kein Hashtag-Block. Die Aussage steht im Vordergrund."],
+    [1.1, "NORMAL: Ein bis zwei Pferdebilder, eine Ueberzeugung oder Lebensweisheit, am Ende ein " +
+          "kurzer Hashtag-Block."],
+    [1.4, "DEUTLICH: In jedem Absatz ein Bild aus der Pferdewelt, zwei bis drei Ueberzeugungen, " +
+          "eine Formel in Grossbuchstaben, Hashtag-Block am Ende."],
+    [99, "VOLL AUFGEDREHT: Fast jeder Gedanke bekommt ein Pferdebild, dazu mehrere Ueberzeugungen, " +
+         "eine Lebensweisheit, eine Formel in Grossbuchstaben und ein langer Hashtag-Block. Die " +
+         "Aussage des Originals bleibt trotzdem erkennbar."],
+  ];
+  for (const [grenze, text] of stufen) {
+    if (staerke < grenze) return "WIE DICK AUFGETRAGEN WIRD -- " + text;
+  }
+  return "WIE DICK AUFGETRAGEN WIRD -- " + stufen[stufen.length - 1][1];
+}
+
+function anweisungKlartext() {
+  return [
+    "Du bist ein nuechterner Uebersetzer. Der Nutzer liefert einen ueberschwaenglichen deutschen Text " +
+      "voller Emojis, Betonungen in Grossbuchstaben, Floskeln und Hashtags.",
+    "Deine Aufgabe: Sage in klaren, kurzen Saetzen, was tatsaechlich gemeint ist. Keine Emojis, keine " +
+      "Hashtags, keine Ausrufezeichen, keine Grossbuchstaben-Betonung, keine Floskeln. Benutze Verben " +
+      "statt Substantivierungen.",
+    "Streiche alles, was keine Information traegt: Dankesformeln, Selbstdarstellung, Bekenntnisse, " +
+      "aneinandergereihte Namen und Einrichtungen. Erfinde nichts hinzu. Zahlen, Daten und Namen, die " +
+      "eine Rolle spielen, bleiben stehen.",
+    "Typische Floskeln dieses Stils: " +
+      (PROFIL.lexikon.wendungen || []).slice(0, 10).map((e) => e.text).join("; ") + ".",
+    "Deutlich kuerzer als das Original, meist ein bis drei Saetze. Sagt der Text nichts Konkretes, " +
+      "schreibe genau das. Gib ausschliesslich die nuechterne Fassung aus.",
+  ].join("\n\n");
+}
+
+/* ------------------------------------------------- Offline-Generator --- */
+/* Baut die Form aus den Messwerten nach. Formuliert nicht um -- das kann
+   nur ein Sprachmodell. Reproduzierbar: gleicher Text, gleiches Ergebnis. */
+
+function zufall(saat) {
+  let s = 2166136261;
+  for (let i = 0; i < saat.length; i++) { s ^= saat.charCodeAt(i); s = Math.imul(s, 16777619); }
+  return function () {
+    s = Math.imul(s ^ (s >>> 15), 2246822507);
+    s = Math.imul(s ^ (s >>> 13), 3266489909);
+    return ((s ^= s >>> 16) >>> 0) / 4294967296;
+  };
+}
+
+function offlineStil(roh, staerke) {
+  const p = PROFIL, r = zufall(roh + "|" + staerke);
+  const waehle = (liste) => liste[Math.floor(r() * liste.length)];
+  let teile = saetze(normalisieren(roh));
+  if (!teile.length) teile = [roh];
+  const eingabeWoerter = woerter(roh).length;
+
+  const oeffner = (p.lexikon.oeffner || []).filter((z) => woerter(z).length >= 2 && woerter(z).length <= 6);
+  const schluesser = (p.lexikon.schluesser || []).filter((z) => woerter(z).length >= 3 && woerter(z).length <= 10);
+  const kopf = oeffner.length && eingabeWoerter >= 30 ? waehle(oeffner) : "";
+  const fuss = schluesser.length && eingabeWoerter >= 18 ? waehle(schluesser) : "";
+
+  let tagzeile = "";
+  const tags = (p.lexikon.hashtags || []).map((e) => e[0]);
+  const erwartet = eingabeWoerter / 100 * soll("hashtags_je_100_woerter") * staerke;
+  if (tags.length && r() < Math.min(1, erwartet)) {
+    tagzeile = tags.slice().sort(() => r() - 0.5).slice(0, Math.max(1, Math.round(erwartet))).join(" ");
+  }
+
+  // Grossschreibung mit einem Budget fuer den ganzen Text, nicht je Satz.
+  const zerlegt = teile.map((s) => s.split(" "));
+  const kandidaten = [];
+  zerlegt.forEach((marken, i) => marken.forEach((m, j) => {
+    if (m.replace(/[^\p{L}]/gu, "").length >= 5 && m !== m.toUpperCase() && !emojis(m).length) {
+      kandidaten.push([i, j]);
+    }
+  }));
+  const gesamtWoerter = zerlegt.reduce((a, m) => a + m.length, 0);
+  const wieviele = Math.min(kandidaten.length, Math.round(gesamtWoerter * soll("versal_wortanteil") * staerke));
+  kandidaten.sort(() => r() - 0.5).slice(0, wieviele)
+    .forEach((stelle) => { zerlegt[stelle[0]][stelle[1]] = zerlegt[stelle[0]][stelle[1]].toUpperCase(); });
+  teile = zerlegt.map((m) => m.join(" "));
+
+  // Emoji-Budget auf die fertige Laenge rechnen, Bausteine abziehen.
+  const rahmen = [kopf, fuss, tagzeile].reduce((a, z) => a + woerter(z).length, 0);
+  let budget = Math.round((eingabeWoerter + rahmen) / 100 * soll("emoji_je_100_woerter") * staerke)
+    - emojis(kopf + " " + fuss).length;
+
+  const auswahl = p.emoji.haeufigste && p.emoji.haeufigste.length ? p.emoji.haeufigste : [["🚀", 1]];
+  const summe = auswahl.reduce((a, e) => a + e[1], 0);
+  const ziehen = () => {
+    let w = r() * summe;
+    for (let i = 0; i < auswahl.length; i++) { w -= auswahl[i][1]; if (w <= 0) return auswahl[i][0]; }
+    return auswahl[0][0];
+  };
+  const laengen = Object.keys(p.emoji.lauflaenge_verteilung || { "1": 1 });
+  const gewichte = laengen.map((k) => (p.emoji.lauflaenge_verteilung || { "1": 1 })[k]);
+  const laenge = () => {
+    let w = r();
+    for (let i = 0; i < laengen.length; i++) { w -= gewichte[i]; if (w <= 0) return parseInt(laengen[i], 10); }
+    return 1;
+  };
+  const gruppe = (max) => {
+    const n = Math.max(1, Math.min(max, laenge())), erstes = ziehen();
+    if (n === 1) return erstes;
+    if (r() < soll("emoji_wiederholung")) return erstes.repeat(n);
+    let s = erstes;
+    for (let i = 1; i < n; i++) s += ziehen();
+    return s;
+  };
+
+  // Datums- und Uhrzeitangaben duerfen nicht zerrissen werden.
+  const GESPERRT = /\d{1,2}\.\s+\p{Lu}[\p{L}]*|\d{1,2}[:.]\d{2}/gu;
+  const reihenfolge = teile.map((_, i) => i).sort(() => r() - 0.5);
+  const anteilMit = Math.min(1, soll("anteil_saetze_mit_emoji") * staerke);
+  for (let runde = 0; runde < 3 && budget > 0; runde++) {
+    for (let k = 0; k < reihenfolge.length && budget > 0; k++) {
+      const i = reihenfolge[k];
+      if (runde === 0 && r() > anteilMit) continue;
+      const g = gruppe(budget);
+      budget -= emojis(g).length;
+      const marken = teile[i].split(" ");
+      const sperren = [];
+      let treffer;
+      const muster = new RegExp(GESPERRT.source, GESPERRT.flags);
+      while ((treffer = muster.exec(teile[i])) !== null) sperren.push([treffer.index, treffer.index + treffer[0].length]);
+      const moeglich = [];
+      let stelle = 0;
+      for (let j = 0; j < marken.length; j++) {
+        stelle += marken[j].length + 1;
+        const drin = sperren.some((s) => s[0] < stelle && stelle < s[1]);
+        if (j >= 2 && j < marken.length - 1 && !drin) moeglich.push(j + 1);
+      }
+      if (moeglich.length && r() < (p.emoji.position || {}).innen) {
+        marken.splice(moeglich[Math.floor(r() * moeglich.length)], 0, g);
+        teile[i] = marken.join(" ");
+      } else {
+        teile[i] = teile[i] + " " + g;
+      }
+    }
+  }
+  return [kopf, teile.join(" "), fuss, tagzeile].filter((b) => b && b.trim()).join("\n\n");
+}
+
+function offlineKlartext(roh) {
+  let t = ohneEmojis(normalisieren(roh)).replace(HASHTAG, " ");
+  const floskeln = (PROFIL.lexikon.wendungen || []).map((e) => e.text).filter((w) => w.split(" ").length >= 3)
+    .concat((PROFIL.lexikon.oeffner || []).concat(PROFIL.lexikon.schluesser || []).filter((z) => z.length > 8));
+  floskeln.sort((a, b) => b.length - a.length).forEach((f) => {
+    t = t.replace(new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ");
+  });
+  t = t.replace(/\b\p{Lu}{3,}\b/gu, (w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .replace(/[!‼]+/g, ".").replace(/\s*\n\s*/g, ". ")
+    .replace(/\s{2,}/g, " ").replace(/(?:\s*\.){2,}/g, ".");
+  const s = saetze(t).filter((x) => woerter(x).length >= 4);
+  if (!s.length) return "Keine konkrete Aussage erkennbar.";
+  return s.slice(0, 3).join(" ").trim();
+}
+
+/* --------------------------------------------------- Sprachmodelle ----- */
+/* Der Schluessel wird vom Besucher eingetragen, im Browser gemerkt und
+   nur an den gewaehlten Anbieter geschickt.                              */
+
+const ANBIETER = [
+  { name: "Claude", praefix: "sk-ant-", adresse: "https://api.anthropic.com/v1/messages",
+    modell: "claude-opus-5", format: "anthropic" },
+  { name: "Groq", praefix: "gsk_", adresse: "https://api.groq.com/openai/v1/chat/completions",
+    modell: "llama-3.3-70b-versatile", format: "openai" },
+  { name: "OpenRouter", praefix: "sk-or-", adresse: "https://openrouter.ai/api/v1/chat/completions",
+    modell: "meta-llama/llama-3.3-70b-instruct:free", format: "openai" },
+  { name: "OpenAI", praefix: "sk-", adresse: "https://api.openai.com/v1/chat/completions",
+    modell: "gpt-4o-mini", format: "openai" },
+];
+const anbieterZu = (s) => ANBIETER.filter((a) => s.indexOf(a.praefix) === 0)[0] || null;
+
+/* Liegt neben dieser Datei eine api.php, dann laeuft der Aufruf darueber:
+   der Schluessel steht auf dem Server, Besucher brauchen keinen eigenen, und
+   es gibt kein CORS-Problem. Fehlt sie, traegt jeder seinen Schluessel ein. */
+const VERMITTLER = { bereit: false, zustand: "unbekannt", zugangNoetig: false, anbieter: "", modell: "", grund: "" };
+
+async function vermittlerPruefen() {
+  let antwort;
+  try {
+    antwort = await fetch("./api.php", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ pruefen: true }),
+    });
+  } catch (e) {
+    VERMITTLER.zustand = "fehlt";
+    return;
+  }
+  if (antwort.status === 404) { VERMITTLER.zustand = "fehlt"; return; }
+
+  const roh = await antwort.text();
+  // Wird PHP nicht ausgefuehrt, liefert der Server den Quelltext aus -- und
+  // damit stuende der Schluessel offen im Netz. Das muss auffallen.
+  if (roh.trim().indexOf("<?php") === 0) { VERMITTLER.zustand = "kein_php"; return; }
+
+  let daten;
+  try { daten = JSON.parse(roh); } catch (e) { VERMITTLER.zustand = "fehlt"; return; }
+
+  if (daten && daten.bereit) {
+    VERMITTLER.bereit = true;
+    VERMITTLER.zustand = "bereit";
+    VERMITTLER.zugangNoetig = !!daten.zugang_noetig;
+    VERMITTLER.anbieter = daten.anbieter || "";
+    VERMITTLER.modell = daten.modell || "";
+  } else {
+    VERMITTLER.zustand = "ohne_schluessel";
+    VERMITTLER.grund = (daten && daten.grund) || "";
+  }
+}
+
+async function ueberVermittler(system, nutzer) {
+  const antwort = await fetch("./api.php", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ system: system, nutzer: nutzer, zugang: $("schluessel").value.trim() }),
+  });
+  let daten = {};
+  try { daten = await antwort.json(); } catch (e) { /* keine JSON-Antwort */ }
+  if (!antwort.ok || daten.fehler) throw new Error(daten.fehler || ("Der Server antwortete mit Status " + antwort.status + "."));
+  return String(daten.text || "").trim();
+}
+
+const FEHLERTEXTE = {
+  400: "Die Anfrage wurde abgelehnt (400). Meist stimmt der Modellname nicht.",
+  401: "Der Schlüssel wird nicht akzeptiert (401). Falsch, widerrufen oder unvollständig kopiert.",
+  403: "Zugriff verweigert (403).",
+  404: "Modell nicht gefunden (404).",
+  429: "Zu viele Anfragen (429). Kurz warten und erneut versuchen.",
+  529: "Der Dienst ist überlastet (529). Bitte erneut versuchen.",
+};
+
+async function frageModell(system, nutzer) {
+  if (VERMITTLER.bereit) return ueberVermittler(system, nutzer);
+
+  const schluessel = $("schluessel").value.trim();
+  const anbieter = anbieterZu(schluessel);
+  if (!anbieter) {
+    throw new Error("Kein gültiger Schlüssel. Erwartet wird sk-ant-… (Claude), gsk_… (Groq) " +
+      "oder sk-or-… (OpenRouter).");
+  }
+
+  let kopf, koerper;
+  if (anbieter.format === "anthropic") {
+    kopf = {
+      "content-type": "application/json", "x-api-key": schluessel,
+      "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true",
+    };
+    koerper = {
+      model: anbieter.modell, max_tokens: 8000, system: system,
+      messages: [{ role: "user", content: nutzer }], output_config: { effort: "medium" },
+    };
+  } else {
+    kopf = { "content-type": "application/json", authorization: "Bearer " + schluessel };
+    koerper = {
+      model: anbieter.modell, max_tokens: 2000,
+      messages: [{ role: "system", content: system }, { role: "user", content: nutzer }],
+    };
+  }
+
+  let antwort;
+  try {
+    antwort = await fetch(anbieter.adresse, { method: "POST", headers: kopf, body: JSON.stringify(koerper) });
+  } catch (e) {
+    throw new Error("Die Verbindung wurde vom Browser blockiert. Das passiert, wenn die Datei per " +
+      "Doppelklick geöffnet wird (file://). Auf einem Webserver mit https:// funktioniert es — " +
+      "oder die Python-Fassung nehmen: python bernie.py");
+  }
+  if (!antwort.ok) {
+    let detail = "";
+    try {
+      const j = await antwort.json();
+      detail = (j.error && (j.error.message || j.error)) || "";
+    } catch (e) { /* Antwort war kein JSON */ }
+    throw new Error((FEHLERTEXTE[antwort.status] || ("Der Anbieter antwortete mit Status " + antwort.status + "."))
+      + (detail ? " Meldung: " + detail : ""));
+  }
+  const j = await antwort.json();
+  const text = j.content
+    ? j.content.filter((b) => b.type === "text").map((b) => b.text).join("\n")
+    : (((j.choices || [{}])[0].message || {}).content || "");
+  if (!String(text).trim()) throw new Error("Die Antwort des Modells war leer.");
+  return String(text).trim();
+}
+
+/* ---------------------------------------------------- Uebersetzung ----- */
+
+const zustand = { richtung: "zu_bernie", motor: "modell", laeuft: false, ausgabe: "" };
+// Ab hier wird ein zweiter Aufruf gewagt. Eigene Beitraege erreichen im
+// Schnitt 77.5 Punkte bei einer Streuung von 8.8; wer unter 55 bleibt, liegt
+// mehr als zwei Streuungen darunter -- dann lohnt der zusaetzliche Aufruf.
+const NACHBESSERN_UNTER = 55;
+
+async function uebersetzen() {
+  const text = $("eingabe").value.trim();
+  if (!text || zustand.laeuft) return;
+  zustand.laeuft = true;
+  $("los").disabled = true;
+  $("kopieren").hidden = true;
+  $("kopieren2").hidden = true;
+  $("bewertung").hidden = true;
+  $("ausgabe").innerHTML = '<p class="laedt">Er sattelt auf …</p>';
+
+  const staerke = Number($("staerke").value);
+  const kannModell = VERMITTLER.bereit
+    ? (!VERMITTLER.zugangNoetig || !!$("schluessel").value.trim())
+    : !!$("schluessel").value.trim();
+  const hinweise = [];
+
+  try {
+    let ergebnis;
+    let motor = zustand.motor === "modell" && kannModell ? "modell" : "offline";
+    if (zustand.motor === "modell" && !kannModell) {
+      hinweise.push(VERMITTLER.bereit
+        ? "Zugangswort fehlt — der Offline-Generator hat übernommen."
+        : "Kein Schlüssel eingetragen — der Offline-Generator hat übernommen. " +
+          "Er trifft die Form, formuliert aber nicht neu.");
+    }
+
+    if (zustand.richtung === "zu_klartext") {
+      ergebnis = motor === "modell" ? await frageModell(anweisungKlartext(), text) : offlineKlartext(text);
+    } else if (motor === "offline") {
+      ergebnis = offlineStil(text, staerke);
+    } else {
+      // Sparsam: ein Aufruf. Nachgebessert wird nur, wenn der Entwurf klar
+      // danebenliegt -- gemessen wird weiterhin, nur nicht mehr angezeigt.
+      const anweisung = anweisungStil(text, staerke);
+      ergebnis = await frageModell(anweisung, text);
+      const note = bewerte(ergebnis);
+      if (note.punkte < NACHBESSERN_UNTER) {
+        try {
+          const zweiter = await frageModell(anweisung,
+            text + "\n\nDein bisheriger Entwurf:\n" + ergebnis +
+            "\n\nDer Entwurf liegt noch daneben. Gemessen wurde:\n" + auftrag(note) +
+            "\n\nSchreibe ihn neu und gleiche genau diese Punkte aus. " +
+            "Inhalt und Fakten bleiben unverändert.");
+          if (bewerte(zweiter).punkte > note.punkte) ergebnis = zweiter;
+        } catch (stoerung) {
+          hinweise.push("Nachbesserung abgebrochen: " + (stoerung.message || stoerung));
+        }
+      }
+    }
+    zeigen(ergebnis, hinweise);
+  } catch (fehler) {
+    $("ausgabe").innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "fehler";
+    p.textContent = String((fehler && fehler.message) || fehler);
+    $("ausgabe").append(p);
+  } finally {
+    zustand.laeuft = false;
+    $("los").disabled = false;
+  }
+}
+
+function zeigen(text, hinweise) {
+  zustand.ausgabe = text;
+  $("ausgabe").replaceChildren.apply($("ausgabe"), text.split(/\n{2,}/).map((teil) => {
+    const p = document.createElement("p");
+    p.textContent = teil;
+    return p;
+  }));
+  $("kopieren").hidden = !text;
+  $("kopieren2").hidden = !text;
+
+  const zeile = hinweise.join(" ");
+  $("hinweis").textContent = zeile;
+  $("hinweis").hidden = !zeile;
+  $("bewertung").hidden = !zeile;
+}
+
+/* --------------------------------------------------------- Bedienung --- */
+
+function schalterBinden(wurzel, beiWahl) {
+  wurzel.addEventListener("click", (e) => {
+    const knopf = e.target.closest("button[data-wert]");
+    if (!knopf) return;
+    Array.prototype.forEach.call(wurzel.querySelectorAll("button"),
+      (b) => b.setAttribute("aria-pressed", String(b === knopf)));
+    beiWahl(knopf.dataset.wert);
+  });
+}
+
+schalterBinden($("richtung"), (wert) => {
+  zustand.richtung = wert;
+  const zuBernie = wert === "zu_bernie";
+  $("eingabetitel").textContent = zuBernie ? "Dein Text" : "Sein Text";
+  $("ausgabetitel").textContent = zuBernie ? "So würde er es sagen" : "Was eigentlich gemeint ist";
+  $("eingabe").placeholder = zuBernie
+    ? "Schreib hier ganz normal auf Deutsch. Zum Beispiel: Ich schaffe die Präsentation nicht bis Freitag."
+    : "Seinen Text hier einfügen — der Inhalt wird herausgelöst.";
+  $("staerkeregler").style.visibility = zuBernie ? "visible" : "hidden";
+  $("ausgabe").innerHTML = '<p class="leise">Die Übersetzung erscheint hier.</p>';
+  $("bewertung").hidden = true;
+  $("kopieren").hidden = true;
+  $("kopieren2").hidden = true;
+});
+schalterBinden($("motor"), (wert) => { zustand.motor = wert; });
+
+$("staerke").addEventListener("input", (e) => {
+  const v = Number(e.target.value);
+  $("staerkewert").textContent = v < 0.8 ? "zurückhaltend" : v > 1.2 ? "voll aufgedreht" : "normal";
+});
+$("eingabe").addEventListener("input", () => {
+  $("zaehler").textContent = $("eingabe").value.trim().length + " Zeichen";
+});
+async function kopieren(knopf, beschriftung) {
+  let geschafft = false;
+  // Die moderne Zwischenablage gibt es nur im sicheren Kontext (https).
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(zustand.ausgabe);
+      geschafft = true;
+    } catch (e) { /* weiter zum alten Weg */ }
+  }
+  if (!geschafft) {
+    // Alter Weg: unsichtbares Feld fuellen, markieren, kopieren. Funktioniert
+    // auch ueber http und in aelteren Browsern.
+    const feld = document.createElement("textarea");
+    feld.value = zustand.ausgabe;
+    feld.setAttribute("readonly", "");
+    feld.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+    document.body.appendChild(feld);
+    feld.focus();
+    feld.select();
+    feld.setSelectionRange(0, feld.value.length);  // iOS braucht das
+    try { geschafft = document.execCommand("copy"); } catch (e) { geschafft = false; }
+    document.body.removeChild(feld);
+  }
+  knopf.textContent = geschafft ? "Kopiert" : "Bitte von Hand markieren";
+  setTimeout(() => { knopf.textContent = beschriftung; }, 1600);
+}
+
+$("kopieren").addEventListener("click", () => kopieren($("kopieren"), "Kopieren"));
+$("kopieren2").addEventListener("click", () => kopieren($("kopieren2"), "Text kopieren"));
+$("schluessel").addEventListener("input", () => {
+  const wert = $("schluessel").value.trim();
+  const a = anbieterZu(wert);
+  $("anbietername").textContent = a ? a.name + " · " + a.modell : (wert ? "unbekannter Schlüssel" : "");
+  try { localStorage.setItem("bernie.schluessel", wert); } catch (e) { /* privater Modus */ }
+});
+window.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); uebersetzen(); }
+});
+$("los").addEventListener("click", uebersetzen);
+
+if (UNTERZEILE) {
+  $("unterzeile").textContent = UNTERZEILE;
+  $("unterzeile").hidden = false;
+}
+try {
+  const gemerkt = localStorage.getItem("bernie.schluessel");
+  if (gemerkt) { $("schluessel").value = gemerkt; $("schluessel").dispatchEvent(new Event("input")); }
+} catch (e) { /* privater Modus */ }
+
+vermittlerPruefen().then(() => {
+  const anzeige = $("anbietername");
+  anzeige.className = "fussnote";
+  if (VERMITTLER.zustand === "bereit") {
+    anzeige.className = "fussnote verbunden";
+    anzeige.textContent = "api.php verbunden · " + VERMITTLER.anbieter + " · " + VERMITTLER.modell;
+    if (VERMITTLER.zugangNoetig) {
+      $("schluessel").placeholder = "Zugangswort";
+      $("schluessel").value = "";
+    } else {
+      $("schluessel").hidden = true;
+    }
+  } else if (VERMITTLER.zustand === "kein_php") {
+    anzeige.className = "fussnote warnung";
+    anzeige.textContent = "api.php wird nicht ausgeführt — Schlüssel wäre offen sichtbar! Datei entfernen.";
+  } else if (VERMITTLER.zustand === "ohne_schluessel") {
+    anzeige.className = "fussnote warnung";
+    anzeige.textContent = VERMITTLER.grund || "api.php gefunden, aber ohne Schlüssel.";
+  } else if (!$("schluessel").value.trim()) {
+    anzeige.textContent = "keine api.php gefunden — Schlüssel hier eintragen";
+  }
+});
+</script>
+</body>
+</html>
