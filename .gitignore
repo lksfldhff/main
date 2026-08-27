@@ -9,4 +9,5 @@ venv/
 # Erzeugte Newsletter
 *.html
 !templates/*.html
+!particle-image/*.html
 *_bilder/
