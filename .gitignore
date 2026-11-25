@@ -7,3 +7,4 @@ dist/
 # raw geodata downloads (tools/geo/fetch_lgl.py)
 .geodata/
 __pycache__/
+.assets-raw/

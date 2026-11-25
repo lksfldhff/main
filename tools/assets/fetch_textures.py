@@ -37,8 +37,8 @@ TEXTURES = {
 }
 HDRI = ("sky_partly_cloudy", "kloofendal_48d_partly_cloudy_puresky")
 
-DIFF_SIZE = 1024
-NORMAL_SIZE = 512
+DIFF_SIZE = 2048
+NORMAL_SIZE = 1024
 
 
 def get(url: str) -> bytes:
@@ -60,9 +60,9 @@ def main() -> None:
     credits = []
     for name, asset in TEXTURES.items():
         files = json.loads(get(API + asset))
-        diff = (files.get("Diffuse") or files.get("diffuse"))["1k"]["jpg"]["url"]
+        diff = (files.get("Diffuse") or files.get("diffuse"))["2k"]["jpg"]["url"]
         nor = files["nor_gl"]["1k"]["jpg"]["url"]
-        save_jpg(get(diff), OUT / "textures" / f"{name}_diff.jpg", DIFF_SIZE, 84)
+        save_jpg(get(diff), OUT / "textures" / f"{name}_diff.jpg", DIFF_SIZE, 82)
         save_jpg(get(nor), OUT / "textures" / f"{name}_nrm.jpg", NORMAL_SIZE, 90)
         credits.append(f"{name}: https://polyhaven.com/a/{asset}")
         print("✓", name, "←", asset)

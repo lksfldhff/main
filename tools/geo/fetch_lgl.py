@@ -45,6 +45,22 @@ def main() -> None:
     name = config.ALKIS_GEMARKUNG_FILE
     fetch(f"{BASE}/alkis/{name}", raw / "alkis" / name)
     unzip(raw / "alkis" / name, raw / "alkis" / "heilbronn")
+    for t in config.DGM_TILES:  # orthophotos for real roof colours (~250 MB per tile)
+        name = f"dop20rgb_32_{t}_2_bw.zip"
+        fetch(f"{BASE}/dop20/{name}", raw / "dop" / name)
+        unzip(raw / "dop" / name, raw / "dop" / t)
+    # OpenStreetMap extract of the play area via the official API (one request).
+    from pyproj import Transformer
+    tr = Transformer.from_crs("EPSG:25832", "EPSG:4326", always_xy=True)
+    lo = tr.transform(config.BBOX[0], config.BBOX[1])
+    hi = tr.transform(config.BBOX[2], config.BBOX[3])
+    bbox = f"{lo[0] - 0.0005:.5f},{lo[1] - 0.0005:.5f},{hi[0] + 0.0005:.5f},{hi[1] + 0.0005:.5f}"
+    req = urllib.request.Request(f"https://api.openstreetmap.org/api/0.6/map?bbox={bbox}", headers={"User-Agent": "heilbronn-game-data-import/1.0"})
+    osm_file = raw / "osm" / "heilbronn.osm"
+    if not osm_file.exists():
+        osm_file.parent.mkdir(parents=True, exist_ok=True)
+        with urllib.request.urlopen(req, timeout=300) as r:
+            osm_file.write_bytes(r.read())
     print("done →", raw.resolve())
 
 

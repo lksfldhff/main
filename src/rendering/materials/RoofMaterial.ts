@@ -22,8 +22,8 @@ export function createRoofMaterial(diffuse: THREE.DataArrayTexture, normal: THRE
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec3 roof;\nvarying vec2 vRoof;\nflat varying int vRoofCode;\nvarying vec3 vRoofNormalW;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRoof = roof.xy;\nvRoofCode = int(roof.z + 0.5);\nvRoofNormalW = normalize(mat3(modelMatrix) * objectNormal);');
+      .replace('#include <common>', '#include <common>\nattribute vec3 roof;\nattribute float roofRgb;\nvarying vec2 vRoof;\nflat varying int vRoofCode;\nflat varying vec3 vRoofReal;\nvarying vec3 vRoofNormalW;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRoof = roof.xy;\nvRoofCode = int(roof.z + 0.5);\nint rgbi = int(roofRgb + 0.5);\nvRoofReal = rgbi > 0 ? vec3(float((rgbi >> 16) & 255), float((rgbi >> 8) & 255), float(rgbi & 255)) / 255.0 : vec3(-1.0);\nvRoofNormalW = normalize(mat3(modelMatrix) * objectNormal);');
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
@@ -38,6 +38,7 @@ uniform float uRoofMetal[5];
 uniform vec3 uRoofPalette[20];
 varying vec2 vRoof;
 flat varying int vRoofCode;
+flat varying vec3 vRoofReal;
 varying vec3 vRoofNormalW;
 ${GLSL_NOISE}
 ${GLSL_PERTURB}
@@ -52,7 +53,15 @@ roofKind = min(vRoofCode & 7, 4);
 float roofVariant = float(vRoofCode >> 3);
 vec2 ruv = vRoof.xy / uRoofTile[roofKind];
 float rl = uRoofLayer[roofKind];
-vec3 rc = texture(uRoofDiff, vec3(ruv, rl)).rgb * uRoofPalette[roofKind * 4 + int(mod(roofVariant, 4.0))];
+vec3 rTex = texture(uRoofDiff, vec3(ruv, rl)).rgb;
+vec3 rc = rTex * uRoofPalette[roofKind * 4 + int(mod(roofVariant, 4.0))];
+if (vRoofReal.r >= 0.0) {
+  // Real roof colour from the orthophoto (sRGB → linear), texture keeps the detail.
+  vec3 real = pow(vRoofReal, vec3(2.2)) * 1.15;
+  float lum = dot(rTex, vec3(0.299, 0.587, 0.114));
+  float avg = roofKind == 1 ? 0.2 : 0.3;
+  rc = real * clamp(lum / avg, 0.55, 1.5);
+}
 rc *= 0.85 + 0.25 * fbm2(vRoof.xy * 0.08 + roofVariant);
 rNrmSample = texture(uRoofNrm, vec3(ruv, rl)).rgb;
 diffuseColor.rgb *= rc;
@@ -72,6 +81,6 @@ normal = normalize((viewMatrix * vec4(perturbWorldNormal(rN, rT, rB, rNrmSample,
 `,
       );
   };
-  material.customProgramCacheKey = () => 'roof-v2';
+  material.customProgramCacheKey = () => 'roof-v3';
   return material;
 }

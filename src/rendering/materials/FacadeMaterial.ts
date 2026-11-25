@@ -71,14 +71,20 @@ float fNrmStrength;
 // The packed code must not be interpolated (rounding would corrupt the bit fields) → flat int.
 int style = min(vFacadeCode & 15, 9);
 float shop = float((vFacadeCode >> 4) & 1);
-float variant = float(vFacadeCode >> 5);
+float variant = float((vFacadeCode >> 5) & 255);
+int wallMat = (vFacadeCode >> 13) & 7; // OSM building:material override
 float u = vFacade.x;
 float h = vFacade.y;
 float wallLen = vFacade.z;
 
 float layer = uWallLayer[style];
-vec2 wallUV = vec2(u, h) / uWallTile[style];
+float wallTile = uWallTile[style];
 vec3 tint = uPalette[style * 8 + int(mod(variant, 8.0))];
+if (wallMat == 2) { layer = 2.0; wallTile = 4.5; tint = vec3(0.86, 0.62, 0.52); }      // sandstone
+else if (wallMat == 3) { layer = 1.0; wallTile = 2.2; tint = vec3(1.0); }              // brick
+else if (wallMat == 5) { layer = 3.0; wallTile = 3.0; tint = vec3(0.85, 0.84, 0.8); }  // concrete
+else if (wallMat == 6) { layer = 4.0; wallTile = 2.5; tint = vec3(0.8, 0.83, 0.85); }  // metal
+vec2 wallUV = vec2(u, h) / wallTile;
 vec3 col = texture(uWallDiff, vec3(wallUV, layer)).rgb * tint;
 fNrmSample = texture(uWallNrm, vec3(wallUV, layer)).rgb;
 fNrmStrength = 1.0;
@@ -167,13 +173,14 @@ if (hasWindows) {
     } else {
       float rnd = hash12(vec2(bayIdx * 7.31 + variant, floorIdx * 3.17 + wallLen));
       vec3 glass = mix(vec3(0.42, 0.5, 0.56), vec3(0.3, 0.36, 0.4), rnd);
+      if (style == 3) glass = mix(vec3(0.78, 0.86, 0.88), vec3(0.66, 0.76, 0.8), rnd); // bright science-centre glazing
       if (style == 4) glass = mix(vec3(0.32, 0.36, 0.48), vec3(0.45, 0.32, 0.3), step(0.5, fract((lu + lv) * 1.7))); // stained glass
       // Curtains / blinds in some windows
-      float curtain = (!isShop && rnd > 0.55) ? step(sill + wh * (0.72 + 0.2 * rnd), lv) : 0.0;
+      float curtain = (!isShop && !ribbon && rnd > 0.55) ? step(sill + wh * (0.72 + 0.2 * rnd), lv) : 0.0;
       col = mix(glass, vec3(0.78, 0.74, 0.66), curtain);
       fGlass = 1.0 - curtain;
       fRough = mix(0.04, 0.7, curtain);
-      fMetal = fGlass * 0.85;
+      fMetal = fGlass * (style == 3 ? 0.35 : 0.85);
       fNrmStrength = 0.0;
       // Shop interiors and a few lit rooms
       if (isShop) {
@@ -229,6 +236,6 @@ normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);
       )
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += fEmissive;');
   };
-  material.customProgramCacheKey = () => 'facade-v3';
+  material.customProgramCacheKey = () => 'facade-v4';
   return material;
 }

@@ -10,6 +10,7 @@ export type Action =
   | 'jump'
   | 'sprint'
   | 'interact'
+  | 'handbrake'
   | 'toggleDebug';
 
 export const DEFAULT_BINDINGS: Record<Action, readonly string[]> = {
@@ -19,6 +20,7 @@ export const DEFAULT_BINDINGS: Record<Action, readonly string[]> = {
   right: ['KeyD', 'ArrowRight'],
   jump: ['Space'],
   sprint: ['ShiftLeft', 'ShiftRight'],
-  interact: ['KeyE'],
+  interact: ['KeyE', 'KeyF'],
+  handbrake: ['Space'],
   toggleDebug: ['F3'],
 };

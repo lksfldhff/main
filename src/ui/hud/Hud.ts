@@ -1,4 +1,5 @@
 import { h, keycap } from '../dom';
+import { Speedometer } from './Speedometer';
 
 /** In-game overlay: interaction prompt, notifications, short controls hint. */
 export class Hud {
@@ -11,6 +12,7 @@ export class Hud {
   private readonly locationStreet: HTMLElement;
   private readonly locationArea: HTMLElement;
   private currentPrompt: string | null = null;
+  readonly speedometer = new Speedometer();
 
   constructor() {
     this.promptText = h('span', {});
@@ -27,7 +29,7 @@ export class Hud {
     this.locationStreet = h('strong', {});
     this.locationArea = h('span', {});
     this.location = h('div', { class: 'location hidden' }, this.locationStreet, this.locationArea);
-    this.element = h('div', { class: 'hud hidden' }, this.toasts, this.prompt, this.hint, this.location);
+    this.element = h('div', { class: 'hud hidden' }, this.toasts, this.prompt, this.hint, this.location, this.speedometer.element);
   }
 
   show(visible: boolean): void {

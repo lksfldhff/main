@@ -30,6 +30,8 @@ from shapely.geometry import Point, Polygon, box
 from shapely.ops import unary_union
 
 import config
+import osm as osm_mod
+from dop import OrthoMosaic
 
 MIN_E, MIN_N, MAX_E, MAX_N = config.BBOX
 NS = {
@@ -152,6 +154,9 @@ def load_alkis(raw: Path):
         e, n = sr.shape.points[0]
         if not (MIN_E <= e <= MAX_E and MIN_N <= n <= MAX_N):
             continue
+        # Street names only – skip house numbers and other short codes.
+        if len(text) < 4 or any(ch.isdigit() for ch in text[:2]):
+            continue
         if "Lagebezeichnung" in (rec.get("dientZurDa") or "") or "Strassenverkehr" in (rec.get("dientZurDa") or ""):
             labels.append((text, e, n))
     return landuse, footprints, labels
@@ -228,8 +233,10 @@ def triangulate(rings: list[np.ndarray], normal: np.ndarray) -> np.ndarray:
     return tris[area > 1e-6]
 
 
-def build_buildings(raw: Path, h0: float, footprints):
+def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_color=None):
+    """osm_lookup(e, n) -> {material, roof, name} | None;  roof_color(E, N) -> packed RGB (0 = unknown)."""
     tree = STRtree([p for p, _ in footprints])
+    walls_for_index = []  # (E, N, y_center, y_top, nx, nz, width) of large walls, for wall-mounted features
     chunks: dict[tuple[int, int], dict[str, list[np.ndarray]]] = defaultdict(lambda: {"walls": [], "roofs": []})
     count = 0
     stats = defaultdict(int)
@@ -283,11 +290,23 @@ def build_buildings(raw: Path, h0: float, footprints):
             if len(hits):
                 rec = footprints[int(hits[0])][1]
                 fn, name = rec.get("funktion") or "", rec.get("name") or ""
+            osm = osm_lookup(ce, cn) if osm_lookup else None
+            if osm and not name:
+                name = osm["name"]
             style, shop, roof_kind = classify(fn, name, roof_type, height, lod2_function, seed)
+            material = osm["material"] if osm else 0
+            if osm and osm["roof"] == "copper":
+                roof_kind = ROOF_COPPER
             stats[style] += 1
             variant = (seed >> 8) & 0xFF
-            wall_code = float(style | (shop << 4) | (variant << 5))
+            wall_code = float(style | (shop << 4) | (variant << 5) | (material << 13))
             roof_code = float(roof_kind | (variant << 3))
+            # Real roof colour (from the orthophoto), one robust value per building.
+            roof_pts = [r[0] for k, r in surfaces if k == "RoofSurface"]
+            rgb = 0.0
+            if roof_color and roof_pts:
+                rp = np.concatenate(roof_pts)
+                rgb = float(roof_color(rp[:, 0], rp[:, 1]))
 
             ck = (int(math.floor((ce - config.ORIGIN_E) / config.CHUNK)), int(math.floor(-(cn - config.ORIGIN_N) / config.CHUNK)))
             for kind, rings in surfaces:
@@ -314,6 +333,9 @@ def build_buildings(raw: Path, h0: float, footprints):
                     wl = np.full_like(u, umax - umin)
                     code = np.full_like(u, wall_code if kind != "ClosureSurface" else float(STYLE_SMALL | (variant << 5)))
                     chunks[ck]["walls"].append(np.stack([x, y, z, u, hgt, wl, code], axis=1))
+                    if kind == "WallSurface" and umax - umin > 6 and abs(ng[1]) < 0.2:
+                        cE, cN = rings[0][:, 0].mean(), rings[0][:, 1].mean()
+                        walls_for_index.append((cE, cN, float(y.mean()), float(y.max()), float(ng[0]), float(ng[2]), float(umax - umin)))
                 else:  # roof
                     if ng[1] > 0.985:
                         u, v = x, z
@@ -326,17 +348,36 @@ def build_buildings(raw: Path, h0: float, footprints):
                             b = -b  # v increases up the slope
                         u, v = pos @ t, pos @ b
                         rc = roof_code if roof_kind != ROOF_FLAT else float(ROOF_METAL | (variant << 3))
-                    chunks[ck]["roofs"].append(np.stack([x, y, z, u, v, np.full_like(u, rc)], axis=1))
+                    chunks[ck]["roofs"].append(np.stack([x, y, z, u, v, np.full_like(u, rc), np.full_like(u, rgb)], axis=1))
             count += 1
             el.clear()
             while el.getprevious() is not None:
                 del el.getparent()[0]
     print(f"  {count} buildings, styles: {dict(stats)}")
-    return chunks, count
+
+    wall_arr = np.array(walls_for_index) if walls_for_index else np.zeros((0, 7))
+
+    def walls_index(e: float, n: float):
+        """Nearest large wall within 6 m of (e, n): position/orientation for a wall-mounted object."""
+        if len(wall_arr) == 0:
+            return None
+        d = np.hypot(wall_arr[:, 0] - e, wall_arr[:, 1] - n)
+        i = int(np.argmin(d))
+        if d[i] > 8:
+            return None
+        cE, cN, yc, ytop, nx, nz, w = wall_arr[i]
+        # project the node onto the wall plane, slightly in front of it
+        px = e - config.ORIGIN_E
+        pz = -(n - config.ORIGIN_N)
+        wx, wz = cE - config.ORIGIN_E, -(cN - config.ORIGIN_N)
+        dist = (px - wx) * nx + (pz - wz) * nz
+        return {"x": round(px - nx * dist + nx * 0.12, 2), "y": round(min(ytop - 2.5, yc + 3.5), 2), "z": round(pz - nz * dist + nz * 0.12, 2), "nx": round(nx, 3), "nz": round(nz, 3)}
+
+    return chunks, count, walls_index
 
 
 # ----------------------------------------------------------------------------- land use
-def build_landuse(landuse):
+def build_landuse(landuse, pedestrian=()):
     cell = config.LANDUSE_CELL
     w = int(round((MAX_E - MIN_E) / cell))
     h = int(round((MAX_N - MIN_N) / cell))
@@ -357,6 +398,17 @@ def build_landuse(landuse):
                 continue
             draw.polygon(px(p.exterior.coords), fill=cls)
     arr = np.array(img)
+
+    # Pedestrian zones from OSM: road pixels become paving (e.g. Fleiner/Sülmer Straße).
+    if pedestrian:
+        ped = Image.new("L", (w, h), 0)
+        pd = ImageDraw.Draw(ped)
+        for shape in pedestrian:
+            for p in polys(shape):
+                if p.geom_type == "Polygon" and not p.is_empty:
+                    pd.polygon(px(p.exterior.coords), fill=1)
+        mask = np.array(ped) > 0
+        arr[mask & (arr == LANDUSE_ROAD)] = LANDUSE_PLAZA
 
     # Derive sidewalks: road pixels within 2.5 m of urban/plaza/path/green land.
     road = arr == LANDUSE_ROAD
@@ -468,11 +520,32 @@ def main() -> None:
     water, water_geom, levels = build_water(landuse, sample, h0)
     heights = carve_riverbed(heights, water_geom, levels)
 
+    osm_path = raw / "osm" / "heilbronn.osm"
+    osm = osm_mod.OsmData(osm_path) if osm_path.exists() else None
+    print(f"OSM: {'loaded' if osm else 'not found – skipping'}")
+
+    print("Orthophotos …")
+    ortho = OrthoMosaic(raw)
+    print(f"  roof colours: {'on' if ortho.available else 'off (no DOP files)'}")
+
     print("Buildings …")
-    chunks, count = build_buildings(raw, h0, footprints)
+    chunks, count, walls_index = build_buildings(
+        raw, h0, footprints,
+        osm_lookup=osm_mod.building_materials(osm) if osm else None,
+        roof_color=ortho.roof_color if ortho.available else None,
+    )
 
     print("Land use …")
-    lu = build_landuse(landuse)
+    lu = build_landuse(landuse, osm_mod.pedestrian_shapes(osm) if osm else ())
+
+    markings = np.zeros((0, 5), np.float32)
+    points = {}
+    if osm:
+        print("OSM details …")
+        markings = osm_mod.build_markings(osm, sample, h0)
+        points = osm_mod.build_points(osm, sample, h0, walls_index)
+        print(f"  markings: {len(markings) // 3} triangles, " + ", ".join(f"{k}: {len(v)}" for k, v in points.items()))
+    markings.astype("<f4").tofile(out / "markings.bin")
     Image.fromarray(lu, mode="L").save(out / "landuse.png", optimize=True)
 
     # --- write binaries
@@ -486,7 +559,7 @@ def main() -> None:
         for (cx, cz), data in sorted(chunks.items()):
             entry = {"cx": cx, "cz": cz}
             for key in ("walls", "roofs"):
-                arr = np.concatenate(data[key]).astype("<f4") if data[key] else np.zeros((0, 7 if key == "walls" else 6), "<f4")
+                arr = np.concatenate(data[key]).astype("<f4") if data[key] else np.zeros((0, 7), "<f4")
                 fb.write(arr.tobytes())
                 entry[key] = {"offset": offset, "vertices": int(arr.shape[0])}
                 offset += arr.nbytes
@@ -495,7 +568,7 @@ def main() -> None:
     pois, streets = build_pois(footprints, labels, landuse, h0, sample)
     meta = {
         "version": 1,
-        "attribution": config.ATTRIBUTION,
+        "attribution": config.ATTRIBUTION + " · Kartendaten © OpenStreetMap-Mitwirkende (ODbL)",
         "origin": {"e": config.ORIGIN_E, "n": config.ORIGIN_N, "height": h0, "crs": "EPSG:25832"},
         "bounds": {
             "minX": MIN_E - config.ORIGIN_E,
@@ -506,7 +579,9 @@ def main() -> None:
         "terrain": {"cols": cols, "rows": rows, "cell": config.TERRAIN_CELL, "minHeight": min_h - h0, "scale": 0.01},
         "landuse": {"width": int(lu.shape[1]), "height": int(lu.shape[0]), "cell": config.LANDUSE_CELL},
         "water": {"vertices": int(water.shape[0])},
-        "buildings": {"count": count, "chunkSize": config.CHUNK, "wallStride": 7, "roofStride": 6, "chunks": chunk_index},
+        "markings": {"vertices": int(markings.shape[0]), "stride": 5},
+        "osm": points,
+        "buildings": {"count": count, "chunkSize": config.CHUNK, "wallStride": 7, "roofStride": 7, "chunks": chunk_index},
         "pois": pois,
         "streets": streets,
     }

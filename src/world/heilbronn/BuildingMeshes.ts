@@ -37,6 +37,7 @@ export function buildBuildingMeshes(
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.InterleavedBufferAttribute(inter, 3, 0));
       geo.setAttribute('roof', new THREE.InterleavedBufferAttribute(inter, 3, 3));
+      if (roofStride >= 7) geo.setAttribute('roofRgb', new THREE.InterleavedBufferAttribute(inter, 1, 6));
       geo.computeVertexNormals();
       geo.computeBoundingSphere();
       group.add(makeMesh(geo, roofMaterial, `roofs:${chunk.cx},${chunk.cz}`));

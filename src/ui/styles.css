@@ -227,3 +227,22 @@ input[type='range'] { width: 170px; accent-color: var(--accent); }
 .location.flash strong { animation: location-in 0.6s ease both; }
 @keyframes location-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .start-footer .attribution { max-width: 520px; }
+
+/* ---------- Speedometer ---------- */
+.speedometer {
+  position: absolute; right: 28px; bottom: 24px;
+  width: 150px; height: 150px;
+  display: grid; place-items: center;
+}
+.speedo-ring { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.5)); }
+.speedo-track { stroke: rgba(13, 20, 24, 0.55); stroke-width: 9; stroke-linecap: round; }
+.speedo-arc { stroke: var(--accent); stroke-width: 9; stroke-linecap: round; transition: stroke-dasharray 0.12s linear; }
+.speedo-readout { display: flex; flex-direction: column; align-items: center; line-height: 1; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); }
+.speedo-readout strong { font: 800 40px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.speedo-readout small { font: 600 11px/1.4 var(--font); letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
+.speedo-gear { margin-top: 4px; font: 700 13px/1 var(--font); color: var(--accent-2); }
+body.is-driving .location { bottom: 186px; }
+body.is-driving .controls-hint { display: none; }
+body.is-driving .interaction-prompt { bottom: 6%; }
+
+.setting-note { margin: 6px 0 0; font-size: 12px; color: var(--text-dim); }

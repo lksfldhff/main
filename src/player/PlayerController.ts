@@ -138,6 +138,12 @@ export class PlayerController {
     this.renderFacing = this.prevFacing + angleDelta(this.prevFacing, this.facing) * alpha;
   }
 
+  /** Hides the character from physics while it sits in a vehicle. */
+  setActive(active: boolean): void {
+    this.collider.setEnabled(active);
+    if (!active) this.velocity.set(0, 0, 0);
+  }
+
   respawn(): void {
     this.teleport(this.spawn.x, this.spawn.y, this.spawn.z);
   }

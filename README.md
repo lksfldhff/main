@@ -4,7 +4,10 @@ Ein eigenständiges 3D-Open-World-Spiel im Browser, gebaut auf **echten Geodaten
 Alle Modelle, Shader und UI-Elemente sind selbst erstellt. Fremde Spiel-Assets, Logos oder
 Sounds werden nicht verwendet.
 
-> **Stand: Phase 2 – Echtes Heilbronn.** Die Innenstadt mit Marktplatz, Rathaus,
+> **Stand: Phase 3 – Fahrzeuge & Datenabgleich.** Begehbare und befahrbare Innenstadt mit
+> Autos, OSM-Details (Markierungen, Ampeln, Überwege, echte Bäume) und echten Dachfarben aus Luftbildern.
+>
+> Phase 2 – Echtes Heilbronn: Die Innenstadt mit Marktplatz, Rathaus,
 > Kilianskirche, Neckar und Experimenta ist begehbar: 1.684 reale Gebäude (amtliche
 > 3D-Gebäudemodelle), echtes Gelände und amtliche Flächennutzung.
 > Das prozedurale Testviertel aus Phase 1 lässt sich weiterhin über `?world=test` aufrufen.
@@ -41,9 +44,43 @@ URL-Parameter: `?world=test` lädt das Phase-1-Testviertel statt Heilbronn.
 | Maus / Mausrad  | Kamera drehen / Abstand                 |
 | `Shift`         | Rennen                                  |
 | `Leertaste`     | Springen                                |
-| `E`             | Interagieren                            |
+| `E` / `F`       | Interagieren · ins Auto ein-/aussteigen |
 | `Esc`           | Pause-Menü                              |
 | `F3`            | Leistungsanzeige                        |
+
+## Was Phase 3 bringt
+
+**Fahrzeuge**
+- Etwa 70 geparkte Autos stehen am echten Straßenrand: Limousine, Kompaktwagen, SUV,
+  Transporter, Heilbronner Taxi in Elfenbein, Polizei in Blau-Silber. Direkt neben dem
+  Startpunkt parkt ein roter Sportwagen.
+- Alle Modelle sind prozedural und realistisch proportioniert, mit Klarlack-Glanz, getöntem
+  Glas, Felgen, Licht und Bremslichtern. Bei der Polizei blinkt das Blaulicht.
+- Die Fahrphysik nutzt Rapiers Raycast-Fahrzeug: Federung, Reifenhaftung, Hinterradantrieb,
+  geschwindigkeitsabhängige Lenkung, Abtrieb und Luftwiderstand. Die Handbremse
+  (`Leertaste`) lässt das Heck ausbrechen, für Drifts. Kippt das Auto um, wird es nach
+  zwei Sekunden wieder aufgerichtet.
+- Steuerung im Auto: `W`/`S` Gas, Bremse und Rückwärtsgang, `A`/`D` lenken, `E` aussteigen.
+- Die Verfolgerkamera schwingt in Kurven mit, das Sichtfeld weitet sich mit dem Tempo, und
+  die Maus kann frei um das Auto kreisen. Ein runder Tacho zeigt km/h und Gang.
+
+**Abgleich mit weiteren Kartendaten**
+- **OpenStreetMap** (ODbL) ergänzt die Landesdaten:
+  - Fahrbahnmarkierungen nach Spuranzahl (Leitlinien 3 m Strich / 6 m Lücke,
+    Doppellinie bei vier Spuren)
+  - Stadtbahngleise in der Kaiserstraße
+  - Fußgängerzonen als Pflaster: Kaiserstraße, Fleiner und Sülmer Straße
+  - 87 Zebrastreifen und Ampelfurten, 68 Ampeln, 183 echte Baumstandorte, 134 Bänke,
+    30 Bushaltestellen mit H-Schild und 8 Brunnen
+  - Fassadenmaterial aus OSM: Sandstein, Klinker, Beton, Metall
+  - Kupferdächer und die **historische Rathausuhr** an ihrer echten Position
+- **Luftbilder (DOP20, 20 cm)** des LGL liefern für jedes Dach seine echte Farbe (Median der
+  Dachfläche). Kupfer, Schiefer, Ziegel und Kies stehen dort, wo sie wirklich sind.
+- Die Experimenta hat jetzt eine helle Glasfassade. Spiegelungen kommen aus einem Himmel mit
+  hellem Horizont statt aus der HDR-Aufnahme mit schwarzem Boden.
+
+**Grafik:** Die Texturen liegen jetzt in 2K vor (Normal-Maps 1K). Auf Qualitätsstufe „Hoch“
+werden sie voll genutzt, darunter mit 1K. Die Bäume haben eine detailliertere Krone mit Ästen.
 
 ## Was Phase 2 bringt
 
@@ -113,7 +150,7 @@ sie nur, wenn sich Gebiet oder Logik ändern:
 
 ```bash
 pip install -r tools/geo/requirements.txt
-python tools/geo/fetch_lgl.py          # lädt Rohdaten nach .geodata/ (~90 MB, nicht im Git)
+python tools/geo/fetch_lgl.py          # lädt LGL-Daten, Luftbilder und OSM nach .geodata/ (~600 MB, nicht im Git)
 python tools/geo/build_heilbronn.py    # erzeugt public/data/heilbronn/ (~20 s)
 python tools/assets/fetch_textures.py  # nur bei Änderungen an der Texturliste
 ```
@@ -155,9 +192,8 @@ tools/
 
 ## Bekannte Einschränkungen
 
-- **Keine Fahrbahnmarkierungen.** ALKIS enthält nur Straßenflächen, keine Fahrspuren. Die
-  Markierungen sollen aus OpenStreetMap kommen. Der OSM-Server (Overpass) war in der
-  Build-Umgebung bisher nicht stabil erreichbar.
+- **Kein Verkehr und keine Fußgänger.** Die Autos parken nur. KI-Verkehr ist der nächste Schritt.
+- **Fahrzeugschäden fehlen noch.**
 - **Bordsteine sind nur optisch** (Shader-Kante). Gehwege sind nicht erhöht.
 - **Wahrzeichen sind vereinfacht** (LoD2): Dachformen stimmen, Turmspitzen und Ornamente fehlen.
 - **Die Spielfigur** bleibt ein Platzhalter, bis ein Mixamo- oder GLB-Modell hinterlegt ist.
@@ -178,6 +214,9 @@ tools/
   [Datenlizenz Deutschland – Namensnennung – 2.0](https://www.govdata.de/dl-de/by-2-0).
   Verwendet werden das 3D-Gebäudemodell LoD2, das DGM1 und ALKIS. Der Quellenhinweis steht
   auch auf dem Startbildschirm.
+- **OpenStreetMap:** Kartendaten © OpenStreetMap-Mitwirkende, [ODbL](https://www.openstreetmap.org/copyright).
+- **Luftbilder (DOP20):** © LGL, dl-de/by-2-0. Sie dienen nur zur Ermittlung der Dachfarben
+  und werden nicht mitgeliefert.
 - **Texturen und HDRI:** [Poly Haven](https://polyhaven.com), CC0 (Liste in
   `public/assets/CREDITS.txt`).
 - **Bibliotheken:** Three.js (MIT), Rapier (Apache-2.0), Vite (MIT).

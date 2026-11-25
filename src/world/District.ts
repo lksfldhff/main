@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { VehicleSpawn } from '../vehicles/VehicleManager';
 
 /** What the game needs to know about a loaded district (test grid or real Heilbronn). */
 export interface District {
@@ -8,6 +9,8 @@ export interface District {
   /** Centre used by the menu camera fly-around. */
   showcaseCenter: THREE.Vector3;
   showcaseRadius: number;
+  /** Parked cars to spawn. */
+  vehicleSpawns?: VehicleSpawn[];
   /** Data source credits shown in the UI (e.g. OSM / LGL licence notes). */
   attribution?: string;
   /** Per-frame animation (water etc.). */

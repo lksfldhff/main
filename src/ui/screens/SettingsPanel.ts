@@ -51,10 +51,11 @@ export class SettingsPanel {
       range('Mausempfindlichkeit', 0.2, 3, 0.05, v.mouseSensitivity, (n) => n.toFixed(2), (n) => settings.update({ mouseSensitivity: n })),
       toggle('Maus-Y invertieren', v.invertY, (b) => settings.update({ invertY: b })),
       h('h3', {}, 'Grafik'),
-      segmented<GraphicsQuality>('Effekte (AO, Farbgrading)', [['low', 'Aus'], ['medium', 'Mittel'], ['high', 'Hoch']], v.graphicsQuality, (q) => settings.update({ graphicsQuality: q })),
+      segmented<GraphicsQuality>('Qualität (AO, Grading, 2K-Texturen*)', [['low', 'Aus'], ['medium', 'Mittel'], ['high', 'Hoch']], v.graphicsQuality, (q) => settings.update({ graphicsQuality: q })),
       segmented<ShadowQuality>('Schatten', [['off', 'Aus'], ['low', 'Mittel'], ['high', 'Hoch']], v.shadowQuality, (q) => settings.update({ shadowQuality: q })),
       range('Renderauflösung', 0.5, 1, 0.05, v.renderScale, (n) => `${Math.round(n * 100)} %`, (n) => settings.update({ renderScale: n })),
       range('Sichtfeld (FOV)', 50, 90, 1, v.fov, (n) => `${n}°`, (n) => settings.update({ fov: n })),
+      h('p', { class: 'setting-note' }, '* Texturauflösung wird beim nächsten Spielstart übernommen.'),
       toggle('Leistungsanzeige (F3)', v.showDebug, (b) => settings.update({ showDebug: b })),
       h('div', { class: 'panel-actions' }, h('button', { type: 'button', class: 'btn btn-ghost', onclick: onBack }, 'Zurück')),
     );

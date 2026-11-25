@@ -30,6 +30,7 @@ export class World {
     interactions: InteractionSystem,
     events: EventBus<GameEvents>,
     onProgress?: (text: string) => void,
+    textureSize = 1024,
   ): Promise<World> {
     const root = new THREE.Group();
     root.name = 'world';
@@ -45,7 +46,7 @@ export class World {
       surfaces: new MeshBatcher(CONFIG.world.chunkSize),
     };
 
-    const district = id === 'test' ? buildTestDistrict(ctx) : await buildHeilbronnDistrict(ctx, onProgress);
+    const district = id === 'test' ? buildTestDistrict(ctx) : await buildHeilbronnDistrict(ctx, onProgress, textureSize);
 
     root.add(ctx.solids.build({ castShadow: true, receiveShadow: true }));
     root.add(ctx.surfaces.build({ castShadow: false, receiveShadow: true }));

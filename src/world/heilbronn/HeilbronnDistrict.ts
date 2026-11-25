@@ -12,24 +12,31 @@ import { createFacadeMaterial } from '../../rendering/materials/FacadeMaterial';
 import { createRoofMaterial } from '../../rendering/materials/RoofMaterial';
 import { createWaterMaterial } from '../../rendering/materials/WaterMaterial';
 import { PropInstancer } from '../props/PropInstancer';
+import { buildStreetDetails } from './StreetDetails';
 import * as Models from '../props/PropModels';
 import { Random } from '../../utils/random';
+import type { VehicleSpawn } from '../../vehicles/VehicleManager';
 
 /**
  * The real Heilbronn city centre (Marktplatz, Kilianskirche, Neckar, Experimenta)
  * built from LGL open data: LoD2 buildings, DGM1 terrain and ALKIS land use.
  */
-export async function buildHeilbronnDistrict(ctx: WorldContext, onProgress?: (text: string) => void): Promise<District> {
+export async function buildHeilbronnDistrict(
+  ctx: WorldContext,
+  onProgress?: (text: string) => void,
+  textureSize = 1024,
+): Promise<District> {
   const base = `${import.meta.env.BASE_URL}data/heilbronn`;
   const anisotropy = ctx.materials.anisotropy;
   const [data, groundDiff, groundNrm, wallDiff, wallNrm, roofDiff, roofNrm] = await Promise.all([
     loadHeilbronnData(base, onProgress),
-    loadTextureArray(textureUrls(GROUND_TEXTURES, 'diff'), 1024, { srgb: true, anisotropy }),
-    loadTextureArray(textureUrls(GROUND_TEXTURES, 'nrm'), 512, { srgb: false, anisotropy }),
-    loadTextureArray(textureUrls(WALL_TEXTURES, 'diff'), 1024, { srgb: true, anisotropy }),
-    loadTextureArray(textureUrls(WALL_TEXTURES, 'nrm'), 512, { srgb: false, anisotropy }),
-    loadTextureArray(textureUrls(ROOF_TEXTURES, 'diff'), 1024, { srgb: true, anisotropy }),
-    loadTextureArray(textureUrls(ROOF_TEXTURES, 'nrm'), 512, { srgb: false, anisotropy }),
+    loadTextureArray(textureUrls(GROUND_TEXTURES, 'diff'), textureSize, { srgb: true, anisotropy }),
+    loadTextureArray(textureUrls(GROUND_TEXTURES, 'nrm'), textureSize / 2, { srgb: false, anisotropy }),
+    loadTextureArray(textureUrls(WALL_TEXTURES, 'diff'), textureSize, { srgb: true, anisotropy }),
+    loadTextureArray(textureUrls(WALL_TEXTURES, 'nrm'), textureSize / 2, { srgb: false, anisotropy }),
+    // Roofs are mostly seen from a distance: half resolution is plenty.
+    loadTextureArray(textureUrls(ROOF_TEXTURES, 'diff'), textureSize / 2, { srgb: true, anisotropy }),
+    loadTextureArray(textureUrls(ROOF_TEXTURES, 'nrm'), textureSize / 2, { srgb: false, anisotropy }),
   ]);
   onProgress?.('Stadt wird aufgebaut …');
   const { meta } = data;
@@ -65,7 +72,8 @@ export async function buildHeilbronnDistrict(ctx: WorldContext, onProgress?: (te
   const water = createWaterMaterial();
   const waterLevel = addWater(ctx, data, water.material);
 
-  // --- Props
+  // --- Props: OSM street details + generated park trees and lamps
+  buildStreetDetails(ctx, data, terrain);
   placeProps(ctx, data, terrain);
 
   const landuseAt = (x: number, z: number): number => {
@@ -79,6 +87,7 @@ export async function buildHeilbronnDistrict(ctx: WorldContext, onProgress?: (te
   const spawn = new THREE.Vector3(marktplatz.x, 0, marktplatz.z);
   spawn.y = terrain.heightAt(spawn.x, spawn.z) + 0.05;
   const kilian = meta.pois.find((p) => p.name === 'Kilianskirche');
+  const vehicleSpawns = findParkingSpots(data, terrain, spawn);
 
   return {
     name: 'Heilbronn · Innenstadt',
@@ -87,6 +96,7 @@ export async function buildHeilbronnDistrict(ctx: WorldContext, onProgress?: (te
     showcaseCenter: new THREE.Vector3(kilian?.x ?? 0, terrain.heightAt(kilian?.x ?? 0, kilian?.z ?? 0), kilian?.z ?? 0),
     showcaseRadius: 150,
     attribution: meta.attribution,
+    vehicleSpawns,
     update: (t) => water.update(t),
     locate: createLocator(data),
     groundHeight: (x, z) => terrain.heightAt(x, z),
@@ -107,6 +117,73 @@ function addWater(ctx: WorldContext, data: HeilbronnData, material: THREE.Materi
   let level = -Infinity;
   for (let i = 1; i < data.water.length; i += 3) level = Math.max(level, data.water[i]);
   return level;
+}
+
+/**
+ * Kerbside parking spots from the land-use raster: road pixels ~1.2 m from the kerb,
+ * oriented along the kerb, clear of crossings/junctions. The spot nearest to the player
+ * spawn gets a sports car.
+ */
+function findParkingSpots(data: HeilbronnData, terrain: Terrain, spawn: THREE.Vector3): VehicleSpawn[] {
+  const { meta, landuse } = data;
+  const W = meta.landuse.width;
+  const H = meta.landuse.height;
+  const cell = meta.landuse.cell;
+  const rng = new Random(9182);
+  const classAt = (x: number, z: number) => {
+    const px = Math.floor((x - meta.bounds.minX) / cell);
+    const pz = Math.floor((z - meta.bounds.minZ) / cell);
+    return px < 0 || pz < 0 || px >= W || pz >= H ? -1 : landuse[pz * W + px];
+  };
+  const isRoad = (x: number, z: number) => classAt(x, z) === LandUse.Road;
+  const avoid = [...(meta.osm?.crossings ?? []), ...(meta.osm?.signals ?? [])].map((c) => new THREE.Vector2(c[0], c[2]));
+  const spots: VehicleSpawn[] = [];
+  const step = 30;
+  const b = meta.bounds;
+  for (let gz = b.minZ; gz < b.maxZ; gz += step) {
+    for (let gx = b.minX; gx < b.maxX; gx += step) {
+      if (!rng.chance(0.6)) continue;
+      for (let tries = 0; tries < 30; tries++) {
+        const x = gx + rng.next() * step;
+        const z = gz + rng.next() * step;
+        if (!isRoad(x, z)) continue;
+        // Kerb normal: mean direction of nearby non-road samples.
+        let nx = 0;
+        let nz = 0;
+        let hits = 0;
+        for (let k = 0; k < 16; k++) {
+          const a = (k / 16) * Math.PI * 2;
+          const c = classAt(x + Math.cos(a) * 1.6, z + Math.sin(a) * 1.6);
+          if (c === LandUse.Sidewalk) {
+            nx += Math.cos(a);
+            nz += Math.sin(a);
+            hits++;
+          }
+        }
+        if (hits < 3 || hits > 7) continue;
+        const n = new THREE.Vector2(nx, nz).normalize();
+        const along = new THREE.Vector2(-n.y, n.x);
+        // Car centre 1.15 m from the kerb, road must be clear for the car length and wide behind it.
+        const c = new THREE.Vector2(x, z);
+        let ok = true;
+        for (const t of [-2.6, -1.3, 0, 1.3, 2.6]) {
+          const p = c.clone().addScaledVector(along, t);
+          if (!isRoad(p.x, p.y) || !isRoad(p.x - n.x * 4, p.y - n.y * 4) || classAt(p.x + n.x * 1.6, p.y + n.y * 1.6) !== LandUse.Sidewalk) ok = false;
+        }
+        if (!ok || avoid.some((a) => a.distanceTo(c) < 14) || spots.some((s) => Math.hypot(s.position.x - x, s.position.z - z) < 9)) continue;
+        const yaw = Math.atan2(along.x, along.y) + (rng.chance(0.5) ? Math.PI : 0);
+        spots.push({ position: new THREE.Vector3(x, terrain.heightAt(x, z), z), yaw });
+        break;
+      }
+    }
+  }
+  // Starter car closest to the spawn point.
+  spots.sort((a, bb) => a.position.distanceTo(spawn) - bb.position.distanceTo(spawn));
+  if (spots[0]) {
+    spots[0].type = 'sport';
+    spots[0].paint = '#b3121b';
+  }
+  return spots.slice(0, 70);
 }
 
 /** Nearest street / square name within reach, for the HUD location display. */

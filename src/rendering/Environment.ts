@@ -40,7 +40,7 @@ export class Environment {
     u.sunPosition.value.copy(this.sunDirection);
     scene.add(this.sky);
 
-    this.hemi = new THREE.HemisphereLight(0xc4d8f2, 0x6a6255, 0.55);
+    this.hemi = new THREE.HemisphereLight(0xc4d8f2, 0x6a6255, 0.45);
     scene.add(this.hemi);
 
     this.sun = new THREE.DirectionalLight(0xffeedd, 3.2);
@@ -123,8 +123,15 @@ export class Environment {
     envSky.material.uniforms.rayleigh.value = 1.4;
     envSky.material.uniforms.cloudCoverage.value = 0;
     envScene.add(envSky);
+    // Ground bounce: a warm grey lower hemisphere instead of black, so walls and glass
+    // reflect a plausible street level.
+    const ground = new THREE.Mesh(
+      new THREE.SphereGeometry(500, 32, 16, 0, Math.PI * 2, Math.PI / 2 + 0.02, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x5f5b54, side: THREE.BackSide }),
+    );
+    envScene.add(ground);
     this.scene.environment = pmrem.fromScene(envScene, 0.04).texture;
-    this.scene.environmentIntensity = 0.38;
+    this.scene.environmentIntensity = 0.3;
     pmrem.dispose();
   }
 }
