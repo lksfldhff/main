@@ -1,177 +1,183 @@
 # GTA Heilbronn – Open-World-Browserspiel (Prototyp)
 
-Ein eigenständiges, stilisiertes 3D-Open-World-Spiel, das direkt im Browser läuft und
-langfristig auf den echten Geodaten von Heilbronn (OpenStreetMap) basiert.
-Alle Modelle, Texturen und UI-Elemente sind selbst erzeugt – es werden keine
-fremden Spiel-Assets, Logos oder Sounds verwendet.
+Ein eigenständiges 3D-Open-World-Spiel im Browser, gebaut auf **echten Geodaten von Heilbronn**.
+Alle Modelle, Shader und UI-Elemente sind selbst erstellt. Fremde Spiel-Assets, Logos oder
+Sounds werden nicht verwendet.
 
-> **Stand: Phase 1 – Technische Grundlage.** Spielbar ist ein prozedurales
-> *Testviertel* (kein echtes Heilbronn), das alle Kernsysteme abdeckt. Der Import der
-> echten Kartendaten folgt in Phase 2.
+> **Stand: Phase 2 – Echtes Heilbronn.** Die Innenstadt mit Marktplatz, Rathaus,
+> Kilianskirche, Neckar und Experimenta ist begehbar: 1.684 reale Gebäude (amtliche
+> 3D-Gebäudemodelle), echtes Gelände und amtliche Flächennutzung.
+> Das prozedurale Testviertel aus Phase 1 lässt sich weiterhin über `?world=test` aufrufen.
 
 ---
 
 ## Schnellstart
 
-Voraussetzung: **Node.js ≥ 20** (getestet mit Node 22) und ein aktueller Desktop-Browser
-(Chrome, Edge, Firefox, Safari) mit aktivierter Hardwarebeschleunigung.
+Voraussetzung: **Node.js ≥ 20** und ein aktueller Desktop-Browser mit Hardwarebeschleunigung.
 
 ```bash
-npm install        # Abhängigkeiten installieren
-npm run dev        # Entwicklungsserver → http://localhost:5173
+npm install
+npm run dev        # → http://localhost:5173
 ```
 
-Weitere Befehle:
+| Befehl              | Zweck                                                      |
+| ------------------- | ---------------------------------------------------------- |
+| `npm run dev`       | Entwicklungsserver mit Hot Reload                          |
+| `npm run typecheck` | TypeScript-Prüfung                                         |
+| `npm run build`     | Typecheck + Produktions-Build nach `dist/`                 |
+| `npm run preview`   | Produktions-Build lokal ausliefern (http://localhost:4173) |
 
-| Befehl              | Zweck                                                          |
-| ------------------- | -------------------------------------------------------------- |
-| `npm run dev`       | Entwicklungsserver mit Hot Reload                              |
-| `npm run typecheck` | TypeScript-Prüfung ohne Build                                  |
-| `npm run build`     | Typecheck + Produktions-Build nach `dist/`                     |
-| `npm run preview`   | Produktions-Build lokal ausliefern (http://localhost:4173)     |
+`dist/` lässt sich auf jeden normalen Webserver kopieren, auch in einen Unterordner.
+Alle Karten- und Texturdaten liegen vorverarbeitet im Projekt (`public/`). Das Spiel ruft
+**zur Laufzeit keine externen APIs** auf.
 
-Der Inhalt von `dist/` kann auf jeden normalen Webserver (auch in einen Unterordner)
-kopiert werden – es gibt keine Server-Abhängigkeiten und keine externen API-Aufrufe.
+URL-Parameter: `?world=test` lädt das Phase-1-Testviertel statt Heilbronn.
 
 ## Steuerung
 
-| Taste            | Aktion                                   |
-| ---------------- | ---------------------------------------- |
-| `W` `A` `S` `D`  | Bewegen (relativ zur Kamera)             |
-| Maus             | Kamera drehen (Pointer Lock)             |
-| Mausrad          | Kamera-Abstand                           |
-| `Shift`          | Rennen                                   |
-| `Leertaste`      | Springen                                 |
-| `E`              | Interagieren (z. B. Litfaßsäule am Platz) |
-| `Esc`            | Pause-Menü                               |
-| `F3`             | Leistungsanzeige (FPS, Draw Calls …)     |
+| Taste           | Aktion                                  |
+| --------------- | --------------------------------------- |
+| `W` `A` `S` `D` | Bewegen (relativ zur Kamera)            |
+| Maus / Mausrad  | Kamera drehen / Abstand                 |
+| `Shift`         | Rennen                                  |
+| `Leertaste`     | Springen                                |
+| `E`             | Interagieren                            |
+| `Esc`           | Pause-Menü                              |
+| `F3`            | Leistungsanzeige                        |
 
-Tasten werden über `KeyboardEvent.code` gelesen und funktionieren daher auf QWERTZ- und
-QWERTY-Tastaturen gleich. Falls der Browser Pointer Lock verweigert, kann die Kamera mit
-gedrückter linker Maustaste gedreht werden. Ein Klick ins Bild holt den Pointer Lock zurück.
+## Was Phase 2 bringt
 
-## Was in Phase 1 enthalten ist
+**Echte Stadt**
 
-- **Projekt-Setup:** Vite 8, TypeScript 7 (strict), Three.js r187, Rapier 0.21 (WASM-Physik).
-- **Game-Loop:** feste Physik-Schrittweite (60 Hz) mit interpolierter Darstellung, also flüssig
-  bei jeder Bildwiederholrate.
-- **Rendering:** physikalisch basierte Materialien, ACES-Tonemapping, atmosphärischer Himmel mit
-  Wolken, Image Based Lighting aus dem Himmel, Nebel und eine Sonne mit dynamischen Schatten.
-  Der Schattenbereich folgt dem Spieler und ist auf Texel gerastert, damit nichts flimmert.
-- **Prozedurale Texturen** (zur Laufzeit per Canvas erzeugt, keine Bilddateien): Fassaden mit
-  Fenstern in 8 Stilen inklusive Roughness-Maps (glänzendes Glas, matter Putz), Asphalt,
-  Gehwegplatten, Kopfsteinpflaster, Dachziegel, Sandstein-Kaimauer und Rasen. Einige Oberflächen
-  haben zusätzlich Normal-Maps.
-- **Gebäude-Generator:** baut Gebäude aus beliebigen Grundriss-Polygonen, also exakt dem
-  Format, das OSM liefert. Er erzeugt ein Erdgeschoss (Laden, Sockel oder Glas),
-  Obergeschosse mit Fensterraster, Gesimse und Geschossbänder, Flachdach mit Attika und
-  Dachaufbauten sowie Satteldächer mit Dachüberstand. Konkave Grundrisse (L-Form) werden
-  unterstützt.
-- **Testviertel:** 4×4-Straßenraster mit Fahrbahnmarkierungen und Zebrastreifen, erhöhten
-  Gehwegen mit Bordsteinen und Blockrandbebauung mit Innenhöfen und Durchgängen. Dazu ein
-  Platz mit Uhrturm, Brunnen, Bänken und Baumring, ein Bürogebäude mit L-Grundriss und
-  Pocket-Park sowie ein Fluss mit Kaimauer, Promenade und Geländer.
-- **Spielfigur:** Kinematic Character Controller von Rapier. Er bietet Kollision, automatisches
-  Hochsteigen von Bordsteinen und Stufen bis 35 cm, Steigungsgrenze, Gleiten an Wänden, Springen
-  und Schwerkraft. Die stilisierte Figur hat eine prozedurale Lauf-, Renn- und Sprunganimation.
-- **Third-Person-Kamera:** Über-die-Schulter-Ansicht mit weicher Verfolgung, Kamera-Kollision
-  (die Kamera bleibt vor Wänden) und Gleiten am Boden beim Hochschauen. Beim Rennen weitet
-  sich das Sichtfeld leicht.
-- **Interaktionssystem:** generisch, damit später Fahrzeuge, Türen und Missionen andocken können.
-  Die erste Interaktion ist die Litfaßsäule auf dem Platz.
-- **UI:** Startbildschirm mit Ladezustand und Steuerungsübersicht, Pause-Menü, Einstellungen
-  (Mausempfindlichkeit, Y-Invertierung, Schattenqualität, Renderauflösung, Sichtfeld,
-  Leistungsanzeige; gespeichert in `localStorage`), Interaktionshinweise, Benachrichtigungen
-  und ein Debug-Overlay.
-- **Performance-Grundlagen:** Statische Geometrie wird pro Chunk (128 m) und Material zu wenigen
-  großen Meshes zusammengefasst. Das spart Draw Calls und erhält trotzdem das Frustum Culling.
-  Requisiten wie Laternen, Bäume, Bänke und Poller werden instanziert. Materialien und
-  Texturen werden geteilt, die Schattenqualität ist begrenzt und einstellbar.
-- **Geo-Basis:** `GeoProjection` rechnet WGS84 (lat/lon) in lokale Meter um, mit Ursprung am
-  Heilbronner Marktplatz. Bereit für Phase 2.
+- **Gebäude:** LoD2-3D-Gebäudemodelle des Landesamts für Geoinformation (LGL). Sie enthalten
+  echte Grundrisse, Höhen und Dachformen (Sattel-, Walm-, Pult-, Flachdächer). Gotische
+  Kirchendächer, das Rathaus, die Experimenta und die Neckarbrücken sind enthalten.
+- **Gelände:** Das digitale Geländemodell DGM1 (1-m-Raster, im Spiel 2 m) bildet die
+  Neckarufer, Rampen und Höhenunterschiede ab. Die Physik nutzt dasselbe Gelände als
+  Heightfield.
+- **Flächen:** Die amtliche ALKIS-Nutzung liefert Straßen, Plätze, Wege, Grünflächen, Gleise und
+  den Neckar. Daraus werden zusätzlich Gehwege mit Bordsteinkante abgeleitet.
+- **Orte:** Straßen- und Platznamen aus ALKIS erscheinen unten rechts im HUD,
+  zum Beispiel „Marktplatz · Heilbronn Innenstadt“.
+- Bäume in Grünflächen und Straßenlaternen entlang der Gehwege werden automatisch platziert.
+
+**Grafik**
+
+- Ein **Fassaden-Shader** passt Fensterachsen und Stockwerke exakt an jede echte Wand an.
+  Dazu kommen Rahmen, Fensterbänke, Laibungsschatten, Ladenfronten mit farbigen Schildern,
+  Sockel, Gesimse, Vorhänge, einzelne beleuchtete Räume und spiegelndes Glas. Kirchen bekommen
+  gotische Spitzbogenfenster mit Buntglas.
+- **Zehn Gebäudestile** werden automatisch aus Gebäudefunktion, Dachform und Höhe abgeleitet:
+  Altbau, Nachkriegsbau, Moderne, Glas, Sandstein-Kirche, Gewerbe, Garage, Klinker, Brücke
+  und historisch (Rathaus).
+- **Echte PBR-Texturen** (CC0 von Poly Haven): Putz, Klinker, roter Sandstein, Beton,
+  Wellblech, Dachziegel, Schiefer, Asphalt, Gehwegplatten, Sandsteinpflaster, Rasen, Kies.
+- Das **Umgebungslicht** stammt aus einer echten HDR-Himmelsaufnahme, mit dynamischen Schatten.
+- **Postprocessing:** Ambient Occlusion (GTAO), Farbgrading (warme Lichter, kühle Schatten,
+  Vignette), 4×-MSAA bzw. FXAA. Die Stufe ist einstellbar unter *Einstellungen → Effekte*.
+- Der Neckar hat animierte Wellen. Fällt man hinein, wird man ans Ufer zurückgesetzt.
+- **Performance:** Gebäude werden in 200-m-Chunks gebündelt (2 Draw Calls pro Chunk). Das
+  Gelände hat drei Detailstufen (LOD) mit Randschürzen. Feine Fensterdetails werden in der
+  Ferne ausgeblendet, damit nichts flimmert.
+
+**Spielfigur:** Eigene Modelle lassen sich jetzt einbinden (siehe unten). Ohne eigenes Modell
+wird die Platzhalter-Figur genutzt.
+
+## Eigene 3D-Modelle
+
+### Spielfigur (empfohlen: Mixamo)
+
+1. Auf [mixamo.com](https://www.mixamo.com) (kostenloses Adobe-Konto) eine Figur auswählen.
+2. Die Figur als **FBX, „With Skin“** herunterladen und als `character.fbx` speichern.
+3. Animationen **Idle**, **Walking**, **Running** und **Jump** jeweils als FBX,
+   **„Without Skin“** und mit **„In Place“** laden. Speichern als `idle.fbx`, `walk.fbx`,
+   `run.fbx` und `jump.fbx`.
+4. Alles nach `public/models/player/` legen und das Spiel neu laden.
+
+Alternativ geht eine einzelne `public/models/player/player.glb` mit Animationen, deren Namen
+`idle`, `walk`, `run` bzw. `jump` enthalten. Die Größe wird automatisch auf 1,80 m normiert.
+Die Animationsgeschwindigkeit passt sich dem Lauftempo an, und zwischen Animationen wird weich
+überblendet.
+
+### Wahrzeichen (geplant)
+
+Die LoD2-Daten zeigen Gebäude mit korrekter Form, aber ohne Fassadendetails. Für Kilianskirche,
+Rathaus (mit astronomischer Uhr), Götzenturm und Experimenta kann man später detaillierte
+GLB-Modelle aus Blender oder Sketchfab (Lizenz beachten) einsetzen. Sie ersetzen dann das
+jeweilige LoD2-Gebäude. Das Format: GLB, Meter-Maßstab, Ursprung am Boden.
+
+## Datenpipeline (Geodaten neu erzeugen)
+
+Die fertigen Spieldaten liegen in `public/data/heilbronn/` (rund 6 MB). Neu erzeugen muss man
+sie nur, wenn sich Gebiet oder Logik ändern:
+
+```bash
+pip install -r tools/geo/requirements.txt
+python tools/geo/fetch_lgl.py          # lädt Rohdaten nach .geodata/ (~90 MB, nicht im Git)
+python tools/geo/build_heilbronn.py    # erzeugt public/data/heilbronn/ (~20 s)
+python tools/assets/fetch_textures.py  # nur bei Änderungen an der Texturliste
+```
+
+- Gebiet, Ursprung und Auflösungen stehen in `tools/geo/config.py`. Aktuell sind es
+  1,1 × 1,4 km zwischen Neckar/Experimenta und Kilianskirche. Der Ursprung (0, 0, 0) liegt am
+  Marktplatz.
+- Ausgabe: `meta.json` (Index, Orte, Lizenz), `terrain.bin` (Höhen), `buildings.bin`
+  (triangulierte Wände und Dächer mit Fassaden-Attributen), `landuse.png` (Flächenklassen im
+  0,5-m-Raster), `water.bin`.
+- Koordinaten: Rohdaten in ETRS89/UTM32 (EPSG:25832), im Spiel lokale Meter
+  (`+X` Ost, `+Y` oben, `−Z` Nord).
 
 ## Architektur
 
 ```
 src/
-├── main.ts                    Einstiegspunkt
-├── core/                      Game (Composition Root + Zustandsautomat), GameLoop,
-│                              Settings, EventBus, config (alle Tuning-Werte)
-├── rendering/                 Renderer, Environment (Himmel/Licht/Schatten),
-│   └── textures/              MaterialLibrary, prozedurale Canvas-Texturen
-├── physics/                   PhysicsWorld – Wrapper um Rapier
-├── input/                     InputManager, KeyBindings (Aktionen → Tasten)
-├── player/                    PlayerController (Physik/Bewegung), PlayerAvatar (Optik/Animation)
-├── camera/                    ThirdPersonCamera
-├── gameplay/                  InteractionSystem
-├── geo/                       GeoProjection (lat/lon → lokale Meter)
+├── core/            Game (Zustandsautomat), GameLoop, Settings, EventBus, config
+├── rendering/       Renderer, Environment (Himmel/Sonne/HDRI), PostProcessing,
+│   ├── materials/   Fassaden-, Dach-, Gelände- und Wasser-Shader
+│   └── textures/    prozedurale Canvas-Texturen (Testviertel)
+├── physics/         PhysicsWorld (Rapier: Trimesh, Heightfield, Raycasts)
+├── input/           InputManager, KeyBindings
+├── player/          PlayerController (Physik), Avatar-Interface,
+│                    PlayerAvatar (Platzhalter), RiggedAvatar (GLB/FBX + Animationen)
+├── camera/          ThirdPersonCamera
+├── gameplay/        InteractionSystem
+├── geo/             GeoProjection
 ├── world/
-│   ├── World.ts               lädt einen „District“ und baut die Batches
-│   ├── districts/             TestDistrict (Phase 1), später: OSM-District
-│   ├── buildings/             BuildingGenerator, FacadeStyles
-│   ├── builders/              Gebäude, Boden/Gehwege, Straßenmarkierungen
-│   ├── geometry/              Polygon-Utils, GeometryWriter, Extrude, MeshBatcher
-│   └── props/                 Requisiten-Modelle, Instancing, Landmarken
-├── ui/                        UIManager, Screens, HUD, styles.css (ohne Framework)
-└── utils/                     Mathe-Helfer, deterministischer Zufall
+│   ├── World.ts     lädt einen District (Heilbronn oder Testviertel)
+│   ├── heilbronn/   Datenlader, Terrain, Gebäude-Meshes, Stile, Flächenklassen
+│   ├── districts/   TestDistrict (Phase 1)
+│   └── …            Geometrie-Helfer, Requisiten, Gebäude-Generator
+└── ui/              Startbildschirm, Pause, Einstellungen, HUD (inkl. Ortsanzeige)
+tools/
+├── geo/             Python-Pipeline: LGL-Rohdaten → Spieldaten
+└── assets/          Textur-Download (Poly Haven)
 ```
 
-Grundprinzipien:
+## Bekannte Einschränkungen
 
-- **Keine globalen Singletons.** `core/Game.ts` erzeugt alle Systeme und reicht Abhängigkeiten
-  explizit weiter. Welt-Builder bekommen einen `WorldContext`.
-- **Physik und Darstellung sind getrennt.** `PlayerController` kennt kein Mesh, `PlayerAvatar`
-  keine Physik. Dadurch lässt sich die Figur später durch ein GLB-Modell mit Skelettanimation
-  ersetzen, ohne die Steuerung anzufassen.
-- **Die UI ist reines DOM/CSS** und spricht nur über Callbacks bzw. den `EventBus` mit dem Spiel.
-- **Deterministische Generierung** über einen festen Seed: Die Welt sieht bei jedem Start gleich aus.
+- **Keine Fahrbahnmarkierungen.** ALKIS enthält nur Straßenflächen, keine Fahrspuren. Die
+  Markierungen sollen aus OpenStreetMap kommen. Der OSM-Server (Overpass) war in der
+  Build-Umgebung bisher nicht stabil erreichbar.
+- **Bordsteine sind nur optisch** (Shader-Kante). Gehwege sind nicht erhöht.
+- **Wahrzeichen sind vereinfacht** (LoD2): Dachformen stimmen, Turmspitzen und Ornamente fehlen.
+- **Die Spielfigur** bleibt ein Platzhalter, bis ein Mixamo- oder GLB-Modell hinterlegt ist.
+- **Schwimmen gibt es noch nicht.** Wer in den Neckar fällt, wird ans Ufer gesetzt.
+- **Kein Tag-Nacht-Zyklus und kein Bloom.** Bloom wird erst bei Nacht sinnvoll.
+- **Bundle:** etwa 5 MB JS (1,9 MB gzip, davon etwa 3 MB Physik-WASM), dazu etwa 12 MB Daten
+  und Texturen.
+- **Hardware:** Empfohlen ist eine dedizierte oder aktuelle integrierte GPU. Für schwächere
+  Rechner gibt es in den Einstellungen *Effekte: Aus*, *Schatten: Mittel* und eine reduzierte
+  Renderauflösung.
+- **Name:** „GTA“ ist eine Marke von Take-Two/Rockstar. Vor einer Veröffentlichung sollte ein
+  eigener Titel gewählt werden (`src/core/config.ts`).
 
-Koordinatensystem: **1 Einheit = 1 Meter**, `+X` = Osten, `−Z` = Norden, `+Y` = oben.
+## Lizenzen und Quellen
 
-## Abhängigkeiten
-
-| Paket                         | Zweck                                                    |
-| ----------------------------- | -------------------------------------------------------- |
-| `three`                       | 3D-Rendering (WebGL)                                     |
-| `@dimforge/rapier3d-compat`   | Physik (WASM, im Bundle eingebettet → kein Server-Setup) |
-| `vite` *(dev)*                | Entwicklungsserver und Bundler                           |
-| `typescript` *(dev)*          | Typprüfung                                               |
-| `@types/three` *(dev)*        | Typdefinitionen für Three.js                             |
-
-## Bekannte Einschränkungen / offene Punkte
-
-- **Das Testviertel ist nicht Heilbronn.** Straßen und Gebäude sind ein Platzhalter-Raster.
-  Uhrturm und Fluss stehen nur stellvertretend für Kilianskirche und Neckar.
-- **Bundle-Größe:** Rapier bettet sein WASM als Base64 ein, dadurch ist das JS-Bundle ca. 5 MB
-  groß (≈ 1,8 MB gzip). Später sinnvoll: Physik in einen eigenen Chunk auslagern und die
-  WASM-Datei separat ausliefern.
-- **Die Spielfigur** ist ein Platzhalter aus Grundkörpern mit prozeduraler Animation, das finale
-  Modell soll ein GLB mit Rig werden.
-- **Noch kein LOD und kein Chunk-Streaming.** Das Batching ist bereits chunk-basiert, Laden und
-  Entladen kommt mit den echten Kartendaten (Phase 2/3).
-- **Sonne, Tageszeit und Wetter sind fest eingestellt** (später Tag-Nacht-Zyklus mit
-  beleuchteten Fenstern).
-- **Keine Audio-Ausgabe.**
-- **Namenshinweis:** „GTA“ ist eine Marke von Take-Two/Rockstar. Für eine öffentliche
-  Veröffentlichung sollte ein eigener Name gewählt werden. Der Titel ist zentral in
-  `src/core/config.ts` hinterlegt und lässt sich dort mit einer Zeile ändern.
-
-## Ausblick
-
-1. **Phase 2 – Echte Kartendaten:** Ein Offline-Importskript (Node) holt einmalig einen
-   OSM-Ausschnitt der Innenstadt (Overpass-Export oder `.osm.pbf`) und erzeugt ein kompaktes,
-   vorverarbeitetes GeoJSON bzw. Binärformat in `public/data/`. Das Spiel lädt nur diese Datei
-   und hängt zur Laufzeit von keiner externen API ab. Gebäude laufen durch den vorhandenen
-   `BuildingGenerator`, Straßen werden zu Fahrbahn-Meshes.
-2. Phase 3: Chunk-Streaming, LOD, Minimap.
-3. Phase 4: Fahrzeuge (Rapier `DynamicRayCastVehicleController`), Ein- und Aussteigen über das
-   `InteractionSystem`, Fahrzeugkamera, Tacho.
-4. Danach: NPCs, Verkehr, Missionen.
-
-## Lizenzhinweise
-
-- Ab Phase 2 enthält das Spiel Kartendaten von **OpenStreetMap**:
-  © OpenStreetMap-Mitwirkende, lizenziert unter der
-  [Open Database License (ODbL)](https://www.openstreetmap.org/copyright).
-  Der Quellenhinweis wird dann im Startbildschirm und in dieser README angezeigt.
-- Three.js (MIT), Rapier (Apache-2.0), Vite (MIT).
+- **Geodaten:** © Landesamt für Geoinformation und Landentwicklung Baden-Württemberg (LGL),
+  [www.lgl-bw.de](https://www.lgl-bw.de), Lizenz
+  [Datenlizenz Deutschland – Namensnennung – 2.0](https://www.govdata.de/dl-de/by-2-0).
+  Verwendet werden das 3D-Gebäudemodell LoD2, das DGM1 und ALKIS. Der Quellenhinweis steht
+  auch auf dem Startbildschirm.
+- **Texturen und HDRI:** [Poly Haven](https://polyhaven.com), CC0 (Liste in
+  `public/assets/CREDITS.txt`).
+- **Bibliotheken:** Three.js (MIT), Rapier (Apache-2.0), Vite (MIT).

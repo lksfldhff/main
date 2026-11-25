@@ -26,6 +26,8 @@ const ROADS_Z = [-126, -45, 45, 126];
 const RIVER = { quayX: -152, farBankX: -262, waterY: -1.6, bedY: -4 };
 const WORLD_EDGE = 640;
 
+import type { District } from '../District';
+
 interface Block {
   x0: number;
   z0: number;
@@ -33,14 +35,7 @@ interface Block {
   z1: number;
 }
 
-export interface DistrictInfo {
-  spawn: THREE.Vector3;
-  spawnYaw: number;
-  /** Centre used by the menu camera fly-around. */
-  showcaseCenter: THREE.Vector3;
-}
-
-export function buildTestDistrict(ctx: WorldContext): DistrictInfo {
+export function buildTestDistrict(ctx: WorldContext): District {
   const rng = new Random(1977);
   const props = createPropInstancer(ctx);
 
@@ -68,9 +63,11 @@ export function buildTestDistrict(ctx: WorldContext): DistrictInfo {
   props.build(ctx);
 
   return {
+    name: 'Testviertel',
     spawn: new THREE.Vector3(0, CURB_HEIGHT + 0.05, 28),
     spawnYaw: 0,
     showcaseCenter: new THREE.Vector3(0, 0, 0),
+    showcaseRadius: 95,
   };
 }
 

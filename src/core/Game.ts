@@ -5,12 +5,15 @@ import { SettingsStore, type GameSettings } from './Settings';
 import { EventBus, type GameEvents } from './EventBus';
 import { Renderer } from '../rendering/Renderer';
 import { Environment } from '../rendering/Environment';
+import { PostProcessing } from '../rendering/PostProcessing';
 import { MaterialLibrary } from '../rendering/MaterialLibrary';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { InputManager } from '../input/InputManager';
-import { World } from '../world/World';
+import { World, type DistrictId } from '../world/World';
 import { PlayerController } from '../player/PlayerController';
 import { PlayerAvatar } from '../player/PlayerAvatar';
+import { RiggedAvatar } from '../player/RiggedAvatar';
+import type { Avatar } from '../player/Avatar';
 import { ThirdPersonCamera } from '../camera/ThirdPersonCamera';
 import { InteractionSystem } from '../gameplay/InteractionSystem';
 import { UIManager } from '../ui/UIManager';
@@ -21,7 +24,7 @@ interface Runtime {
   physics: PhysicsWorld;
   world: World;
   player: PlayerController;
-  avatar: PlayerAvatar;
+  avatar: Avatar;
   followCam: ThirdPersonCamera;
 }
 
@@ -36,12 +39,15 @@ export class Game {
   private readonly scene = new THREE.Scene();
   private readonly camera: THREE.PerspectiveCamera;
   private readonly environment: Environment;
+  private readonly post: PostProcessing;
   private readonly input: InputManager;
   private readonly interactions = new InteractionSystem();
   private readonly ui: UIManager;
   private readonly loop: GameLoop;
 
   private state: GameState = 'loading';
+  private readonly lastSafe = new THREE.Vector3();
+  private locationTimer = 0;
   private runtime: Runtime | null = null;
   private elapsed = 0;
   private simMs = 0;
@@ -57,6 +63,8 @@ export class Game {
     });
 
     this.environment = new Environment(this.scene, this.renderer.renderer);
+    this.post = new PostProcessing(this.renderer.renderer, this.scene, this.camera);
+    this.renderer.onResize((w, h) => this.post.setSize(w, h, this.renderer.renderer.getPixelRatio()));
     this.input = new InputManager(canvas);
 
     this.ui = new UIManager(uiRoot, this.settings, {
@@ -92,18 +100,28 @@ export class Game {
   /** Loads physics (WASM) and builds the world. */
   async init(): Promise<void> {
     try {
+      const progress = (text: string) => this.ui.startScreen.setProgress(text);
+      progress('Physik wird gestartet …');
+      const hdri = this.environment
+        .loadHdri(`${import.meta.env.BASE_URL}assets/hdri/sky_partly_cloudy.hdr`, this.renderer.renderer)
+        .catch((e) => console.warn('HDRI not loaded, using procedural sky lighting', e));
       const physics = await PhysicsWorld.create(CONFIG.physics.gravity);
       // Yield one frame so the loading UI paints before the (synchronous) world build.
       await new Promise((r) => requestAnimationFrame(() => r(null)));
       const materials = new MaterialLibrary(this.renderer.maxAnisotropy);
-      const world = new World(this.scene, materials, physics, this.interactions, this.events);
+      const districtId: DistrictId = new URLSearchParams(location.search).get('world') === 'test' ? 'test' : 'heilbronn';
+      const world = await World.create(districtId, this.scene, materials, physics, this.interactions, this.events, progress);
+      const district = world.district;
+      if (district.attribution) this.ui.startScreen.setAttribution(district.attribution);
 
-      const player = new PlayerController(physics, world.info.spawn, world.info.spawnYaw);
-      const avatar = new PlayerAvatar();
+      const player = new PlayerController(physics, district.spawn, district.spawnYaw);
+      progress('Spielfigur …');
+      const avatar: Avatar = (await RiggedAvatar.load(`${import.meta.env.BASE_URL}models/player`)) ?? new PlayerAvatar();
       this.scene.add(avatar.object);
       const followCam = new ThirdPersonCamera(this.camera, physics);
       followCam.setBaseFov(this.settings.values.fov);
 
+      await hdri;
       this.runtime = { physics, world, player, avatar, followCam };
       this.renderer.renderer.compile(this.scene, this.camera);
       this.state = 'menu';
@@ -119,9 +137,9 @@ export class Game {
   private async startPlaying(): Promise<void> {
     if (!this.runtime || this.state === 'loading') return;
     const { followCam, player, world } = this.runtime;
-    followCam.snapTo(player.feetPosition, world.info.spawnYaw);
+    followCam.snapTo(player.feetPosition, world.district.spawnYaw);
     this.enterPlaying();
-    this.ui.hud.notify('Testviertel', 'Erkunde das Viertel – an der Litfaßsäule auf dem Platz gibt es etwas zu lesen.');
+    this.ui.hud.notify(world.district.name, 'Willkommen! Erkunde die Stadt – Marktplatz, Kilianskirche, Neckar und Experimenta warten.');
   }
 
   private resume(): void {
@@ -160,6 +178,7 @@ export class Game {
 
   private applySettings(s: Readonly<GameSettings>): void {
     this.renderer.setRenderScale(s.renderScale);
+    this.post.setQuality(s.graphicsQuality);
     this.environment.setShadowQuality(s.shadowQuality);
     this.runtime?.followCam.setBaseFov(s.fov);
     this.ui.debug.setVisible(s.showDebug);
@@ -176,9 +195,29 @@ export class Game {
     this.simMs += performance.now() - t0;
   };
 
+  private updateLocation(dt: number, position: THREE.Vector3): void {
+    this.locationTimer -= dt;
+    if (this.locationTimer > 0 || !this.runtime) return;
+    this.locationTimer = 0.5;
+    this.ui.hud.setLocation(this.runtime.world.district.locate?.(position) ?? null, this.runtime.world.district.name);
+  }
+
+  private rescueFromWater(): void {
+    const rt = this.runtime;
+    if (!rt) return;
+    const p = this.lastSafe.lengthSq() > 0 ? this.lastSafe : rt.world.district.spawn;
+    rt.player.teleport(p.x, p.y + 0.3, p.z);
+    this.ui.hud.notify('Neckar', 'Schwimmen kommt in einer späteren Phase – zurück ans Ufer!');
+  }
+
   /** Development helper (only exposed in dev builds, see main.ts). */
-  debugTeleport(x: number, z: number, y = 0.5): void {
-    this.runtime?.player.teleport(x, y, z);
+  debugTeleport(x: number, z: number, y?: number): void {
+    const ground = this.runtime?.world.district.groundHeight?.(x, z) ?? 0;
+    this.runtime?.player.teleport(x, y ?? ground + 1.5, z);
+  }
+
+  debugGroundHeight(x: number, z: number): number | null {
+    return this.runtime?.world.district.groundHeight?.(x, z) ?? null;
   }
 
   private frame = (dt: number, alpha: number): void => {
@@ -199,14 +238,18 @@ export class Game {
       avatar.update(dt, player.renderPosition, player.visualFacing, this.state === 'playing' ? player.horizontalSpeed : 0, player.grounded);
 
       if (this.state === 'menu') {
-        followCam.updateShowcase(this.elapsed, world.info.showcaseCenter);
-        this.environment.updateShadowFocus(world.info.showcaseCenter);
+        followCam.updateShowcase(this.elapsed, world.district.showcaseCenter, world.district.showcaseRadius);
+        this.environment.updateShadowFocus(world.district.showcaseCenter);
       } else {
         followCam.update(dt, player.renderPosition, player.sprinting && this.state === 'playing', player.collider);
         this.environment.updateShadowFocus(player.renderPosition);
       }
 
+      world.district.update?.(this.elapsed);
       if (this.state === 'playing') {
+        this.updateLocation(dt, player.feetPosition);
+        if (world.district.isInDeepWater?.(player.feetPosition)) this.rescueFromWater();
+        else if (player.grounded) this.lastSafe.copy(player.feetPosition);
         const focused = this.interactions.update(player.feetPosition);
         this.ui.hud.setPrompt(focused?.prompt ?? null);
         if (this.input.consumePress('interact')) this.interactions.interact();
@@ -219,7 +262,7 @@ export class Game {
 
     this.environment.update(this.elapsed);
     const r0 = performance.now();
-    this.renderer.render(this.scene, this.camera);
+    this.post.render(dt);
     const renderMs = performance.now() - r0;
     this.ui.debug.update(
       dt,

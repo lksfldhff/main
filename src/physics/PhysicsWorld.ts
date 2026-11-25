@@ -62,6 +62,16 @@ export class PhysicsWorld {
     return this.world.createCollider(desc, this.staticBody);
   }
 
+  /** Static terrain heightfield. `heights` is column-major (nrows+1)×(ncols+1), centred on `center`. */
+  addStaticHeightfield(nrows: number, ncols: number, heights: Float32Array, scale: Vector3, center: Vector3): RAPIER.Collider {
+    const desc = this.rapier.ColliderDesc.heightfield(nrows, ncols, heights, { x: scale.x, y: scale.y, z: scale.z }).setTranslation(
+      center.x,
+      center.y,
+      center.z,
+    );
+    return this.world.createCollider(desc, this.staticBody);
+  }
+
   /** Casts a ray and returns the closest hit within `maxDistance`, optionally ignoring one collider. */
   castRay(origin: Vector3, direction: Vector3, maxDistance: number, exclude?: RAPIER.Collider): RayHit | null {
     const ray = new this.rapier.Ray(

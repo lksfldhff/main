@@ -36,7 +36,7 @@ export class MaterialLibrary {
   private colors = new Map<string, THREE.MeshStandardMaterial>();
   private roofTileMaterials = new Map<string, THREE.MeshStandardMaterial>();
 
-  constructor(private readonly anisotropy: number) {}
+  constructor(readonly anisotropy: number) {}
 
   surface(name: SurfaceName): THREE.MeshStandardMaterial {
     let mat = this.surfaces.get(name);

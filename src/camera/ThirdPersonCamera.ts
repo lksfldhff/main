@@ -99,10 +99,10 @@ export class ThirdPersonCamera {
   }
 
   /** Slow cinematic orbit used behind the main menu. */
-  updateShowcase(elapsed: number, center: THREE.Vector3): void {
-    const a = elapsed * 0.04 + 0.6;
-    this.camera.position.set(center.x + Math.sin(a) * 95, 42, center.z + Math.cos(a) * 95);
-    this.camera.lookAt(center.x, 8, center.z);
+  updateShowcase(elapsed: number, center: THREE.Vector3, radius = 95): void {
+    const a = elapsed * 0.035 + 0.6;
+    this.camera.position.set(center.x + Math.sin(a) * radius, center.y + radius * 0.42, center.z + Math.cos(a) * radius);
+    this.camera.lookAt(center.x, center.y + 12, center.z);
     this.initialized = false;
   }
 }

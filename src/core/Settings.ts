@@ -1,9 +1,11 @@
 export type ShadowQuality = 'off' | 'low' | 'high';
+export type GraphicsQuality = 'low' | 'medium' | 'high';
 
 export interface GameSettings {
   mouseSensitivity: number;
   invertY: boolean;
   shadowQuality: ShadowQuality;
+  graphicsQuality: GraphicsQuality;
   renderScale: number;
   fov: number;
   showDebug: boolean;
@@ -15,6 +17,7 @@ const DEFAULTS: GameSettings = {
   mouseSensitivity: 1,
   invertY: false,
   shadowQuality: 'high',
+  graphicsQuality: 'high',
   renderScale: 1,
   fov: 62,
   showDebug: false,

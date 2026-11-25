@@ -7,6 +7,9 @@ export class Hud {
   private readonly promptText: HTMLElement;
   private readonly toasts: HTMLElement;
   private readonly hint: HTMLElement;
+  private readonly location: HTMLElement;
+  private readonly locationStreet: HTMLElement;
+  private readonly locationArea: HTMLElement;
   private currentPrompt: string | null = null;
 
   constructor() {
@@ -21,7 +24,10 @@ export class Hud {
       h('span', {}, keycap('Leertaste'), ' Springen'),
       h('span', {}, keycap('Esc'), ' Pause'),
     );
-    this.element = h('div', { class: 'hud hidden' }, this.toasts, this.prompt, this.hint);
+    this.locationStreet = h('strong', {});
+    this.locationArea = h('span', {});
+    this.location = h('div', { class: 'location hidden' }, this.locationStreet, this.locationArea);
+    this.element = h('div', { class: 'hud hidden' }, this.toasts, this.prompt, this.hint, this.location);
   }
 
   show(visible: boolean): void {
@@ -37,6 +43,18 @@ export class Hud {
     this.currentPrompt = text;
     this.prompt.classList.toggle('hidden', text === null);
     if (text) this.promptText.textContent = text;
+  }
+
+  setLocation(street: string | null, area: string): void {
+    this.location.classList.toggle('hidden', !street);
+    if (!street) return;
+    if (this.locationStreet.textContent !== street) {
+      this.locationStreet.textContent = street;
+      this.location.classList.remove('flash');
+      void this.location.offsetWidth;
+      this.location.classList.add('flash');
+    }
+    this.locationArea.textContent = area;
   }
 
   notify(title: string, text: string, durationMs = 6000): void {

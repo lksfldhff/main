@@ -4,7 +4,7 @@
  */
 export const GAME_TITLE = 'GTA Heilbronn';
 export const GAME_SUBTITLE = 'Open World · Prototyp';
-export const BUILD_PHASE = 'Phase 1 – Technische Grundlage';
+export const BUILD_PHASE = 'Phase 2 – Echtes Heilbronn';
 
 export const CONFIG = {
   physics: {

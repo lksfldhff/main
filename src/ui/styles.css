@@ -214,3 +214,16 @@ input[type='range'] { width: 170px; accent-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
+
+/* ---------- Location (street name) ---------- */
+.location {
+  position: absolute; right: 28px; bottom: 26px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  text-align: right;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+.location strong { font: 800 26px/1.05 var(--font-display); letter-spacing: 0.01em; color: var(--text); }
+.location span { font: 600 12px/1 var(--font); letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); }
+.location.flash strong { animation: location-in 0.6s ease both; }
+@keyframes location-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.start-footer .attribution { max-width: 520px; }

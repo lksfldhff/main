@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
+import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import type { ShadowQuality } from '../core/Settings';
 
 const SHADOW_EXTENT = 70; // half-size of the shadow frustum around the player (metres)
@@ -21,30 +22,31 @@ export class Environment {
     private readonly scene: THREE.Scene,
     renderer: THREE.WebGLRenderer,
   ) {
-    // Late-afternoon sun from the west-south-west: warm light, long but readable shadows.
+    // Afternoon sun from the south-west: warm light, readable shadows, streets mostly lit.
     // (azimuth measured from +Z/south towards +X/east)
-    const elevation = THREE.MathUtils.degToRad(32);
-    const azimuth = THREE.MathUtils.degToRad(300);
+    const elevation = THREE.MathUtils.degToRad(44);
+    const azimuth = THREE.MathUtils.degToRad(320);
     this.sunDirection.setFromSphericalCoords(1, Math.PI / 2 - elevation, azimuth);
 
     this.sky = new Sky();
     this.sky.scale.setScalar(4000); // must stay inside the camera far plane
     const u = this.sky.material.uniforms;
-    u.turbidity.value = 3.2;
-    u.rayleigh.value = 1.4;
-    u.mieCoefficient.value = 0.004;
+    u.turbidity.value = 2.4;
+    u.rayleigh.value = 1.3;
+    u.mieCoefficient.value = 0.0025;
     u.mieDirectionalG.value = 0.82;
     u.cloudCoverage.value = 0.35;
+    u.showSunDisc.value = 0; // the HDR sun disc would bloom over half the screen
     u.sunPosition.value.copy(this.sunDirection);
     scene.add(this.sky);
 
-    this.hemi = new THREE.HemisphereLight(0xbcd4f0, 0x5a5243, 0.45);
+    this.hemi = new THREE.HemisphereLight(0xc4d8f2, 0x6a6255, 0.55);
     scene.add(this.hemi);
 
-    this.sun = new THREE.DirectionalLight(0xffdcb0, 3.4);
+    this.sun = new THREE.DirectionalLight(0xffeedd, 3.2);
     this.sun.castShadow = true;
     this.sun.shadow.bias = -0.0004;
-    this.sun.shadow.normalBias = 0.035;
+    this.sun.shadow.normalBias = 0.045;
     const cam = this.sun.shadow.camera;
     cam.left = -SHADOW_EXTENT;
     cam.right = SHADOW_EXTENT;
@@ -54,7 +56,7 @@ export class Environment {
     cam.far = 400;
     scene.add(this.sun, this.sun.target);
 
-    scene.fog = new THREE.Fog(0xbfcdd8, 180, 950);
+    scene.fog = new THREE.Fog(0xc4d3de, 260, 1500);
     scene.background = null;
 
     this.buildEnvironmentMap(renderer);
@@ -62,6 +64,24 @@ export class Environment {
     // Basis of the light's view plane (used for texel snapping).
     this.lightRight.crossVectors(new THREE.Vector3(0, 1, 0), this.sunDirection).normalize();
     this.lightUp.crossVectors(this.sunDirection, this.lightRight).normalize();
+  }
+
+  /**
+   * Replaces the procedural-sky environment map with a real HDR sky (Poly Haven, CC0) for
+   * more natural ambient light and reflections. The visible sky stays procedural.
+   */
+  async loadHdri(url: string, renderer: THREE.WebGLRenderer): Promise<void> {
+    const hdr = await new HDRLoader().loadAsync(url);
+    hdr.mapping = THREE.EquirectangularReflectionMapping;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const env = pmrem.fromEquirectangular(hdr).texture;
+    hdr.dispose();
+    pmrem.dispose();
+    this.scene.environment?.dispose();
+    this.scene.environment = env;
+    this.scene.environmentIntensity = 0.5;
+    // Rotate so the HDRI's bright sky region roughly matches our sun azimuth.
+    this.scene.environmentRotation.set(0, THREE.MathUtils.degToRad(120), 0);
   }
 
   setShadowQuality(quality: ShadowQuality): void {

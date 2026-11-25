@@ -3,3 +3,7 @@ dist/
 *.local
 .DS_Store
 .vite/
+
+# raw geodata downloads (tools/geo/fetch_lgl.py)
+.geodata/
+__pycache__/

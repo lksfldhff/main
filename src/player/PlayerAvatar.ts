@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../core/config';
 import { damp } from '../utils/math';
+import type { Avatar } from './Avatar';
 
 interface Limb {
   pivot: THREE.Group;
@@ -11,7 +12,7 @@ interface Limb {
  * walk/run/jump cycle. Faces -Z in local space. Will be replaced by a rigged
  * GLB model with skeletal animations in a later phase.
  */
-export class PlayerAvatar {
+export class PlayerAvatar implements Avatar {
   readonly object = new THREE.Group();
   private readonly body = new THREE.Group();
   private readonly legL: Limb;

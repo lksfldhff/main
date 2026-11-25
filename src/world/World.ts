@@ -6,29 +6,37 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { MaterialLibrary } from '../rendering/MaterialLibrary';
 import { MeshBatcher } from './geometry/MeshBatcher';
 import type { WorldContext } from './WorldContext';
-import { buildTestDistrict, type DistrictInfo } from './districts/TestDistrict';
+import type { District } from './District';
+import { buildTestDistrict } from './districts/TestDistrict';
+import { buildHeilbronnDistrict } from './heilbronn/HeilbronnDistrict';
+
+export type DistrictId = 'heilbronn' | 'test';
 
 /**
- * Owns all static world content. Phase 1 builds the procedural test district;
- * Phase 2 swaps in an OSM-based district loader behind the same interface.
+ * Owns all static world content. The district is selectable (URL `?world=test` loads the
+ * procedural Phase 1 test grid); the default is the real Heilbronn city centre.
  */
 export class World {
-  readonly root = new THREE.Group();
-  readonly info: DistrictInfo;
+  private constructor(
+    readonly district: District,
+    readonly root: THREE.Group,
+  ) {}
 
-  constructor(
+  static async create(
+    id: DistrictId,
     scene: THREE.Scene,
     materials: MaterialLibrary,
     physics: PhysicsWorld,
     interactions: InteractionSystem,
     events: EventBus<GameEvents>,
-  ) {
-    this.root.name = 'world';
-    scene.add(this.root);
-
+    onProgress?: (text: string) => void,
+  ): Promise<World> {
+    const root = new THREE.Group();
+    root.name = 'world';
+    scene.add(root);
     const ctx: WorldContext = {
       scene,
-      root: this.root,
+      root,
       materials,
       physics,
       interactions,
@@ -37,10 +45,12 @@ export class World {
       surfaces: new MeshBatcher(CONFIG.world.chunkSize),
     };
 
-    this.info = buildTestDistrict(ctx);
+    const district = id === 'test' ? buildTestDistrict(ctx) : await buildHeilbronnDistrict(ctx, onProgress);
 
-    this.root.add(ctx.solids.build({ castShadow: true, receiveShadow: true }));
-    this.root.add(ctx.surfaces.build({ castShadow: false, receiveShadow: true }));
+    root.add(ctx.solids.build({ castShadow: true, receiveShadow: true }));
+    root.add(ctx.surfaces.build({ castShadow: false, receiveShadow: true }));
     physics.refreshQueries();
+
+    return new World(district, root);
   }
 }
