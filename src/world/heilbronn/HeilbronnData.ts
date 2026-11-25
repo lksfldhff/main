@@ -57,6 +57,21 @@ async function fetchOk(url: string): Promise<Response> {
   return res;
 }
 
+/**
+ * Loads a binary file. Hosts that refuse to serve raw binaries (e.g. sandboxed previews)
+ * can ship a base64 copy next to it as `<name>.b64.txt`, used as a fallback.
+ */
+async function fetchBinary(url: string): Promise<ArrayBuffer> {
+  const res = await fetch(url);
+  const type = res.headers.get('content-type') ?? '';
+  if (res.ok && !type.includes('text/html')) return res.arrayBuffer();
+  const b64 = await (await fetchOk(`${url}.b64.txt`)).text();
+  const bin = atob(b64.trim());
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out.buffer;
+}
+
 async function loadGrayscalePng(url: string, width: number, height: number): Promise<Uint8Array> {
   const blob = await (await fetchOk(url)).blob();
   const bitmap = await createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
@@ -77,9 +92,9 @@ export async function loadHeilbronnData(baseUrl: string, onProgress?: (text: str
 
   onProgress?.('Gelände, Gebäude, Flächen …');
   const [terrainBuf, buildings, waterBuf, landuse] = await Promise.all([
-    fetchOk(`${baseUrl}/terrain.bin`).then((r) => r.arrayBuffer()),
-    fetchOk(`${baseUrl}/buildings.bin`).then((r) => r.arrayBuffer()),
-    fetchOk(`${baseUrl}/water.bin`).then((r) => r.arrayBuffer()),
+    fetchBinary(`${baseUrl}/terrain.bin`),
+    fetchBinary(`${baseUrl}/buildings.bin`),
+    fetchBinary(`${baseUrl}/water.bin`),
     loadGrayscalePng(`${baseUrl}/landuse.png`, meta.landuse.width, meta.landuse.height),
   ]);
 
