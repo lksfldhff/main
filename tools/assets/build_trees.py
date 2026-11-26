@@ -14,7 +14,7 @@ Per tree:
     UV→3D fit of the leaf, spanning its UV box, so the texture (diffuse + Poly Haven's leaf alpha map)
     draws the leaf outline. Leaves are thinned to a random subset and every kept card is scaled by
     1/sqrt(keep) about its centre, so the canopy keeps its volume and covered area.
-  * lod2: 3 crossed vertical + 1 horizontal billboard (16 tris, both sides modelled, single-sided
+  * lod2: 4 crossed vertical billboards through the trunk (16 tris, both sides modelled, single-sided
     material) with a canopy atlas rendered from the original model (Cycles, ambient light).
   * glTF is written directly (alphaMode MASK, doubleSided), then gltf-transform webp + meshopt.
 Prints one library.json entry per tree; library.json itself is not modified here.
@@ -53,12 +53,13 @@ TREES = {
     ),
     "tree_park_old": dict(
         src="island_tree_01",
-        lod0=dict(bark=4000, bark_part=0.1, twigs=3000, cards=6000, leaf_tex=1024, leaf_nrm=512, bark_tex=1024, bark_nrm=512, twig_tex=512),
-        lod1=dict(bark=500, bark_part=0.4, twigs=300, cards=800, clusters=600, leaf_tex=512, leaf_nrm=0, bark_tex=512, bark_nrm=0, twig_tex=256),
+        lod0=dict(bark=4500, bark_part=0.1, twigs=2000, cards=6200, leaf_tex=1024, leaf_nrm=512, bark_tex=1024, bark_nrm=512, twig_tex=512),
+        lod1=dict(bark=1000, bark_part=0.4, twigs=0, cards=800, clusters=650, leaf_tex=512, leaf_nrm=0, bark_tex=512, bark_nrm=0, twig_tex=256),
     ),
 }
 LOD2_RENDER = 512  # bake resolution per view
 LOD2_TILE = 256  # atlas tile (2x2 tiles)
+LOD2_ANGLES = (0.0, 45.0, 90.0, 135.0)  # crossed vertical cards through the trunk (a top card looked like a slab)
 SEED = 7
 
 
@@ -547,7 +548,7 @@ def finish(writer: GltfWriter, tmp: Path, target: Path):
 
 # --------------------------------------------------------------------------- LOD2 billboards
 def bake_billboards(gltf_path: Path, shift: np.ndarray, tmp: Path):
-    """Renders the original tree (Cycles, ambient light, transparent) from 3 sides + top → RGBA tiles."""
+    """Renders the original tree (Cycles, ambient light, transparent) from len(LOD2_ANGLES) sides → RGBA tiles."""
     import bpy
     import mathutils
 
@@ -563,12 +564,16 @@ def bake_billboards(gltf_path: Path, shift: np.ndarray, tmp: Path):
         if o.parent is None:  # glTF (x,y,z) → Blender (x,-z,y)
             o.location += mathutils.Vector((shift[0], -shift[2], shift[1]))
     bpy.context.view_layer.update()
-    pts = np.concatenate([np.array([o.matrix_world @ v.co for v in o.data.vertices]) for o in objs])
+    pts = []
+    for o in objs:
+        v = np.empty(len(o.data.vertices) * 3, np.float32)
+        o.data.vertices.foreach_get("co", v)
+        mw = np.array(o.matrix_world)
+        pts.append(v.reshape(-1, 3) @ mw[:3, :3].T + mw[:3, 3])
+    pts = np.concatenate(pts)
     zmin, zmax = 0.0, pts[:, 2].max()
-    axis = (pts[:, :2].min(0) + pts[:, :2].max(0)) / 2
+    axis = np.zeros(2)  # planes cross at the trunk so its three images coincide
     R = np.linalg.norm(pts[:, :2] - axis, axis=1).max() * 1.02
-    leafz = pts[:, 2]
-    canopy_lo = np.percentile(leafz, 30)
     cam = bpy.data.cameras.new("c")
     cam.type = "ORTHO"
     co = bpy.data.objects.new("c", cam)
@@ -590,7 +595,7 @@ def bake_billboards(gltf_path: Path, shift: np.ndarray, tmp: Path):
     w.node_tree.nodes["Background"].inputs[1].default_value = 1.0
     H = zmax - zmin
     views = []
-    for i, th in enumerate((0.0, 60.0, 120.0)):
+    for i, th in enumerate(LOD2_ANGLES):
         t = math.radians(th)
         h = np.array([math.cos(t), math.sin(t)])  # in-plane horizontal axis (Blender xy)
         nrm = np.array([-h[1], h[0]])
@@ -602,21 +607,14 @@ def bake_billboards(gltf_path: Path, shift: np.ndarray, tmp: Path):
         sc.render.resolution_y = LOD2_RENDER if H >= 2 * R else max(8, round(LOD2_RENDER * H / (2 * R)))
         sc.render.filepath = str(tmp / f"bb{i}.png")
         bpy.ops.render.render(write_still=True)
-        views.append(("v", h, tmp / f"bb{i}.png"))
-    co.location = (axis[0], axis[1], zmax + 50)
-    co.rotation_euler = (0, 0, 0)
-    cam.ortho_scale = 2 * R
-    sc.render.resolution_x = sc.render.resolution_y = LOD2_RENDER
-    sc.render.filepath = str(tmp / "bb_top.png")
-    bpy.ops.render.render(write_still=True)
-    views.append(("h", None, tmp / "bb_top.png"))
+        views.append((h, tmp / f"bb{i}.png"))
     # glTF coords: Blender (x,y,z) → (x, z, -y)
-    return views, np.array([axis[0], -axis[1]]), R, H, (canopy_lo + zmax) / 2
+    return views, np.array([axis[0], -axis[1]]), R, H
 
 
-def billboard_lod(views, axis, R, H, top_y):
+def billboard_lod(views, axis, R, H):
     tiles = []
-    for _, _, p in views:
+    for _, p in views:
         im = Image.open(p).convert("RGBA").resize((LOD2_TILE, LOD2_TILE), Image.LANCZOS)
         tiles.append(im)
     atlas = Image.new("RGBA", (LOD2_TILE * 2, LOD2_TILE * 2))
@@ -624,18 +622,13 @@ def billboard_lod(views, axis, R, H, top_y):
         atlas.paste(im, ((i % 2) * LOD2_TILE, (i // 2) * LOD2_TILE))
     atlas = finish_atlas(atlas)
     pos, uv, idx, nrm = [], [], [], []
-    for i, (kind, h, _) in enumerate(views):
+    for i, (h, _) in enumerate(views):
         u0, v0 = (i % 2) * 0.5, (i // 2) * 0.5
         quv = np.array([[u0, v0 + 0.5], [u0 + 0.5, v0 + 0.5], [u0 + 0.5, v0], [u0, v0]])
-        if kind == "v":
-            hx = np.array([h[0], 0.0, -h[1]])  # Blender xy dir → glTF xz
-            c = np.array([axis[0], 0.0, axis[1]])
-            hw, ht, y0 = R, H, 0.0  # tile was rendered for exactly 2R x H and stretched to a square
-            q = np.array([c - hx * hw + [0, y0, 0], c + hx * hw + [0, y0, 0], c + hx * hw + [0, y0 + ht, 0], c - hx * hw + [0, y0 + ht, 0]])
-        else:
-            c = np.array([axis[0], top_y, axis[1]])
-            # top view: image right = +x, image up = Blender +y = glTF -z
-            q = np.array([c + [-R, 0, R], c + [R, 0, R], c + [R, 0, -R], c + [-R, 0, -R]])
+        hx = np.array([h[0], 0.0, -h[1]])  # Blender xy dir → glTF xz
+        c = np.array([axis[0], 0.0, axis[1]])
+        # the tile was rendered for exactly 2R x H and stretched to a square
+        q = np.array([c - hx * R, c + hx * R, c + hx * R + [0, H, 0], c - hx * R + [0, H, 0]])
         fn = np.cross(q[1] - q[0], q[3] - q[0])
         fn /= np.linalg.norm(fn)
         for quad, sgn in ((q, 1.0), (q[::-1], -1.0)):  # both sides as separate faces
@@ -729,8 +722,8 @@ def build(tree_id: str, cfg: dict, preview: Path | None, do_lod2: bool) -> dict:
 
     if do_lod2:
         with tempfile.TemporaryDirectory() as td:
-            views, axis, R, H, top_y = bake_billboards(path, shift, Path(td))
-            prim, atlas = billboard_lod(views, axis, R, H, top_y)
+            views, axis, R, H = bake_billboards(path, shift, Path(td))
+            prim, atlas = billboard_lod(views, axis, R, H)
             w = GltfWriter()
             t = w.image("billboard.png", atlas)
             m = w.material({"name": f"{tree_id}_billboard", "alphaMode": "MASK", "alphaCutoff": 0.5, "doubleSided": False,
@@ -780,28 +773,6 @@ def render_preview(files, out_png: Path, shift, yaw=0.0, height_px=512, samples=
         groups.append(g)
     bpy.context.view_layer.update()
 
-    for mat in bpy.data.materials:  # Cycles ignores backface culling: hide back faces of single-sided materials
-        if not (mat.use_backface_culling and mat.node_tree):
-            continue
-        nt = mat.node_tree
-        bsdf = next((n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"), None)
-        if bsdf is None:
-            continue
-        geo = nt.nodes.new("ShaderNodeNewGeometry")
-        inv = nt.nodes.new("ShaderNodeMath")
-        inv.operation = "SUBTRACT"
-        inv.inputs[0].default_value = 1.0
-        nt.links.new(geo.outputs["Backfacing"], inv.inputs[1])
-        alpha = bsdf.inputs["Alpha"]
-        if alpha.is_linked:
-            mul = nt.nodes.new("ShaderNodeMath")
-            mul.operation = "MULTIPLY"
-            nt.links.new(alpha.links[0].from_socket, mul.inputs[0])
-            nt.links.new(inv.outputs[0], mul.inputs[1])
-            nt.links.new(mul.outputs[0], alpha)
-        else:
-            nt.links.new(inv.outputs[0], alpha)
-
     def bbox(objs):
         pts = [o.matrix_world @ mathutils.Vector(c) for o in objs if o.type == "MESH" for c in o.bound_box]
         return np.array(pts).min(0), np.array(pts).max(0)
@@ -830,6 +801,22 @@ def render_preview(files, out_png: Path, shift, yaw=0.0, height_px=512, samples=
     sc.render.resolution_y = height_px
     sc.render.resolution_x = int(height_px * len(files) * W / (zmax * 1.1))
     cam.ortho_scale = len(files) * W
+    # Cycles ignores backface culling: delete faces of single-sided materials that face away from the camera
+    import bmesh
+
+    bpy.context.view_layer.update()
+    view = co.matrix_world.to_3x3() @ mathutils.Vector((0, 0, -1))
+    for o in [o for g in groups for o in g if o.type == "MESH"]:
+        culled = {i for i, m in enumerate(o.data.materials) if m and m.use_backface_culling}
+        if not culled:
+            continue
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        nm = o.matrix_world.to_3x3()
+        bad = [f for f in bm.faces if f.material_index in culled and (nm @ f.normal).dot(view) >= 0]
+        bmesh.ops.delete(bm, geom=bad, context="FACES")
+        bm.to_mesh(o.data)
+        bm.free()
     sc.render.engine = "CYCLES"
     sc.cycles.device = "CPU"
     sc.cycles.samples = samples
