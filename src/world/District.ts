@@ -24,6 +24,8 @@ export interface District {
   stats?(): string;
   /** Radar map image (GTA-style minimap). */
   mapImage?: MapImage;
+  /** Landmarks shown as radar blips. */
+  landmarks?: { name: string; x: number; z: number }[];
   /** Human-readable location (street / square) for the HUD. */
   locate?(position: THREE.Vector3): string | null;
   /** Terrain height at (x, z), if the district has terrain. */

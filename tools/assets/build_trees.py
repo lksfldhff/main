@@ -234,10 +234,11 @@ def bpy_mod():
     return bpy
 
 
-def cluster_cards(P, uv, n, K: int, atlas_px: int, leaf_png: Path, tmp: Path, rng, grid: int = 4):
+def cluster_cards(P, uv, n, K: int, atlas_px: int, leaf_png: Path, tmp: Path, rng, grid: int = 4, leaf_scale: float = 1.4):
     """Groups the leaf cards into K spatial clusters; each becomes one card (PCA plane, outward facing).
     grid x grid representative clusters are rendered from the full-density cards (ambient light → baked AO)
-    into an atlas tile; every cluster card uses a random tile."""
+    into an atlas tile; every cluster card uses a random tile. Leaves are drawn leaf_scale x larger in the
+    tiles: at mid distance the overlap of thousands of small leaves is lost, a denser tile keeps the canopy closed."""
     import bpy
     import mathutils
     from scipy.cluster.vq import kmeans2
@@ -293,6 +294,8 @@ def cluster_cards(P, uv, n, K: int, atlas_px: int, leaf_png: Path, tmp: Path, rn
         sel, c, e1, e2, e3, a, b = frames[r]
         near = sel
         q = P[near]
+        qc = q.mean(1, keepdims=True)
+        q = qc + (q - qc) * leaf_scale
         me = bpy.data.meshes.new("cl")
         me.from_pydata(q.reshape(-1, 3).tolist(), [], (np.arange(len(near) * 4).reshape(-1, 4)).tolist())
         uvl = me.uv_layers.new(name="uv")

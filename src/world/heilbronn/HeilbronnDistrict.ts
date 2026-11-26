@@ -116,6 +116,7 @@ export async function buildHeilbronnDistrict(
     attribution: meta.attribution,
     vehicleSpawns,
     mapImage: buildMapImage(data),
+    landmarks: meta.pois.filter((p) => LANDMARKS.test(p.name)).map(({ name, x, z }) => ({ name, x, z })),
     update: (t) => water.update(t),
     updateView: (camera) => kit.update(camera),
     qa: () => ({ placements: furniture.placements, facadeKit: meta.kit?.stats ?? {}, assets: assets.credits() }),
@@ -216,6 +217,9 @@ function findParkingSpots(data: HeilbronnData, terrain: Terrain, spawn: THREE.Ve
   }
   return spots.slice(0, 70);
 }
+
+/** Landmarks of the city centre (also listed in the user's research package, data/landmarks.json). */
+const LANDMARKS = /^(Rathaus|Kilianskirche|Hafenmarktturm|Götzenturm|Bollwerksturm|experimenta|Theater Heilbronn|Skaio|Deutschhof|Fleischhaus|Käthchenhaus)/i;
 
 /** Nearest street / square name within reach, for the HUD location display. */
 function createLocator(data: HeilbronnData): (p: THREE.Vector3) => string | null {

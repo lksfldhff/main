@@ -12,6 +12,8 @@ export interface MapMarker {
   x: number;
   z: number;
   color: string;
+  /** 'dot' (default) or 'landmark' (gold diamond, also shown at the rim when out of range). */
+  kind?: 'dot' | 'landmark';
 }
 
 /**
@@ -65,9 +67,29 @@ export class Minimap {
     g.imageSmoothingEnabled = true;
     g.drawImage(m.canvas, m.minX - x, m.minZ - z, m.canvas.width * m.metresPerPx, m.canvas.height * m.metresPerPx);
     for (const mk of markers) {
-      const dx = mk.x - x;
-      const dz = mk.z - z;
-      if (dx * dx + dz * dz > this.radius * this.radius * 1.2) continue;
+      let dx = mk.x - x;
+      let dz = mk.z - z;
+      const d = Math.hypot(dx, dz);
+      if (mk.kind === 'landmark') {
+        // Landmarks stay visible: clamp to the rim like GTA blips.
+        const maxR = this.radius * 0.86;
+        if (d > maxR) {
+          dx *= maxR / d;
+          dz *= maxR / d;
+        }
+        const r = 7 / scale;
+        g.save();
+        g.translate(dx, dz);
+        g.rotate(-cameraYaw + Math.PI / 4);
+        g.fillStyle = '#e8b064';
+        g.strokeStyle = '#0d1418';
+        g.lineWidth = 2 / scale;
+        g.fillRect(-r / 2, -r / 2, r, r);
+        g.strokeRect(-r / 2, -r / 2, r, r);
+        g.restore();
+        continue;
+      }
+      if (d * d > this.radius * this.radius * 1.2) continue;
       g.fillStyle = mk.color;
       g.beginPath();
       g.arc(dx, dz, 3.2 / scale * 2, 0, Math.PI * 2);

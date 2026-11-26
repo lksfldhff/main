@@ -536,7 +536,7 @@ def load_house_numbers(raw: Path) -> list[tuple[float, float]]:
 
 
 # ----------------------------------------------------------------------------- POIs
-def build_pois(footprints, labels, landuse, h0, sample):
+def build_pois(footprints, labels, landuse, h0, sample, osm_named=None, osm_poly=None):
     pois = []
     seen = set()
     for poly, rec in footprints:
@@ -555,6 +555,20 @@ def build_pois(footprints, labels, landuse, h0, sample):
             c = poly.representative_point()
             x, _, z = to_local(np.array(c.x), np.array(c.y), np.array(0.0), h0)
             pois.append({"name": name, "kind": "area", "x": round(float(x), 1), "z": round(float(z), 1)})
+    # Named OSM buildings missing in ALKIS (e.g. "Skaio Holzhaus" in the Neckarbogen).
+    for _, refs, t in (osm_named or []):
+        name = t.get("name", "").strip()
+        if not name or name in seen or not ("building" in t or "tourism" in t or "historic" in t):
+            continue
+        poly = osm_poly(refs)
+        if poly is None:
+            continue
+        c = poly.representative_point()
+        if not (MIN_E <= c.x <= MAX_E and MIN_N <= c.y <= MAX_N):
+            continue
+        seen.add(name)
+        x, _, z = to_local(np.array(c.x), np.array(c.y), np.array(0.0), h0)
+        pois.append({"name": name, "kind": "building", "x": round(float(x), 1), "z": round(float(z), 1)})
     streets = []
     for text, e, n in labels:
         x, _, z = to_local(np.array(e), np.array(n), np.array(0.0), h0)
@@ -666,7 +680,8 @@ def main() -> None:
                 offset += arr.nbytes
             chunk_index.append(entry)
 
-    pois, streets = build_pois(footprints, labels, landuse, h0, sample)
+    pois, streets = build_pois(footprints, labels, landuse, h0, sample,
+                               osm_named=osm.ways if osm else None, osm_poly=osm.polygon if osm else None)
     meta = {
         "version": 1,
         "attribution": config.ATTRIBUTION + " · Kartendaten © OpenStreetMap-Mitwirkende (ODbL)",

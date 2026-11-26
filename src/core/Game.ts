@@ -12,6 +12,7 @@ import { InputManager } from '../input/InputManager';
 import { World, type DistrictId } from '../world/World';
 import { PlayerController } from '../player/PlayerController';
 import { PlayerAvatar } from '../player/PlayerAvatar';
+import type { MapMarker } from '../ui/hud/Minimap';
 import { RiggedAvatar } from '../player/RiggedAvatar';
 import type { Avatar } from '../player/Avatar';
 import { ThirdPersonCamera } from '../camera/ThirdPersonCamera';
@@ -349,7 +350,8 @@ export class Game {
         const camYaw = Math.atan2(-this.camDir.x, -this.camDir.z);
         const v = this.driving;
         const p = v ? v.position : player.feetPosition;
-        const markers = vehicles.vehicles.filter((c) => c !== v).map((c) => ({ x: c.position.x, z: c.position.z, color: '#4fa3a5' }));
+        const markers: MapMarker[] = vehicles.vehicles.filter((c) => c !== v).map((c) => ({ x: c.position.x, z: c.position.z, color: '#4fa3a5' }));
+        for (const l of world.district.landmarks ?? []) markers.push({ x: l.x, z: l.z, color: '#e8b064', kind: 'landmark' });
         this.ui.hud.minimap.setSpeed(v ? v.speed : 0);
         this.ui.hud.minimap.update(p.x, p.z, camYaw, v ? v.heading + Math.PI : player.visualFacing, markers);
       }
