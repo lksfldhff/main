@@ -222,11 +222,21 @@ else if (part == 1 || part == 12) {
   kRough = 0.05; kMetal = 0.8;
   if (part == 1 && vRand > 0.62 && vKitLocal.y > vKitSize.y * (0.18 + 0.2 * vRand)) { c = vec3(0.82, 0.78, 0.7); kRough = 0.8; kMetal = 0.0; }
   if (part == 12) {
-    // Shop window: dark glass, dim warm interior that fades towards the floor.
-    c = mix(vec3(0.16, 0.19, 0.21), vec3(0.22, 0.24, 0.25), vRand);
-    kMetal = 0.45; kRough = 0.06;
+    // Shop window: less mirror-like than upper windows so the lit interior reads through –
+    // a cheap fake interior (back wall, shelves with goods) instead of a blank reflective panel.
+    vec2 q = vKitLocal.xy + vec2(vRand * 13.0, 0.0);
     float y01 = clamp(vKitLocal.y / max(vKitSize.y, 0.1) + 0.5, 0.0, 1.0);
-    kEmissive = vec3(1.0, 0.86, 0.66) * (0.03 + 0.07 * vRand) * smoothstep(0.0, 0.6, y01);
+    vec3 backWall = mix(vec3(0.33, 0.3, 0.27), vec3(0.24, 0.27, 0.3), vRand);
+    float shelf = step(0.82, fract(y01 * 4.0));
+    vec2 cellId = floor(vec2(q.x * 2.2, y01 * 4.0));
+    vec3 goods = mix(vec3(0.35), vec3(hash12(cellId), hash12(cellId + 3.1), hash12(cellId + 7.7)), 0.55) * 0.7 + 0.05;
+    float hasGoods = step(0.35, hash12(cellId + vRand)) * step(0.15, y01) * step(y01, 0.85);
+    c = mix(backWall, goods, hasGoods * 0.8);
+    c = mix(c, vec3(0.55, 0.52, 0.48), shelf * step(0.15, y01));
+    // Interiors are much darker than the sunlit street: tiny diffuse part, the rest is "interior light".
+    kEmissive = c * vec3(1.0, 0.9, 0.75) * (0.2 + 0.14 * vRand);
+    c *= 0.12;
+    kMetal = 0.1; kRough = 0.07;
   }
 }
 else if (part == 2) { c = vec3(0.93, 0.92, 0.9); kRough = 0.45; }
