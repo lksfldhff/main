@@ -18,7 +18,7 @@ export function buildStreetDetails(
   data: HeilbronnData,
   terrain: Terrain,
   /** Parts now handled by StreetFurniture (glass shelters, library benches) are skipped here. */
-  options: { busStops?: boolean; benches?: boolean } = {},
+  options: { busStops?: boolean; benches?: boolean; trees?: boolean } = {},
 ): void {
   const osm = data.meta.osm ?? {};
   const extra: number[] = [];
@@ -83,7 +83,7 @@ export function buildStreetDetails(
   props.define('bench', Models.bench(), [m.color('#3a4044', 0.5, 0.5), m.color('#8d6342', 0.7)]);
   props.define('busStop', Models.busStop(), [m.color('#9aa0a4', 0.45, 0.6), busSignMaterial()], cyl(2.6, 0.06));
 
-  for (const [x, y, z] of osm.trees ?? []) {
+  if (options.trees !== false) for (const [x, y, z] of osm.trees ?? []) {
     const color = new THREE.Color().setHSL(0.24 + rng.range(-0.03, 0.05), 0.4 + rng.range(0, 0.25), 0.72 + rng.range(-0.08, 0.1));
     props.place('osmTree', new THREE.Vector3(x, y, z), rng.range(0, Math.PI * 2), rng.range(0.85, 1.3), color);
   }

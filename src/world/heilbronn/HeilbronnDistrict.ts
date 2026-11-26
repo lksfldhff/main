@@ -83,9 +83,26 @@ export async function buildHeilbronnDistrict(
 
   // --- Props: OSM street details, street furniture (library models / procedural), trees and lamps
   onProgress?.('Stadtmöbel …');
-  buildStreetDetails(ctx, data, terrain, { busStops: false, benches: !assets.has('bench_wood') });
+  // Real photoscanned trees (Poly Haven, CC0) when the library has them, procedural trees otherwise.
+  const useLibraryTrees = assets.has('tree_street_young') && assets.has('tree_park_old');
+  buildStreetDetails(ctx, data, terrain, { busStops: false, benches: !assets.has('bench_wood'), trees: !useLibraryTrees });
   const covered = createCoverTest(ctx, (x, z) => terrain.heightAt(x, z));
-  const lamps = placeProps(ctx, data, terrain).filter((l) => !covered(l.position.x, l.position.z));
+  const parkTrees: Placement[] | undefined = useLibraryTrees ? [] : undefined;
+  const lamps = placeProps(ctx, data, terrain, parkTrees).filter((l) => !covered(l.position.x, l.position.z));
+  if (useLibraryTrees) {
+    const rngT = new Random(1913);
+    const trunk = (p: Placement, h: number) => ctx.physics.addStaticCylinder(p.position.clone().setY(p.position.y + h * 0.2), h * 0.2, 0.28 * (p.scale ?? 1));
+    const streetTrees: Placement[] = (meta.osm?.trees ?? []).map(([x, , z]) => ({
+      position: new THREE.Vector3(x, terrain.heightAt(x, z), z),
+      yaw: rngT.range(0, Math.PI * 2),
+      scale: rngT.range(0.85, 1.2),
+    }));
+    const [a, b] = await Promise.all([
+      assets.instantiate('tree_street_young', streetTrees, { cullDistance: 700, collider: trunk }),
+      assets.instantiate('tree_park_old', parkTrees ?? [], { cullDistance: 700, collider: trunk }),
+    ]);
+    ctx.root.add(a, b);
+  }
   const lampQa: QaPlacement[] = [];
   const [furniture, libraryLamps] = await Promise.all([
     buildStreetFurniture(ctx, data, terrain, assets),
@@ -253,7 +270,7 @@ function placeProceduralLamps(ctx: WorldContext, lamps: Placement[]): void {
 }
 
 /** Trees in parks and green strips; returns street lamp positions along sidewalks. */
-function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): Placement[] {
+function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain, libraryTrees?: Placement[]): Placement[] {
   const { meta, landuse } = data;
   const m = ctx.materials;
   const rng = new Random(4242);
@@ -280,7 +297,8 @@ function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): P
       const p = toWorld(jx, jz);
       p.y = terrain.heightAt(p.x, p.z);
       const color = new THREE.Color().setHSL(0.24 + rng.range(-0.04, 0.05), 0.35 + rng.range(0, 0.3), 0.75 + rng.range(-0.08, 0.12));
-      props.place('tree', p, rng.range(0, Math.PI * 2), rng.range(0.9, 1.5), color);
+      if (libraryTrees) libraryTrees.push({ position: p, yaw: rng.range(0, Math.PI * 2), scale: rng.range(0.8, 1.25) });
+      else props.place('tree', p, rng.range(0, Math.PI * 2), rng.range(0.9, 1.5), color);
     }
   }
 

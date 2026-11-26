@@ -84,7 +84,11 @@ export class AssetLibrary {
     group.name = `asset:${id}`;
     const entry = this.entries.get(id);
     if (!entry || placements.length === 0) return group;
-    const [lod0, lod1] = await Promise.all([this.load(entry, 'lod0'), this.load(entry, 'lod1')]);
+    const [lod0, lod1, lod2] = await Promise.all([
+      this.load(entry, 'lod0'),
+      this.load(entry, 'lod1'),
+      entry.lods.lod2 ? this.load(entry, 'lod2') : Promise.resolve(null),
+    ]);
     const b = entry.lods.lod0.bounds;
     const height = Math.max(b[1][1] - b[0][1], 0.01);
     const norm = entry.targetHeight / height;
@@ -125,6 +129,8 @@ export class AssetLibrary {
       lod.addLevel(build(lod0, true), 0);
       // Far level: no shadow casting (sub-pixel shadows, big saving in the shadow pass).
       lod.addLevel(build(lod1, false), (entry.lodDistances[1] ?? 45) + slack * 0.5);
+      // Optional billboard level (e.g. trees: crossed cards) for the far field.
+      if (lod2) lod.addLevel(build(lod2, false), (entry.lodDistances[2] ?? 140) + slack);
       lod.addLevel(new THREE.Object3D(), (options.cullDistance ?? 200) + slack);
       group.add(lod);
       for (const p of list) options.collider?.(p, entry.targetHeight * (p.scale ?? 1));
@@ -147,7 +153,9 @@ export class AssetLibrary {
         gltf.scene.traverse((o) => {
           const mesh = o as THREE.Mesh;
           if (!mesh.isMesh) return;
-          const geometry = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+          // Meshopt/quantized GLBs store positions as normalized int16 with the scale in the node
+          // matrix: de-quantize to float first, otherwise applyMatrix4 clamps everything to ±1.
+          const geometry = dequantize(mesh.geometry.clone()).applyMatrix4(mesh.matrixWorld);
           const material = mesh.material as THREE.Material;
           // Lamp bulbs / lantern glass glow at night.
           if (/bulb|lantern|lamp.*glass|light_glass/i.test(material.name) && (material as THREE.MeshStandardMaterial).isMeshStandardMaterial) registerBulb(material as THREE.MeshStandardMaterial);
@@ -167,4 +175,18 @@ export class AssetLibrary {
     }
     return p;
   }
+}
+
+/** Converts normalized / integer vertex attributes to Float32 so transforms can be baked in. */
+function dequantize(geo: THREE.BufferGeometry): THREE.BufferGeometry {
+  for (const name of Object.keys(geo.attributes)) {
+    const attr = geo.getAttribute(name) as THREE.BufferAttribute | THREE.InterleavedBufferAttribute;
+    if (attr.array instanceof Float32Array && !attr.normalized && !(attr as THREE.InterleavedBufferAttribute).isInterleavedBufferAttribute) continue;
+    const out = new Float32Array(attr.count * attr.itemSize);
+    for (let i = 0; i < attr.count; i++) {
+      for (let c = 0; c < attr.itemSize; c++) out[i * attr.itemSize + c] = attr.getComponent(i, c);
+    }
+    geo.setAttribute(name, new THREE.BufferAttribute(out, attr.itemSize));
+  }
+  return geo;
 }

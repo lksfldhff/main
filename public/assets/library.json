@@ -520,6 +520,146 @@
      ]
     }
    }
+  },
+  "tree_street_young": {
+   "id": "tree_street_young",
+   "category": "vegetation/tree",
+   "title": "Tree Small 02",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/tree_small_02",
+   "author": "Rico Cilliers",
+   "license": "CC0",
+   "attribution": "Tree Small 02 by Rico Cilliers (https://polyhaven.com/a/tree_small_02), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 9.0,
+   "lodDistances": [
+    0,
+    45,
+    140
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/tree_street_young/lod0.glb",
+     "bytes": 875828,
+     "triangles": 18999,
+     "bounds": [
+      [
+       -1.3455969577349767,
+       0,
+       -1.4139000571461313
+      ],
+      [
+       1.6294025664843663,
+       4.630084991455078,
+       2.908708969423353
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/tree_street_young/lod1.glb",
+     "bytes": 203328,
+     "triangles": 1999,
+     "bounds": [
+      [
+       -1.3961017121909816,
+       0,
+       -1.3923870212180383
+      ],
+      [
+       1.6507551660178859,
+       4.638804912567139,
+       2.9298686868293053
+      ]
+     ]
+    },
+    "lod2": {
+     "file": "models/tree_street_young/lod2.glb",
+     "bytes": 37536,
+     "triangles": 16,
+     "bounds": [
+      [
+       -2.995267629623413,
+       -0.00023419748537323315,
+       -2.995267629623413
+      ],
+      [
+       2.995267629623413,
+       4.5569749582885954,
+       2.995267629623413
+      ]
+     ]
+    }
+   }
+  },
+  "tree_park_old": {
+   "id": "tree_park_old",
+   "category": "vegetation/tree",
+   "title": "Island Tree 01",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/island_tree_01",
+   "author": "Rob Tuytel, Rico Cilliers",
+   "license": "CC0",
+   "attribution": "Island Tree 01 by Rob Tuytel, Rico Cilliers (https://polyhaven.com/a/island_tree_01), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 11.0,
+   "lodDistances": [
+    0,
+    45,
+    140
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/tree_park_old/lod0.glb",
+     "bytes": 836192,
+     "triangles": 18898,
+     "bounds": [
+      [
+       -2.4250010410110283,
+       0,
+       -2.5913851479897256
+      ],
+      [
+       2.340628282145672,
+       5.017362594604492,
+       2.211606047571635
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/tree_park_old/lod1.glb",
+     "bytes": 158940,
+     "triangles": 2300,
+     "bounds": [
+      [
+       -2.4404856162770177,
+       0,
+       -2.5899647573354128
+      ],
+      [
+       2.391188283513346,
+       5.022347450256348,
+       2.2392567495229128
+      ]
+     ]
+    },
+    "lod2": {
+     "file": "models/tree_park_old/lod2.glb",
+     "bytes": 56648,
+     "triangles": 16,
+     "bounds": [
+      [
+       -2.87176775932312,
+       -0.00011416559460641906,
+       -2.87176775932312
+      ],
+      [
+       2.87176775932312,
+       5.027560912420778,
+       2.87176775932312
+      ]
+     ]
+    }
+   }
   }
  },
  "generated": "2026-11-26"
