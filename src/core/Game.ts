@@ -160,7 +160,7 @@ export class Game {
     const { followCam, player, world } = this.runtime;
     followCam.snapTo(player.feetPosition, world.district.spawnYaw);
     this.enterPlaying();
-    this.ui.hud.notify(world.district.name, 'Willkommen! Erkunde die Stadt – oder steig in ein Auto (E). Ein roter Sportwagen parkt ganz in der Nähe.');
+    this.ui.hud.notify(world.district.name, 'Willkommen! Erkunde die Stadt – oder steig in ein Auto (E). Ein SUV und ein roter Sportwagen parken ganz in der Nähe.');
   }
 
   private resume(): void {

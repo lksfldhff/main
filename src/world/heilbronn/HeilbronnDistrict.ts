@@ -202,9 +202,15 @@ function findParkingSpots(data: HeilbronnData, terrain: Terrain, spawn: THREE.Ve
   }
   // Starter car closest to the spawn point.
   spots.sort((a, bb) => a.position.distanceTo(spawn) - bb.position.distanceTo(spawn));
+  // Starter cars next to the spawn: the City SUV (falls back to the procedural SUV when the
+  // user-licensed model is not installed) and the red sports car.
   if (spots[0]) {
-    spots[0].type = 'sport';
-    spots[0].paint = '#b3121b';
+    spots[0].type = 'suv_model';
+    spots[0].paint = '#1d3557';
+  }
+  if (spots[1]) {
+    spots[1].type = 'sport';
+    spots[1].paint = '#b3121b';
   }
   return spots.slice(0, 70);
 }

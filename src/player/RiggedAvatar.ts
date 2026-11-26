@@ -5,6 +5,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { CONFIG } from '../core/config';
 import type { Avatar } from './Avatar';
+import { loadGltf } from '../assets/loadGltf';
 
 type ClipName = 'idle' | 'walk' | 'run' | 'sprint' | 'jump' | 'fall' | 'land' | 'drive' | 'sit';
 
@@ -72,7 +73,8 @@ export class RiggedAvatar implements Avatar {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.castShadow = true;
-      mesh.receiveShadow = true;
+      // Detailed/scanned skinned meshes show heavy self-shadow acne with the scene's shadow bias.
+      mesh.receiveShadow = false;
       mesh.frustumCulled = false; // skinned bounds are unreliable
       meshes.push(mesh);
       for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) restyleMixamo(m);
@@ -102,7 +104,7 @@ export class RiggedAvatar implements Avatar {
   /** Tries to load a rigged player model; resolves to null when none is installed. */
   static async load(baseUrl: string): Promise<RiggedAvatar | null> {
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-    const glb = await tryLoad(() => loader.loadAsync(`${baseUrl}/player.glb`));
+    const glb = await tryLoad(() => loadGltf(loader, `${baseUrl}/player.glb`));
     if (glb) {
       const clips = pickClips(glb.animations);
       if (!clips.has('idle') && glb.animations[0]) clips.set('idle', glb.animations[0]);

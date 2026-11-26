@@ -53,6 +53,7 @@ export class VehicleManager {
     // the nearest car without a fixed type becomes the detailed City SUV, so it is easy to find.
     let type = s.type;
     let paint = s.paint;
+    if (type === 'suv_model') this.featuredPlaced = true; // district already placed one
     if (!type && !this.featuredPlaced) {
       this.featuredPlaced = true;
       type = 'suv_model';

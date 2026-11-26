@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { loadGltf } from './loadGltf';
 
 /** Instances are grouped into square cells of this size (frustum culling + LOD per cell). */
 const CELL = 100;
@@ -136,7 +137,7 @@ export class AssetLibrary {
     let p = this.cache.get(key);
     if (!p) {
       const info = entry.lods[lod] ?? entry.lods.lod0;
-      p = this.loader.loadAsync(`${this.baseUrl}assets/${info.file}`).then((gltf) => {
+      p = loadGltf(this.loader, `${this.baseUrl}assets/${info.file}`).then((gltf) => {
         this.stats.assetsLoaded++;
         this.stats.bytesLoaded += info.bytes;
         // One part per material: merge all primitives that share it (fewer draw calls).
@@ -151,7 +152,9 @@ export class AssetLibrary {
         });
         const parts: LoadedLod['parts'] = [];
         for (const [material, geos] of byMaterial) {
-          const merged = geos.length > 1 ? mergeGeometries(geos) : geos[0];
+          // Only merge primitives with identical attribute sets (mergeGeometries would log an error).
+          const sig = (g: THREE.BufferGeometry) => Object.keys(g.attributes).sort().join(',') + (g.index ? ':i' : '');
+          const merged = geos.length > 1 && geos.every((g) => sig(g) === sig(geos[0])) ? mergeGeometries(geos) : geos.length === 1 ? geos[0] : null;
           if (merged) parts.push({ geometry: merged, material });
           else for (const g of geos) parts.push({ geometry: g, material });
         }

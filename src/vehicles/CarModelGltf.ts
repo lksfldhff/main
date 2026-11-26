@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import type { CarModel, CarSpec, CarType } from './CarModel';
+import { loadGltf } from '../assets/loadGltf';
 
 /**
  * Optional detailed car models (GLB, built by tools/assets/convert_vehicle.py). Not part of the
@@ -35,8 +36,7 @@ export function loadCarTemplate(type: CarType): Promise<CarTemplate | null> {
   let p = cache.get(url);
   if (!p) {
     loader ??= new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-    p = loader
-      .loadAsync(url)
+    p = loadGltf(loader, url)
       .then((gltf) => toTemplate(gltf.scene))
       .catch(() => null);
     cache.set(url, p);

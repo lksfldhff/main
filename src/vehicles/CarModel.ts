@@ -30,7 +30,7 @@ export const CAR_SPECS: Record<CarType, CarSpec> = {
   van: { type: 'van', length: 5.2, width: 1.98, belt: 1.15, roof: 2.15, wheelbase: 3.25, wheelRadius: 0.34, cabin: [0.02, 0.03, 0.8, 0.86], mass: 2300, enginePower: 8500, maxSpeed: 40 },
   taxi: { type: 'taxi', length: 4.85, width: 1.85, belt: 0.98, roof: 1.48, wheelbase: 2.9, wheelRadius: 0.33, cabin: [0.2, 0.32, 0.6, 0.74], mass: 1550, enginePower: 7500, maxSpeed: 50 },
   police: { type: 'police', length: 4.75, width: 1.84, belt: 1.0, roof: 1.5, wheelbase: 2.85, wheelRadius: 0.34, cabin: [0.06, 0.14, 0.6, 0.74], mass: 1600, enginePower: 9500, maxSpeed: 58 },
-  suv_model: { type: 'suv_model', length: 4.73, width: 1.87, belt: 1.05, roof: 1.62, wheelbase: 2.8, wheelRadius: 0.36, cabin: [0.05, 0.12, 0.62, 0.74], mass: 2000, enginePower: 9800, maxSpeed: 50, seat: [0.42, 0.68, -0.12] },
+  suv_model: { type: 'suv_model', length: 4.73, width: 1.87, belt: 1.05, roof: 1.62, wheelbase: 2.8, wheelRadius: 0.36, cabin: [0.05, 0.12, 0.62, 0.74], mass: 2000, enginePower: 9800, maxSpeed: 50, seat: [0.42, 0.68, 0.0] },
   sport: { type: 'sport', length: 4.5, width: 1.92, belt: 0.82, roof: 1.25, wheelbase: 2.65, wheelRadius: 0.35, cabin: [0.24, 0.36, 0.58, 0.72], mass: 1400, enginePower: 13000, maxSpeed: 70 },
 };
 
