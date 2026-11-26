@@ -126,7 +126,9 @@ export async function buildStreetFurniture(
 
   // --- Planters and modular seating on pedestrian squares (generated, clear of buildings/roads)
   const { planters, seating } = squareFurniture(data, ground, rng);
-  place('planter_box', planters, 0.45, 160, 'generated: planter on square');
+  if (place('planter_box', planters, 0.45, 160, 'generated: planter on square')) {
+    addInstanced(ctx, 'planterGreen', planterGreen(), planters.map((p) => p.position), planters.map((p) => p.yaw), true);
+  }
   place('street_seating', seating, 0, 160, 'generated: seating on square');
   for (const s of seating) ctx.physics.addStaticBox(s.position.clone().setY(s.position.y + 0.4), new THREE.Vector3(2.1, 0.4, 0.38), s.yaw);
 
@@ -372,6 +374,30 @@ function bikeStand(): { geo: THREE.BufferGeometry; mat: THREE.Material }[] {
   path.add(new THREE.LineCurve3(new THREE.Vector3(0.4, 0.8 - r, 0), new THREE.Vector3(0.4, 0, 0)));
   // Hoop stands across the kerb direction: rotate so its plane is the local YZ plane.
   return [{ geo: new THREE.TubeGeometry(path, 14, 0.024, 6).rotateY(Math.PI / 2), mat: steel }];
+}
+
+/** Boxwood and flowers filling a planter (planter_box scaled ×1.8 → ~0.76 m high, 1.64 × 0.74 m). */
+function planterGreen(): { geo: THREE.BufferGeometry; mat: THREE.Material }[] {
+  const rng = new Random(31);
+  const leaves: THREE.BufferGeometry[] = [];
+  const flowers: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < 5; i++) {
+    const g = new THREE.IcosahedronGeometry(0.26 + rng.next() * 0.08, 1);
+    const pos = g.getAttribute('position');
+    for (let k = 0; k < pos.count; k++) {
+      const f = 0.85 + rng.next() * 0.3;
+      pos.setXYZ(k, pos.getX(k) * f, pos.getY(k) * f * 0.8, pos.getZ(k) * f);
+    }
+    g.computeVertexNormals();
+    leaves.push(g.translate(-0.6 + i * 0.3, 0.78 + rng.next() * 0.05, (rng.next() - 0.5) * 0.25));
+  }
+  for (let i = 0; i < 14; i++) {
+    flowers.push(new THREE.SphereGeometry(0.045, 6, 4).translate(-0.7 + rng.next() * 1.4, 0.95 + rng.next() * 0.12, (rng.next() - 0.5) * 0.55));
+  }
+  return [
+    { geo: merge(leaves), mat: new THREE.MeshStandardMaterial({ color: 0x3f6b2e, roughness: 0.85, flatShading: true }) },
+    { geo: merge(flowers), mat: new THREE.MeshStandardMaterial({ color: 0xd8475a, roughness: 0.7 }) },
+  ];
 }
 
 function bollardModel(): { geo: THREE.BufferGeometry; mat: THREE.Material }[] {

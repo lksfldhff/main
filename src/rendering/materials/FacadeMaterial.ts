@@ -195,9 +195,17 @@ if (hasWindows) {
       fRough = mix(0.04, 0.7, curtain);
       fMetal = fGlass * (style == 3 ? 0.35 : 0.85);
       fNrmStrength = 0.0;
-      // Shop interiors and a few lit rooms
+      // Shop interiors (back wall, shelves, goods – much darker than the sunlit street) and a few lit rooms
       if (isShop) {
-        fEmissive = vec3(1.0, 0.86, 0.62) * 0.22 * (0.6 + 0.4 * rnd);
+        float y01 = clamp((lv - sill) / wh, 0.0, 1.0);
+        vec2 cellId = floor(vec2((u + rnd * 13.0) * 2.2, y01 * 4.0));
+        vec3 goods = mix(vec3(0.35), vec3(hash12(cellId), hash12(cellId + 3.1), hash12(cellId + 7.7)), 0.55) * 0.7 + 0.05;
+        vec3 interior = mix(mix(vec3(0.33, 0.3, 0.27), vec3(0.24, 0.27, 0.3), rnd), goods, step(0.35, hash12(cellId + rnd)) * step(0.15, y01) * step(y01, 0.85) * 0.8);
+        interior = mix(interior, vec3(0.55, 0.52, 0.48), step(0.82, fract(y01 * 4.0)) * step(0.15, y01));
+        col = interior * 0.12;
+        fMetal = 0.1;
+        fRough = 0.07;
+        fEmissive = interior * vec3(1.0, 0.9, 0.75) * (0.2 + 0.14 * rnd);
       } else if (rnd > 0.93) {
         fEmissive = vec3(1.0, 0.82, 0.55) * 0.12;
       }
@@ -249,6 +257,6 @@ normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);
       )
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += fEmissive;');
   };
-  material.customProgramCacheKey = () => 'facade-v5';
+  material.customProgramCacheKey = () => 'facade-v6';
   return material;
 }

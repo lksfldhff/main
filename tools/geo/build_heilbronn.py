@@ -432,6 +432,22 @@ def build_landuse(landuse, pedestrian=()):
     edge_src = np.isin(arr, [LANDUSE_URBAN, LANDUSE_PLAZA, LANDUSE_PATH, LANDUSE_GREEN, LANDUSE_NONE])
     dist = ndimage.distance_transform_edt(~edge_src) * cell
     arr[road & (dist <= 2.6)] = LANDUSE_SIDEWALK
+
+    # Remove carriageway slivers (< 3.5 m wide or < 60 m²) left between plaza/sidewalk polygons –
+    # they produced kerb zig-zags in pedestrian zones. Slivers take the nearest non-road class.
+    road = arr == LANDUSE_ROAD
+    r = int(round(1.75 / cell))
+    yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
+    disk = (xx * xx + yy * yy) <= r * r
+    wide = ndimage.binary_opening(road, structure=disk)
+    labels, n = ndimage.label(wide)
+    if n:
+        sizes = ndimage.sum(wide, labels, index=np.arange(1, n + 1)) * cell * cell
+        wide &= np.isin(labels, np.flatnonzero(sizes >= 60) + 1)
+    sliver = road & ~wide
+    if sliver.any():
+        _, (iy, ix) = ndimage.distance_transform_edt(road, return_indices=True)
+        arr[sliver] = arr[iy[sliver], ix[sliver]]
     return arr
 
 
