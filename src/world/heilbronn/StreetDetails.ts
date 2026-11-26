@@ -13,7 +13,13 @@ import { createCanvas } from '../../rendering/textures/CanvasUtils';
  * zebra crossings / signalised crossings, traffic lights, real trees, benches,
  * bus stops and the historic Rathaus clock.
  */
-export function buildStreetDetails(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): void {
+export function buildStreetDetails(
+  ctx: WorldContext,
+  data: HeilbronnData,
+  terrain: Terrain,
+  /** Parts now handled by StreetFurniture (glass shelters, library benches) are skipped here. */
+  options: { busStops?: boolean; benches?: boolean } = {},
+): void {
   const osm = data.meta.osm ?? {};
   const extra: number[] = [];
 
@@ -89,8 +95,8 @@ export function buildStreetDetails(ctx: WorldContext, data: HeilbronnData, terra
     const pz = z + right.y * off;
     props.place('signal', new THREE.Vector3(px, terrain.heightAt(px, pz), pz), Math.atan2(-d.x, -d.y));
   }
-  for (const [x, y, z] of osm.benches ?? []) props.place('bench', new THREE.Vector3(x, y, z), rng.range(0, Math.PI * 2));
-  for (const [x, , z] of osm.busStops ?? []) props.place('busStop', new THREE.Vector3(x, terrain.heightAt(x, z), z), rng.range(0, Math.PI * 2));
+  if (options.benches !== false) for (const [x, y, z] of osm.benches ?? []) props.place('bench', new THREE.Vector3(x, y, z), rng.range(0, Math.PI * 2));
+  if (options.busStops !== false) for (const [x, , z] of osm.busStops ?? []) props.place('busStop', new THREE.Vector3(x, terrain.heightAt(x, z), z), rng.range(0, Math.PI * 2));
   props.build(ctx);
 
   for (const [x, y, z] of osm.fountains ?? []) addFountain(ctx, x, y, z);

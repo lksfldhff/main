@@ -4,7 +4,11 @@ Ein eigenständiges 3D-Open-World-Spiel im Browser, gebaut auf **echten Geodaten
 Alle Modelle, Shader und UI-Elemente sind selbst erstellt. Fremde Spiel-Assets, Logos oder
 Sounds werden nicht verwendet.
 
-> **Stand: Phase 3 – Fahrzeuge & Datenabgleich.** Begehbare und befahrbare Innenstadt mit
+> **Neu: Fassaden-Baukasten, Straßenraum, Asset-Bibliothek, Szenen-QA** – 3D-Fenster, Türen an echten
+> Hausnummern, Balkone, Schornsteine, Bordsteine, Glas-Wartehallen, CC0-Stadtmöbel, Leistungsanzeige
+> und automatische Qualitätskontrolle. Details: [`docs/STAND_P2_P4.md`](docs/STAND_P2_P4.md).
+>
+> **Phase 3 – Fahrzeuge & Datenabgleich.** Begehbare und befahrbare Innenstadt mit
 > Autos, OSM-Details (Markierungen, Ampeln, Überwege, echte Bäume) und echten Dachfarben aus Luftbildern.
 >
 > Phase 2 – Echtes Heilbronn: Die Innenstadt mit Marktplatz, Rathaus,
@@ -18,6 +22,8 @@ Sounds werden nicht verwendet.
 
 - [`docs/ARCHITEKTUR_IST.md`](docs/ARCHITEKTUR_IST.md): Ist-Analyse mit Messwerten
 - [`docs/UMSETZUNGSPLAN.md`](docs/UMSETZUNGSPLAN.md): Zielarchitektur, Entscheidungen, Phasen, Migrationsstrategie
+- [`docs/STAND_P2_P4.md`](docs/STAND_P2_P4.md): Abnahmebericht Fassaden-Baukasten, Straßenraum, Asset-Bibliothek, Performance, QA
+- [`docs/qa/report.md`](docs/qa/report.md): automatischer Szenen-QA-Bericht je 200-m-Kartenausschnitt
 - [`docs/verification/`](docs/verification/): Kartenabgleich gegen das amtliche Luftbild
   - `report.json`: Messwerte
   - `index.html`: interaktive Karte

@@ -2,6 +2,8 @@
  * Facade/roof style tables. Style ids are assigned offline (tools/geo/build_heilbronn.py)
  * from the ALKIS building function, roof type and height; these tables define the look.
  */
+import facadeStyles from './facadeStyles.json';
+
 export const Style = {
   Altbau: 0,
   Postwar: 1,
@@ -33,39 +35,8 @@ export interface StyleTable {
   palette: string[][];
 }
 
-export const STYLES: StyleTable = {
-  //          Altbau Postwar Modern Glass Sandst Indust Small Brick Bridge Historic
-  wallLayer: [0, 0, 3, 3, 2, 4, 0, 1, 3, 0],
-  wallTile: [3.5, 3.5, 3, 3, 5.5, 2.5, 3.5, 2.2, 4, 3.5],
-  floorHeight: [3.3, 3.0, 3.6, 4.0, 11.0, 5.0, 3.0, 3.3, 3.0, 4.2],
-  groundHeight: [4.0, 3.8, 4.6, 5.0, 0.01, 5.0, 3.0, 4.0, 3.0, 4.8],
-  bayWidth: [2.9, 2.7, 1.8, 1.6, 5.0, 6.0, 3.0, 2.9, 3.0, 3.4],
-  window: [
-    [1.15, 1.65, 0.85],
-    [1.35, 1.45, 0.9],
-    [-0.14, 1.9, 0.85],
-    [-0.04, 3.0, 0.55],
-    [1.5, 6.0, 3.0],
-    [-1.2, 1.2, 3.0],
-    [0, 0, 0],
-    [1.15, 1.65, 0.85],
-    [0, 0, 0],
-    [1.2, 2.3, 1.0],
-  ],
-  frameDark: [0, 0, 1, 0, 1, 1, 0, 0, 0, 0],
-  palette: [
-    ['#efe4cc', '#e2c48f', '#ead9a4', '#dcb6a2', '#e9ece6', '#cfd8cc', '#e6cfa3', '#f1ebdf'],
-    ['#ebe7dd', '#dcd5c6', '#cfc8b8', '#e5d7bc', '#d9dcd8', '#e9e1cf', '#c7c0b0', '#efe9dc'],
-    ['#d4d2cc', '#c3c1bc', '#e2dfd8', '#b4b3b0', '#d8d3c8', '#c9ccc9', '#dedcd6', '#bdbab3'],
-    ['#f2f3f1', '#eceeed', '#f2f3f1', '#eceeed', '#f2f3f1', '#eceeed', '#f2f3f1', '#eceeed'],
-    ['#d79c84', '#cf927a', '#dba58e', '#c98a74', '#d79c84', '#cf927a', '#dba58e', '#c98a74'],
-    ['#c5ccd0', '#b6bcbc', '#9da8ae', '#c9c0ae', '#aeb7b2', '#c2c6c8', '#a7adb0', '#bdb7a8'],
-    ['#ddd8cd', '#cfc9bd', '#e3ded4', '#c4beb3', '#ddd8cd', '#cfc9bd', '#e3ded4', '#c4beb3'],
-    ['#ffffff', '#f2e8e2', '#e6dcd6', '#fff6ef', '#ffffff', '#f2e8e2', '#e6dcd6', '#fff6ef'],
-    ['#d0cec8', '#c7c5bf', '#d0cec8', '#c7c5bf', '#d0cec8', '#c7c5bf', '#d0cec8', '#c7c5bf'],
-    ['#f6e9d4', '#f1e2c8', '#f6e9d4', '#f1e2c8', '#f6e9d4', '#f1e2c8', '#f6e9d4', '#f1e2c8'],
-  ],
-};
+export const STYLES: StyleTable = facadeStyles as unknown as StyleTable;
+
 
 /** Shop fascia / awning accent colours. */
 export const SHOP_ACCENTS = ['#2f5d62', '#a33a2f', '#2b3a4a', '#d8a33a', '#5b3c5f', '#3f6b3a', '#1f1f1f', '#8a4b2a'];

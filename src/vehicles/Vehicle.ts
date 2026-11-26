@@ -115,6 +115,14 @@ export class Vehicle {
     return target.set(this.spec.width / 2 + 1.1, 0, 0.35).applyQuaternion(this.currRot).add(this.currPos);
   }
 
+  /** Driver hip point in model space (relative to `model.body`, ground at y = 0, forward +Z). */
+  driverSeat(target = new THREE.Vector3()): THREE.Vector3 {
+    const s = this.spec;
+    if (s.seat) return target.fromArray(s.seat);
+    const windshieldBase = -s.length / 2 + s.cabin[3] * s.length;
+    return target.set(s.width * 0.22, s.belt - 0.42, windshieldBase - 1.2);
+  }
+
   fixedUpdate(dt: number, input: DriveInput | null): void {
     this.prevPos.copy(this.currPos);
     this.prevRot.copy(this.currRot);

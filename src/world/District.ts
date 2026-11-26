@@ -15,6 +15,12 @@ export interface District {
   attribution?: string;
   /** Per-frame animation (water etc.). */
   update?(elapsed: number): void;
+  /** Camera-dependent streaming / LOD (facade modules etc.). */
+  updateView?(camera: THREE.Vector3): void;
+  /** Placement records for the automated visual QA (tools/qa/dump_scene.cjs). */
+  qa?(): unknown;
+  /** Extra lines for the performance monitor. */
+  stats?(): string;
   /** Human-readable location (street / square) for the HUD. */
   locate?(position: THREE.Vector3): string | null;
   /** Terrain height at (x, z), if the district has terrain. */

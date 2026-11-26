@@ -233,7 +233,8 @@ export class Game {
     this.driving = v;
     rt.vehicles.setActive(v);
     rt.player.setActive(false);
-    rt.avatar.object.visible = false;
+    // Rigged avatars sit in the driver seat (drive pose); others are hidden while driving.
+    if (!rt.avatar.sitIn?.(v.model.body, v.driverSeat())) rt.avatar.object.visible = false;
     rt.vehicleCam.reset(v.heading, v.position);
     this.ui.hud.speedometer.show(true);
     this.drivingTime = 0;
@@ -252,6 +253,7 @@ export class Game {
     const ground = rt.world.district.groundHeight?.(door.x, door.z) ?? v.position.y - 0.5;
     rt.player.teleport(door.x, Math.max(ground, v.position.y - 0.8) + 0.1, door.z);
     rt.player.setActive(true);
+    rt.avatar.standUp?.(this.scene);
     rt.avatar.object.visible = true;
     rt.vehicles.setActive(null);
     rt.followCam.snapTo(rt.player.feetPosition, v.heading + Math.PI);
@@ -338,6 +340,7 @@ export class Game {
       }
 
       world.district.update?.(this.elapsed);
+      world.district.updateView?.(this.camera.position);
       if (this.state === 'playing') {
         if (this.driving) {
           this.updateLocation(dt, this.driving.position);
@@ -368,7 +371,8 @@ export class Game {
       dt,
       this.renderer.renderer,
       rt?.player.feetPosition ?? this.camera.position,
-      `CPU        Sim ${this.simMs.toFixed(1)} ms · Render ${renderMs.toFixed(1)} ms\nKamera     ${rt?.followCam.debugInfo ?? '-'}\nZustand    ${this.state}${this.driving ? ` · Auto ${(this.driving.speed * 3.6).toFixed(0)} km/h` : ''}\n`,
+      `CPU        Sim ${this.simMs.toFixed(1)} ms · Render ${renderMs.toFixed(1)} ms\nKamera     ${rt?.followCam.debugInfo ?? '-'}\nZustand    ${this.state}${this.driving ? ` · Auto ${(this.driving.speed * 3.6).toFixed(0)} km/h` : ''}\n` +
+        (rt?.world.district.stats?.() ?? ''),
     );
     this.simMs = 0;
   };

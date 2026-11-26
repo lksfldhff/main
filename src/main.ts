@@ -22,7 +22,11 @@ if (!canvas || !uiRoot) {
 try {
   const game = new Game(canvas, uiRoot);
   void game.init();
-  if (import.meta.env.DEV) (window as unknown as { game: Game }).game = game;
+  if (import.meta.env.DEV) {
+    // Debug/profiling hooks for automated browser tests (dev server only).
+    (window as unknown as { game: Game }).game = game;
+    void import('three').then((three) => ((window as unknown as { __THREE: unknown }).__THREE = three));
+  }
 } catch (err) {
   console.error(err);
   showFatal('WebGL konnte nicht gestartet werden. Bitte einen aktuellen Desktop-Browser mit aktivierter Hardwarebeschleunigung verwenden.');

@@ -1,0 +1,639 @@
+{
+ "summary": {
+  "placements": 1696,
+  "models": {
+   "street_lamp_classic": 997,
+   "procedural:bike_hoop": 382,
+   "bench_wood": 135,
+   "procedural:bollard": 45,
+   "trash_can": 42,
+   "planter_box": 42,
+   "procedural:bus_stop_pole": 21,
+   "procedural:post_box": 16,
+   "procedural:glass_bus_shelter": 9,
+   "fire_hydrant": 3,
+   "street_seating": 2,
+   "procedural:advertising_column": 2
+  },
+  "facadeKit": {
+   "walls": 17255,
+   "kitWalls": 2487,
+   "blind": 4058,
+   "windows": 18464,
+   "shops": 3083,
+   "doors": 230,
+   "balconies": 1949,
+   "chimneys": 1248,
+   "partyWalls": 4058
+  },
+  "R6_blindWallsWithOpenings": 0,
+  "issues": {
+   "R1": 0,
+   "R2": 28,
+   "R3": 24,
+   "R4": 0,
+   "R5": 0,
+   "R7": 41
+  }
+ },
+ "sections": {
+  "-1,-2": [
+   {
+    "rule": "R2",
+    "x": -122.0,
+    "z": -398.0,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   }
+  ],
+  "-1,-3": [
+   {
+    "rule": "R2",
+    "x": -90.2,
+    "z": -573.5,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -45.0,
+    "z": -573.5,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -73.8,
+    "z": -459.2,
+    "text": "street_lamp_classic (generated: street lamp at kerb) steht in einem Gebäude"
+   }
+  ],
+  "-1,0": [
+   {
+    "rule": "R2",
+    "x": -73.3,
+    "z": 106.4,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -72.3,
+    "z": 106.4,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -71.3,
+    "z": 106.4,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R3",
+    "x": -134.8,
+    "z": 81.1,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": -134.8,
+    "z": 80.1,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R2",
+    "x": -169.0,
+    "z": 35.2,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -168.1,
+    "z": 35.8,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -167.2,
+    "z": 36.2,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -80.2,
+    "z": 2.2,
+    "text": "street_lamp_classic (generated: street lamp at kerb) steht in einem Gebäude"
+   }
+  ],
+  "-1,1": [
+   {
+    "rule": "R7",
+    "x": -189.0,
+    "z": 344.7,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -172.8,
+    "z": 343.5,
+    "text": "trash_can (amenity=waste_basket): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R2",
+    "x": -5.9,
+    "z": 297.2,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -5.4,
+    "z": 298.1,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -112.2,
+    "z": 315.2,
+    "text": "street_lamp_classic (generated: street lamp at kerb) steht in einem Gebäude"
+   }
+  ],
+  "-2,-1": [
+   {
+    "rule": "R2",
+    "x": -360.9,
+    "z": -42.5,
+    "text": "procedural:glass_bus_shelter (highway=bus_stop + shelter=yes) steht in einem Gebäude"
+   },
+   {
+    "rule": "R7",
+    "x": -363.7,
+    "z": -59.5,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -382.9,
+    "z": -63,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -371.2,
+    "z": -61.1,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R3",
+    "x": -380.5,
+    "z": -73.3,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R7",
+    "x": -360.1,
+    "z": -69.5,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -383.6,
+    "z": -63.0,
+    "text": "trash_can (amenity=waste_basket): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   }
+  ],
+  "-2,0": [
+   {
+    "rule": "R3",
+    "x": -332.9,
+    "z": 120.8,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": -357.5,
+    "z": 178.9,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": -363.4,
+    "z": 191.6,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": -353.4,
+    "z": 167.9,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": -364.2,
+    "z": 193.8,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   }
+  ],
+  "-2,1": [
+   {
+    "rule": "R7",
+    "x": -295.3,
+    "z": 238.4,
+    "text": "trash_can (amenity=waste_basket): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R2",
+    "x": -309.6,
+    "z": 251.7,
+    "text": "procedural:bollard (barrier=bollard) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": -367.4,
+    "z": 225.8,
+    "text": "procedural:bollard (barrier=bollard) steht in einem Gebäude"
+   }
+  ],
+  "-3,-1": [
+   {
+    "rule": "R7",
+    "x": -456.1,
+    "z": -146.5,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -457.7,
+    "z": -149.2,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -464.8,
+    "z": -143.6,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -465.5,
+    "z": -146.4,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -448.9,
+    "z": -149.4,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -450.2,
+    "z": -153.1,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -453.6,
+    "z": -160.8,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": -455.2,
+    "z": -163.8,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   }
+  ],
+  "-3,-3": [
+   {
+    "rule": "R2",
+    "x": -561.2,
+    "z": -549.8,
+    "text": "street_lamp_classic (generated: street lamp at kerb) steht in einem Gebäude"
+   }
+  ],
+  "-3,-4": [
+   {
+    "rule": "R2",
+    "x": -484.8,
+    "z": -606.2,
+    "text": "street_lamp_classic (generated: street lamp at kerb) steht in einem Gebäude"
+   }
+  ],
+  "0,-1": [
+   {
+    "rule": "R3",
+    "x": 56.3,
+    "z": -102.0,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R2",
+    "x": 130.6,
+    "z": -68.4,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   }
+  ],
+  "0,-3": [
+   {
+    "rule": "R2",
+    "x": 134.9,
+    "z": -464.0,
+    "text": "procedural:glass_bus_shelter (highway=bus_stop + shelter=yes) steht in einem Gebäude"
+   }
+  ],
+  "0,-4": [
+   {
+    "rule": "R7",
+    "x": 194.7,
+    "z": -771.4,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 194.5,
+    "z": -773.4,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R3",
+    "x": 196.1,
+    "z": -793.9,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": 196.5,
+    "z": -796.9,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   }
+  ],
+  "0,-5": [
+   {
+    "rule": "R3",
+    "x": 196.7,
+    "z": -801.3,
+    "text": "trash_can (amenity=waste_basket) steht auf der Fahrbahn"
+   }
+  ],
+  "0,1": [
+   {
+    "rule": "R7",
+    "x": 128.7,
+    "z": 267.5,
+    "text": "procedural:bus_stop_pole (highway=bus_stop): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 129.5,
+    "z": 276.0,
+    "text": "procedural:bus_stop_pole (highway=bus_stop): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 130.4,
+    "z": 302.5,
+    "text": "procedural:bus_stop_pole (highway=bus_stop): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 129.9,
+    "z": 284.6,
+    "text": "procedural:bus_stop_pole (highway=bus_stop): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 130.1,
+    "z": 293.8,
+    "text": "procedural:bus_stop_pole (highway=bus_stop): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 133.2,
+    "z": 308.8,
+    "text": "procedural:bus_stop_pole (highway=bus_stop): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 145.8,
+    "z": 378.1,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 147.1,
+    "z": 376.6,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 144.7,
+    "z": 376.2,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 136.3,
+    "z": 372.8,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 138.6,
+    "z": 362.9,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R3",
+    "x": 196.2,
+    "z": 207.3,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": 197.6,
+    "z": 205.3,
+    "text": "trash_can (amenity=waste_basket) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R2",
+    "x": 35.1,
+    "z": 340.6,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": 88.5,
+    "z": 357.7,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   },
+   {
+    "rule": "R2",
+    "x": 185.1,
+    "z": 240.6,
+    "text": "procedural:post_box (amenity=post_box) steht in einem Gebäude"
+   }
+  ],
+  "1,-1": [
+   {
+    "rule": "R7",
+    "x": 282.2,
+    "z": -86.9,
+    "text": "procedural:bus_stop_pole (highway=bus_stop): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R3",
+    "x": 278.5,
+    "z": -12.8,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R7",
+    "x": 278.2,
+    "z": -39.6,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R3",
+    "x": 284.6,
+    "z": -77.7,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R7",
+    "x": 282.8,
+    "z": -71.2,
+    "text": "trash_can (amenity=waste_basket): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 276.8,
+    "z": -32.5,
+    "text": "trash_can (amenity=waste_basket): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 279.6,
+    "z": -197.3,
+    "text": "fire_hydrant (emergency=fire_hydrant): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R3",
+    "x": 268.6,
+    "z": -146.9,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": 268.7,
+    "z": -147.9,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": 268.8,
+    "z": -148.9,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht auf der Fahrbahn"
+   }
+  ],
+  "1,-2": [
+   {
+    "rule": "R3",
+    "x": 320.6,
+    "z": -316.3,
+    "text": "procedural:bus_stop_pole (highway=bus_stop) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": 298.8,
+    "z": -317.0,
+    "text": "procedural:bus_stop_pole (highway=bus_stop) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R2",
+    "x": 231.2,
+    "z": -280.2,
+    "text": "street_lamp_classic (generated: street lamp at kerb) steht in einem Gebäude"
+   }
+  ],
+  "1,-3": [
+   {
+    "rule": "R7",
+    "x": 231.2,
+    "z": -471.7,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 234.3,
+    "z": -471.4,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 216.1,
+    "z": -473.4,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 249.1,
+    "z": -470.0,
+    "text": "bench_wood (amenity=bench): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 224.3,
+    "z": -472.4,
+    "text": "trash_can (amenity=waste_basket): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R7",
+    "x": 262.5,
+    "z": -468.5,
+    "text": "trash_can (amenity=waste_basket): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R2",
+    "x": 336.8,
+    "z": -567.8,
+    "text": "street_lamp_classic (generated: street lamp at kerb) steht in einem Gebäude"
+   }
+  ],
+  "1,0": [
+   {
+    "rule": "R7",
+    "x": 267.7,
+    "z": 0.9,
+    "text": "procedural:bus_stop_pole (highway=bus_stop): ganze Umgebung als Fahrbahn klassifiziert – Flächennutzung prüfen (Platz/Fußgängerzone/ZOB?)"
+   },
+   {
+    "rule": "R3",
+    "x": 204.1,
+    "z": 197.6,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R3",
+    "x": 202.7,
+    "z": 199.5,
+    "text": "trash_can (amenity=waste_basket) steht auf der Fahrbahn"
+   }
+  ],
+  "1,1": [
+   {
+    "rule": "R2",
+    "x": 210.7,
+    "z": 208.0,
+    "text": "procedural:glass_bus_shelter (highway=bus_stop + shelter=yes) steht in einem Gebäude"
+   },
+   {
+    "rule": "R3",
+    "x": 200.2,
+    "z": 202.6,
+    "text": "bench_wood (amenity=bench) steht auf der Fahrbahn"
+   },
+   {
+    "rule": "R2",
+    "x": 201.0,
+    "z": 246.0,
+    "text": "procedural:bike_hoop (amenity=bicycle_parking) steht in einem Gebäude"
+   }
+  ]
+ }
+}

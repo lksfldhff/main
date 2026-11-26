@@ -10,7 +10,12 @@ import { SHOP_ACCENTS, STYLES } from '../../world/heilbronn/BuildingStyles';
  * sills, recess shadows, shop fronts, plinths and floor bands, and gives glass a reflective
  * PBR response (sky reflections via the environment map) with a few lit interiors.
  */
-export function createFacadeMaterial(diffuse: THREE.DataArrayTexture, normal: THREE.DataArrayTexture): THREE.MeshStandardMaterial {
+export function createFacadeMaterial(
+  diffuse: THREE.DataArrayTexture,
+  normal: THREE.DataArrayTexture,
+  /** Distance up to which 3D facade modules (FacadeKit) replace painted openings on kit walls. */
+  kitDistance: { value: number } = { value: 0 },
+): THREE.MeshStandardMaterial {
   const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0, side: THREE.DoubleSide });
   // Closed LoD2 solids: render back faces into the shadow map → no self-shadowing acne on lit walls.
   material.shadowSide = THREE.BackSide;
@@ -27,13 +32,14 @@ export function createFacadeMaterial(diffuse: THREE.DataArrayTexture, normal: TH
     uFrameDark: { value: STYLES.frameDark },
     uPalette: { value: palette },
     uAccents: { value: SHOP_ACCENTS.map((c) => new THREE.Color(c)) },
+    uKitDist: kitDistance,
   };
 
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec4 facade;\nvarying vec3 vFacade;\nflat varying int vFacadeCode;\nvarying vec3 vWallNormalW;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFacade = facade.xyz;\nvFacadeCode = int(facade.w + 0.5);\nvWallNormalW = normalize(mat3(modelMatrix) * objectNormal);');
+      .replace('#include <common>', '#include <common>\nattribute vec4 facade;\nvarying vec3 vFacade;\nflat varying int vFacadeCode;\nvarying vec3 vWallNormalW;\nvarying vec3 vFacadeWorld;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFacade = facade.xyz;\nvFacadeCode = int(facade.w + 0.5);\nvWallNormalW = normalize(mat3(modelMatrix) * objectNormal);\nvFacadeWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;');
 
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -51,6 +57,8 @@ uniform vec3 uWindow[10];
 uniform float uFrameDark[10];
 uniform vec3 uPalette[80];
 uniform vec3 uAccents[8];
+uniform float uKitDist;
+varying vec3 vFacadeWorld;
 varying vec3 vFacade;
 flat varying int vFacadeCode;
 varying vec3 vWallNormalW;
@@ -73,6 +81,8 @@ int style = min(vFacadeCode & 15, 9);
 float shop = float((vFacadeCode >> 4) & 1);
 float variant = float((vFacadeCode >> 5) & 255);
 int wallMat = (vFacadeCode >> 13) & 7; // OSM building:material override
+bool blindWall = ((vFacadeCode >> 16) & 1) == 1; // party / fire wall: no openings
+bool kitWall = ((vFacadeCode >> 17) & 1) == 1;   // 3D modules exist for every opening
 float u = vFacade.x;
 float h = vFacade.y;
 float wallLen = vFacade.z;
@@ -101,7 +111,7 @@ col *= mix(0.82, 1.0, smoothstep(0.0, 1.6, h));
 vec3 win = uWindow[style];
 float groundH = uGroundH[style];
 float floorH = uFloorH[style];
-bool hasWindows = win.y > 0.0 && wallLen > 1.6;
+bool hasWindows = win.y > 0.0 && wallLen > 1.6 && !blindWall;
 // Pixel footprint in metres: fade procedural detail to its average when it gets sub-pixel (prevents shimmering).
 float footprint = max(length(vec2(dFdx(u), dFdy(u))), length(vec2(dFdx(h), dFdy(h))));
 float detailFade = smoothstep(0.06, 0.22, footprint);
@@ -153,6 +163,9 @@ if (hasWindows) {
   bool inside = dx < 0.0 && dy < 0.0;
   vec3 frameCol = uFrameDark[style] > 0.5 ? vec3(0.16, 0.18, 0.2) : vec3(0.93, 0.92, 0.89);
 
+  // Near the camera, 3D modules (reveal, frame, glass, sill) take over: cut the opening.
+  // Hole radius is 4 m smaller than the module radius, so a module always fills the hole.
+  if (inside && kitWall && distance(vFacadeWorld, cameraPosition) < uKitDist - 4.0) discard;
   if (inside) {
     bool onFrame = dx > -frame || dy > -frame;
     // Mullions / transoms
@@ -236,6 +249,6 @@ normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);
       )
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += fEmissive;');
   };
-  material.customProgramCacheKey = () => 'facade-v4';
+  material.customProgramCacheKey = () => 'facade-v5';
   return material;
 }

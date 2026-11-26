@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-export type CarType = 'sedan' | 'hatch' | 'suv' | 'van' | 'taxi' | 'police' | 'sport';
+/** 'suv_model' uses the detailed GLB model (public/models/vehicles/city_suv.glb) when it is installed. */
+export type CarType = 'sedan' | 'hatch' | 'suv' | 'van' | 'taxi' | 'police' | 'sport' | 'suv_model';
 
 export interface CarSpec {
   type: CarType;
@@ -17,6 +19,8 @@ export interface CarSpec {
   mass: number;
   enginePower: number;
   maxSpeed: number;
+  /** Driver hip point in model space (x left, y up, z forward); derived from the cabin when absent. */
+  seat?: [number, number, number];
 }
 
 export const CAR_SPECS: Record<CarType, CarSpec> = {
@@ -26,6 +30,7 @@ export const CAR_SPECS: Record<CarType, CarSpec> = {
   van: { type: 'van', length: 5.2, width: 1.98, belt: 1.15, roof: 2.15, wheelbase: 3.25, wheelRadius: 0.34, cabin: [0.02, 0.03, 0.8, 0.86], mass: 2300, enginePower: 8500, maxSpeed: 40 },
   taxi: { type: 'taxi', length: 4.85, width: 1.85, belt: 0.98, roof: 1.48, wheelbase: 2.9, wheelRadius: 0.33, cabin: [0.2, 0.32, 0.6, 0.74], mass: 1550, enginePower: 7500, maxSpeed: 50 },
   police: { type: 'police', length: 4.75, width: 1.84, belt: 1.0, roof: 1.5, wheelbase: 2.85, wheelRadius: 0.34, cabin: [0.06, 0.14, 0.6, 0.74], mass: 1600, enginePower: 9500, maxSpeed: 58 },
+  suv_model: { type: 'suv_model', length: 4.73, width: 1.87, belt: 1.05, roof: 1.62, wheelbase: 2.8, wheelRadius: 0.36, cabin: [0.05, 0.12, 0.62, 0.74], mass: 2000, enginePower: 9800, maxSpeed: 50, seat: [0.42, 0.68, -0.12] },
   sport: { type: 'sport', length: 4.5, width: 1.92, belt: 0.82, roof: 1.25, wheelbase: 2.65, wheelRadius: 0.35, cabin: [0.24, 0.36, 0.58, 0.72], mass: 1400, enginePower: 13000, maxSpeed: 70 },
 };
 
@@ -41,28 +46,67 @@ export interface CarModel {
 }
 
 const shared = {
-  glass: new THREE.MeshPhysicalMaterial({ color: 0x141b20, metalness: 0.1, roughness: 0.05, clearcoat: 1, transparent: false }),
-  trim: new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.55, metalness: 0.1 }),
-  chrome: new THREE.MeshStandardMaterial({ color: 0xd8dbe0, roughness: 0.18, metalness: 1 }),
-  tire: new THREE.MeshStandardMaterial({ color: 0x18191b, roughness: 0.9 }),
-  rim: new THREE.MeshStandardMaterial({ color: 0xb8bcc2, roughness: 0.3, metalness: 0.9 }),
-  head: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2d6, emissiveIntensity: 0.6, roughness: 0.1 }),
-  plate: new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 }),
+  glass: new THREE.MeshPhysicalMaterial({ name: 'glass', color: 0x141b20, metalness: 0.1, roughness: 0.05, clearcoat: 1, transparent: false }),
+  trim: new THREE.MeshStandardMaterial({ name: 'trim', color: 0x15171a, roughness: 0.55, metalness: 0.1 }),
+  chrome: new THREE.MeshStandardMaterial({ name: 'chrome', color: 0xd8dbe0, roughness: 0.18, metalness: 1 }),
+  tire: new THREE.MeshStandardMaterial({ name: 'tire', color: 0x18191b, roughness: 0.9 }),
+  rim: new THREE.MeshStandardMaterial({ name: 'rim', color: 0xb8bcc2, roughness: 0.3, metalness: 0.9 }),
+  head: new THREE.MeshStandardMaterial({ name: 'headlight', color: 0xffffff, emissive: 0xfff2d6, emissiveIntensity: 0.6, roughness: 0.1 }),
+  plate: new THREE.MeshStandardMaterial({ name: 'plate', color: 0xf2f2ee, roughness: 0.5 }),
 };
+
+/**
+ * Merges all meshes directly below `group` that share a material into one mesh per material
+ * (draw-call reduction: a procedural car is built from ~40 primitives). Runtime material changes
+ * (brake lights, beacon, paint) keep working because the material objects are kept.
+ */
+export function mergeByMaterial(group: THREE.Object3D, prefix: string): void {
+  const buckets = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  let shadow = false;
+  for (const child of [...group.children]) {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh || Array.isArray(mesh.material)) continue;
+    mesh.updateMatrix();
+    const g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+    g.applyMatrix4(mesh.matrix);
+    // Untextured materials: position + normal are all that is needed (also makes attributes uniform).
+    for (const key of Object.keys(g.attributes)) if (key !== 'position' && key !== 'normal') g.deleteAttribute(key);
+    g.clearGroups();
+    const list = buckets.get(mesh.material) ?? [];
+    list.push(g);
+    buckets.set(mesh.material, list);
+    shadow ||= mesh.castShadow;
+    group.remove(mesh);
+    mesh.geometry.dispose();
+  }
+  for (const [material, geos] of buckets) {
+    const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
+    if (geos.length > 1) for (const g of geos) g.dispose();
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, material);
+    mesh.name = `${prefix}:${material.name || 'part'}`;
+    mesh.castShadow = shadow;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+}
 
 /** Builds a procedural, realistically proportioned car facing +Z, wheels on y = 0. */
 export function createCarModel(spec: CarSpec, paintHex: string): CarModel {
   const { length: L, width: W, belt, roof, wheelbase, wheelRadius: R } = spec;
   const paint = new THREE.MeshPhysicalMaterial({
+    name: 'paint',
     color: paintHex,
     metalness: 0.55,
     roughness: 0.34,
     clearcoat: 1,
     clearcoatRoughness: 0.06,
   });
-  const brakeLights = new THREE.MeshStandardMaterial({ color: 0x8a0c0c, emissive: 0xff1a0a, emissiveIntensity: 0.25, roughness: 0.2 });
+  const brakeLights = new THREE.MeshStandardMaterial({ name: 'taillight', color: 0x8a0c0c, emissive: 0xff1a0a, emissiveIntensity: 0.25, roughness: 0.2 });
   const root = new THREE.Group();
+  root.name = `vehicle:${spec.type}`;
   const body = new THREE.Group();
+  body.name = 'body';
   root.add(body);
 
   const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 0) => {
@@ -149,12 +193,12 @@ export function createCarModel(spec: CarSpec, paintHex: string): CarModel {
   // --- Type specific
   let beacon: THREE.MeshStandardMaterial | undefined;
   if (spec.type === 'taxi') {
-    const sign = new THREE.MeshStandardMaterial({ color: 0xf6d34a, emissive: 0xffd34a, emissiveIntensity: 0.35, roughness: 0.4 });
+    const sign = new THREE.MeshStandardMaterial({ name: 'taxi_sign', color: 0xf6d34a, emissive: 0xffd34a, emissiveIntensity: 0.35, roughness: 0.4 });
     add(new THREE.BoxGeometry(0.5, 0.14, 0.2), sign, 0, roof + 0.1, (c1 + c2) / 2);
   } else if (spec.type === 'police') {
-    const blue = new THREE.MeshStandardMaterial({ color: 0x1f4fa8, roughness: 0.35, metalness: 0.2 });
+    const blue = new THREE.MeshStandardMaterial({ name: 'police_stripe', color: 0x1f4fa8, roughness: 0.35, metalness: 0.2 });
     for (const side of [-1, 1]) add(new THREE.BoxGeometry(0.02, 0.18, L * 0.78), blue, side * (W / 2 + 0.075), clear + 0.35, 0);
-    beacon = new THREE.MeshStandardMaterial({ color: 0x1847ff, emissive: 0x2255ff, emissiveIntensity: 1.5, roughness: 0.2 });
+    beacon = new THREE.MeshStandardMaterial({ name: 'beacon', color: 0x1847ff, emissive: 0x2255ff, emissiveIntensity: 1.5, roughness: 0.2 });
     add(new THREE.BoxGeometry(0.9, 0.1, 0.24), beacon, 0, roof + 0.08, (c1 + c2) / 2);
   } else if (spec.type === 'sport') {
     add(new THREE.BoxGeometry(W * 0.8, 0.04, 0.24), paint, 0, belt + 0.12, zr + 0.18);
@@ -184,7 +228,7 @@ export function createCarModel(spec: CarSpec, paintHex: string): CarModel {
     for (const [geo, mat] of [
       [tireGeo, shared.tire],
       [rimGeo, shared.rim],
-      [hubGeo, shared.chrome],
+      [hubGeo, shared.rim],
     ] as const) {
       const m = new THREE.Mesh(geo, mat);
       m.castShadow = true;
@@ -195,9 +239,16 @@ export function createCarModel(spec: CarSpec, paintHex: string): CarModel {
       s.rotation.x = (k / 3) * Math.PI;
       spin.add(s);
     }
+    mergeByMaterial(spin, 'wheel');
+    pivot.name = ['wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'][wheels.length];
     root.add(pivot);
     wheels.push(pivot);
   }
+  mergeByMaterial(body, 'body');
+  tireGeo.dispose();
+  rimGeo.dispose();
+  hubGeo.dispose();
+  spokeGeo.dispose();
 
   return { root, body, wheels, brakeLights, beacon };
 }

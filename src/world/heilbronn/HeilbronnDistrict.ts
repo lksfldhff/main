@@ -16,6 +16,9 @@ import { buildStreetDetails } from './StreetDetails';
 import * as Models from '../props/PropModels';
 import { Random } from '../../utils/random';
 import type { VehicleSpawn } from '../../vehicles/VehicleManager';
+import { FacadeKit } from './FacadeKit';
+import { AssetLibrary, type Placement } from '../../assets/AssetLibrary';
+import { buildStreetFurniture, createCoverTest, placeLibraryLamps, type QaPlacement } from './StreetFurniture';
 
 /**
  * The real Heilbronn city centre (Marktplatz, Kilianskirche, Neckar, Experimenta)
@@ -28,8 +31,10 @@ export async function buildHeilbronnDistrict(
 ): Promise<District> {
   const base = `${import.meta.env.BASE_URL}data/heilbronn`;
   const anisotropy = ctx.materials.anisotropy;
-  const [data, groundDiff, groundNrm, wallDiff, wallNrm, roofDiff, roofNrm] = await Promise.all([
+  const assets = new AssetLibrary(import.meta.env.BASE_URL);
+  const [data, , groundDiff, groundNrm, wallDiff, wallNrm, roofDiff, roofNrm] = await Promise.all([
     loadHeilbronnData(base, onProgress),
+    assets.init(),
     loadTextureArray(textureUrls(GROUND_TEXTURES, 'diff'), textureSize, { srgb: true, anisotropy }),
     loadTextureArray(textureUrls(GROUND_TEXTURES, 'nrm'), textureSize / 2, { srgb: false, anisotropy }),
     loadTextureArray(textureUrls(WALL_TEXTURES, 'diff'), textureSize, { srgb: true, anisotropy }),
@@ -63,8 +68,11 @@ export async function buildHeilbronnDistrict(
   const terrain = new Terrain(meta, data.heights, terrainMaterial, ctx.physics);
   ctx.root.add(terrain.group);
 
-  // --- Buildings
-  const facade = createFacadeMaterial(wallDiff, wallNrm);
+  // --- Buildings: LoD2 shells with painted facades + 3D facade modules near the camera
+  const kit = new FacadeKit(meta, data.kit);
+  kit.setDistance(textureSize >= 2048 ? 150 : 110);
+  ctx.root.add(kit.group);
+  const facade = createFacadeMaterial(wallDiff, wallNrm, kit.distance);
   const roof = createRoofMaterial(roofDiff, roofNrm);
   ctx.root.add(buildBuildingMeshes(meta, data.buildings, facade, roof, ctx.physics));
 
@@ -72,9 +80,18 @@ export async function buildHeilbronnDistrict(
   const water = createWaterMaterial();
   const waterLevel = addWater(ctx, data, water.material);
 
-  // --- Props: OSM street details + generated park trees and lamps
-  buildStreetDetails(ctx, data, terrain);
-  placeProps(ctx, data, terrain);
+  // --- Props: OSM street details, street furniture (library models / procedural), trees and lamps
+  onProgress?.('Stadtmöbel …');
+  buildStreetDetails(ctx, data, terrain, { busStops: false, benches: !assets.has('bench_wood') });
+  const covered = createCoverTest(ctx, (x, z) => terrain.heightAt(x, z));
+  const lamps = placeProps(ctx, data, terrain).filter((l) => !covered(l.position.x, l.position.z));
+  const lampQa: QaPlacement[] = [];
+  const [furniture, libraryLamps] = await Promise.all([
+    buildStreetFurniture(ctx, data, terrain, assets),
+    placeLibraryLamps(ctx, assets, lamps.map((l) => ({ ...l, scale: 0.85 })), lampQa),
+  ]);
+  furniture.placements.push(...lampQa);
+  if (!libraryLamps) placeProceduralLamps(ctx, lamps);
 
   const landuseAt = (x: number, z: number): number => {
     const px = Math.floor((x - meta.bounds.minX) / meta.landuse.cell);
@@ -98,6 +115,12 @@ export async function buildHeilbronnDistrict(
     attribution: meta.attribution,
     vehicleSpawns,
     update: (t) => water.update(t),
+    updateView: (camera) => kit.update(camera),
+    qa: () => ({ placements: furniture.placements, facadeKit: meta.kit?.stats ?? {}, assets: assets.credits() }),
+    stats: () =>
+      `Fassaden   ${kit.instanceCount} Module (bis ${kit.distance.value} m)\n` +
+      `Assets     ${assets.stats.assetsLoaded} GLB · ${(assets.stats.bytesLoaded / 1e6).toFixed(1)} MB · ${assets.stats.instances} Instanzen\n` +
+      `Möbel      ${Object.entries(furniture.counts).filter(([k]) => k !== 'kerbTriangles').map(([k, v]) => `${k} ${v}`).join(', ')}\n`,
     locate: createLocator(data),
     groundHeight: (x, z) => terrain.heightAt(x, z),
     isInDeepWater: (p) => waterLevel !== null && landuseAt(p.x, p.z) === LandUse.Water && p.y < waterLevel - 1.1,
@@ -207,8 +230,18 @@ function createLocator(data: HeilbronnData): (p: THREE.Vector3) => string | null
   };
 }
 
-/** Trees in parks and green strips, street lamps along sidewalks. */
-function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): void {
+function placeProceduralLamps(ctx: WorldContext, lamps: Placement[]): void {
+  const m = ctx.materials;
+  const props = new PropInstancer();
+  props.define('lamp', Models.streetLamp(), [m.color('#2e3437', 0.45, 0.6), m.color('#fff4da', 0.3)], (pos, scale) =>
+    ctx.physics.addStaticCylinder(pos.clone().setY(pos.y + 2.8 * scale), 2.8 * scale, 0.13 * scale),
+  );
+  for (const l of lamps) props.place('lamp', l.position, l.yaw);
+  props.build(ctx);
+}
+
+/** Trees in parks and green strips; returns street lamp positions along sidewalks. */
+function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): Placement[] {
   const { meta, landuse } = data;
   const m = ctx.materials;
   const rng = new Random(4242);
@@ -216,7 +249,6 @@ function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): v
   const cyl = (height: number, radius: number) => (pos: THREE.Vector3, scale: number) =>
     ctx.physics.addStaticCylinder(pos.clone().setY(pos.y + (height * scale) / 2), (height * scale) / 2, radius * scale);
   props.define('tree', Models.tree(7), [m.color('#5b4636', 0.9), m.color('#5d8a3c', 0.85)], cyl(3.2, 0.25));
-  props.define('lamp', Models.streetLamp(), [m.color('#2e3437', 0.45, 0.6), m.color('#fff4da', 0.3)], cyl(5.6, 0.13));
 
   const W = meta.landuse.width;
   const H = meta.landuse.height;
@@ -241,6 +273,7 @@ function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): v
   }
 
   // Street lamps: one per 26 m cell on a sidewalk pixel that borders the road, arm towards the road.
+  const lamps: Placement[] = [];
   const lampStep = Math.round(26 / cell);
   const look = Math.round(3 / cell);
   for (let gz = 0; gz < H; gz += lampStep) {
@@ -256,7 +289,7 @@ function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): v
           if (at(px + dx * look, pz + dz * look) === LandUse.Road && at(px - dx * 2, pz - dz * 2) !== LandUse.Road) {
             const p = toWorld(px, pz);
             p.y = terrain.heightAt(p.x, p.z);
-            props.place('lamp', p, Math.atan2(dx, dz));
+            lamps.push({ position: p, yaw: Math.atan2(dx, dz) });
             placed = true;
             break;
           }
@@ -265,4 +298,5 @@ function placeProps(ctx: WorldContext, data: HeilbronnData, terrain: Terrain): v
     }
   }
   props.build(ctx);
+  return lamps;
 }

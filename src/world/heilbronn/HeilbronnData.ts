@@ -36,7 +36,15 @@ export interface OsmPoints {
   /** x, y, z, dirX, dirZ, road width */
   signals?: [number, number, number, number, number, number][];
   benches?: [number, number, number][];
-  busStops?: [number, number, number][];
+  /** x, y, z, shelter (OSM shelter=yes), bench */
+  busStops?: [number, number, number, number?, number?][];
+  wasteBaskets?: [number, number, number][];
+  postBoxes?: [number, number, number][];
+  /** x, y, z, capacity */
+  bicycleParking?: [number, number, number, number][];
+  bollards?: [number, number, number][];
+  hydrants?: [number, number, number][];
+  adColumns?: [number, number, number][];
   fountains?: [number, number, number][];
   clocks?: { name: string; x: number; y: number; z: number; nx: number; nz: number }[];
 }
@@ -50,6 +58,10 @@ export interface HeilbronnMeta {
   landuse: { width: number; height: number; cell: number };
   water: { vertices: number };
   markings?: { vertices: number; stride: number };
+  /** Kerbstone triangles (x, y, z) along road/walkway boundaries. */
+  kerbs?: { vertices: number };
+  /** Facade-kit module instances per chunk (x, y, z, nx, nz, w, h, type, rand, rgb). */
+  kit?: { stride: number; chunks: { cx: number; cz: number; offset: number; count: number }[]; stats: Record<string, number> };
   osm?: OsmPoints;
   buildings: { count: number; chunkSize: number; wallStride: number; roofStride: number; chunks: BuildingChunk[] };
   pois: Poi[];
@@ -66,6 +78,8 @@ export interface HeilbronnData {
   markings: Float32Array;
   /** Land-use class per pixel, row 0 = north. */
   landuse: Uint8Array;
+  kerbs: Float32Array;
+  kit: ArrayBuffer;
 }
 
 async function fetchOk(url: string): Promise<Response> {
@@ -108,12 +122,15 @@ export async function loadHeilbronnData(baseUrl: string, onProgress?: (text: str
   const meta = (await (await fetchOk(`${baseUrl}/meta.json`)).json()) as HeilbronnMeta;
 
   onProgress?.('Gelände, Gebäude, Flächen …');
-  const [terrainBuf, buildings, waterBuf, markingsBuf, landuse] = await Promise.all([
+  const optional = (cond: unknown, name: string) => (cond ? fetchBinary(`${baseUrl}/${name}`).catch(() => new ArrayBuffer(0)) : Promise.resolve(new ArrayBuffer(0)));
+  const [terrainBuf, buildings, waterBuf, markingsBuf, landuse, kerbsBuf, kit] = await Promise.all([
     fetchBinary(`${baseUrl}/terrain.bin`),
     fetchBinary(`${baseUrl}/buildings.bin`),
     fetchBinary(`${baseUrl}/water.bin`),
     meta.markings ? fetchBinary(`${baseUrl}/markings.bin`) : Promise.resolve(new ArrayBuffer(0)),
     loadGrayscalePng(`${baseUrl}/landuse.png`, meta.landuse.width, meta.landuse.height),
+    optional(meta.kerbs, 'kerbs.bin'),
+    optional(meta.kit, 'kit.bin'),
   ]);
 
   const raw = new Uint16Array(terrainBuf);
@@ -121,5 +138,5 @@ export async function loadHeilbronnData(baseUrl: string, onProgress?: (text: str
   const { minHeight, scale } = meta.terrain;
   for (let i = 0; i < raw.length; i++) heights[i] = minHeight + raw[i] * scale;
 
-  return { meta, heights, buildings, water: new Float32Array(waterBuf), markings: new Float32Array(markingsBuf), landuse };
+  return { meta, heights, buildings, water: new Float32Array(waterBuf), markings: new Float32Array(markingsBuf), landuse, kerbs: new Float32Array(kerbsBuf), kit };
 }

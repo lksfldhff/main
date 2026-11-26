@@ -379,13 +379,13 @@ Abnahmebericht.
 | --- | --- | --- |
 | **P0 ✔** | Ist-Analyse, Plan, reale Kartenansicht, geometrischer Abgleich | diese Dokumente, `docs/verification/` |
 | **P1 Geodaten-Plattform** | Kachelpipeline (250 m, Quadtree), Stadtteile, LoD1 für die Ferne, proj4-Koordinaten, `tiles.json`, WorldStreamer mit Worker und Cache, PerfMonitor 2.0. Die heutige Innenstadt läuft gestreamt mit **identischem Aussehen** | Visueller Vergleich an 8 Kamerapositionen ohne Abweichung, Startdownload unter 15 MB, Streaming ohne Frames über 50 ms |
-| **P2 Straßen und Raum** | Straßen-Mesh, erhöhte Gehwege, Bordsteine mit Kollision, Radwege, Inseln, Parkstreifen, Decals, neue Beläge | QA-Regeln „Bordstein“ und „Belag“ grün, Fahrzeuge springen sauber über Bordsteine |
-| **P3 Gebäude 2.0** | Wandklassifikation, Stockwerk- und Achsenraster, Fassadenbaukasten mit LOD, Eingänge aus Hauskoordinaten, Dachdetails, Bautypen, Wahrzeichen-Ersatz | keine Fenster auf Brandwänden, alle Fenster im Raster, unter 60 Fassaden-Draw-Calls pro Kachel |
-| **P4 Asset-Bibliothek** | Such-, Lade-, Konvertier- und Optimierungspipeline, Lizenzdatenbank, Blender-Generatoren (Bushaltestelle, Laternen, Kästen), Platzierung aus OSM | jede OSM-Kategorie hat ein echtes Modell, vollständige Lizenzangaben, keine Platzhalter in LOD0 |
+| **P2 Straßen und Raum** (Teil 1 ✔: erhöhte Gehwege, Bordsteine, Wartehallen) | Straßen-Mesh, erhöhte Gehwege, Bordsteine mit Kollision, Radwege, Inseln, Parkstreifen, Decals, neue Beläge | QA-Regeln „Bordstein“ und „Belag“ grün, Fahrzeuge springen sauber über Bordsteine |
+| **P3 Gebäude 2.0** (Teil 1 ✔: Wandklassifikation, Raster, Baukasten, Eingänge, Schornsteine) | Wandklassifikation, Stockwerk- und Achsenraster, Fassadenbaukasten mit LOD, Eingänge aus Hauskoordinaten, Dachdetails, Bautypen, Wahrzeichen-Ersatz | keine Fenster auf Brandwänden, alle Fenster im Raster, unter 60 Fassaden-Draw-Calls pro Kachel |
+| **P4 Asset-Bibliothek** (Teil 1 ✔: Pipeline, Lizenz-DB, 8 CC0-Modelle, OSM-Platzierung) | Such-, Lade-, Konvertier- und Optimierungspipeline, Lizenzdatenbank, Blender-Generatoren (Bushaltestelle, Laternen, Kästen), Platzierung aus OSM | jede OSM-Kategorie hat ein echtes Modell, vollständige Lizenzangaben, keine Platzhalter in LOD0 |
 | **P5 Vegetation** | nDOM-Baumerkennung, Baumarten-Assets mit Impostoren, Hecken und Beete | Baumzahl im Gebiet plausibel zum Luftbild (Stichprobe), stabile Framezeit |
 | **P6 Licht und Rendering** | CSM, Tageszeit, Himmel und Atmosphäre, Reflexions-Proben, TAA, Nachtbeleuchtung. Bewertung und Teilumstieg auf WebGPU | Referenzbilder Tag und Nacht, keine Plastik-Materialien laut Material-QA |
 | **P7 Performance** | Budgets durchsetzen, PVS-Occlusion, dynamische Sichtweite, Benchmark in CI | Benchmark-Ziele aus 2.8 erfüllt |
-| **P8 Visuelle QA** | Regel-QA je Kachel, Mapillary- und Foto-Vergleichswerkzeug, Fehlerlisten | Bericht für die Innenstadt, Fehlerliste abgearbeitet |
+| **P8 Visuelle QA** (Teil 1 ✔: Regel-QA R1–R7) | Regel-QA je Kachel, Mapillary- und Foto-Vergleichswerkzeug, Fehlerlisten | Bericht für die Innenstadt, Fehlerliste abgearbeitet |
 | **P9 Ausbau** | weitere Stadtteile (Böckingen, Sontheim …), dann das ganze Stadtgebiet (~100 km², ~60 000 Gebäude) | Kacheln für alle Stadtteile, Ladezeit unverändert |
 
 Die Phasen P2 bis P5 hängen nur von P1 ab und können danach parallel laufen.

@@ -1,0 +1,422 @@
+{
+ "version": 1,
+ "assets": {
+  "street_lamp_classic": {
+   "id": "street_lamp_classic",
+   "category": "street/lamp",
+   "title": "Street Lamp 01",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/street_lamp_01",
+   "author": "Josh Dean",
+   "license": "CC0",
+   "attribution": "Street Lamp 01 by Josh Dean (https://polyhaven.com/a/street_lamp_01), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 5.2,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/street_lamp_classic/lod0.glb",
+     "bytes": 130156,
+     "triangles": 9338,
+     "bounds": [
+      [
+       -0.35162380438717616,
+       0,
+       -0.19268817072668012
+      ],
+      [
+       0.35192024808796657,
+       3.8705554008483887,
+       0.19333969419755873
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/street_lamp_classic/lod1.glb",
+     "bytes": 34824,
+     "triangles": 562,
+     "bounds": [
+      [
+       -0.33973065310201295,
+       0,
+       -0.17686603124408837
+      ],
+      [
+       0.32128805213651307,
+       3.8512802124023438,
+       0.19172476883201714
+      ]
+     ]
+    }
+   }
+  },
+  "bench_wood": {
+   "id": "bench_wood",
+   "category": "street/bench",
+   "title": "Painted Wooden Bench",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/painted_wooden_bench",
+   "author": "Kirill Sannikov",
+   "license": "CC0",
+   "attribution": "Painted Wooden Bench by Kirill Sannikov (https://polyhaven.com/a/painted_wooden_bench), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 0.5,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/bench_wood/lod0.glb",
+     "bytes": 65864,
+     "triangles": 630,
+     "bounds": [
+      [
+       -0.5760610699653625,
+       -0.000524671218846029,
+       -0.25367147371067855
+      ],
+      [
+       0.5888825058937073,
+       0.8888171528759636,
+       0.24281697615876052
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/bench_wood/lod1.glb",
+     "bytes": 25680,
+     "triangles": 314,
+     "bounds": [
+      [
+       -0.5760610699653625,
+       -0.000524671218846029,
+       -0.25367147371067855
+      ],
+      [
+       0.5888825058937073,
+       0.8888171528759636,
+       0.24281697615876052
+      ]
+     ]
+    }
+   }
+  },
+  "street_seating": {
+   "id": "street_seating",
+   "category": "street/bench",
+   "title": "Modular Street Seating",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/modular_street_seating",
+   "author": "Stuart Attenborrow",
+   "license": "CC0",
+   "attribution": "Modular Street Seating by Stuart Attenborrow (https://polyhaven.com/a/modular_street_seating), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 0.77,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/street_seating/lod0.glb",
+     "bytes": 442520,
+     "triangles": 16445,
+     "bounds": [
+      [
+       -2.3600076221735233,
+       1.1443219312151642e-05,
+       -0.37039789595403955
+      ],
+      [
+       1.980000078678131,
+       0.9499996667243005,
+       0.39997625028206585
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/street_seating/lod1.glb",
+     "bytes": 235560,
+     "triangles": 9035,
+     "bounds": [
+      [
+       -2.359993327812516,
+       2.180271388096955e-06,
+       -0.37039532369057215
+      ],
+      [
+       1.980000078678131,
+       0.9499996667243005,
+       0.39997625028206585
+      ]
+     ]
+    }
+   }
+  },
+  "trash_can": {
+   "id": "trash_can",
+   "category": "street/waste_basket",
+   "title": "Metal Trash Can",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/metal_trash_can",
+   "author": "GurJas Studios",
+   "license": "CC0",
+   "attribution": "Metal Trash Can by GurJas Studios (https://polyhaven.com/a/metal_trash_can), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 0.92,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/trash_can/lod0.glb",
+     "bytes": 314924,
+     "triangles": 7575,
+     "bounds": [
+      [
+       -0.9526865221251636,
+       6.173570000100881e-05,
+       -0.27713497342756455
+      ],
+      [
+       0.8253207782744792,
+       0.9062314629554749,
+       0.2771348172218495
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/trash_can/lod1.glb",
+     "bytes": 105776,
+     "triangles": 1288,
+     "bounds": [
+      [
+       -0.9526973698294132,
+       6.527895311592147e-05,
+       -0.2739241782790121
+      ],
+      [
+       0.8243886295206806,
+       0.9062314629554749,
+       0.27567174536579797
+      ]
+     ]
+    }
+   }
+  },
+  "fire_hydrant": {
+   "id": "fire_hydrant",
+   "category": "street/fire_hydrant",
+   "title": "Fire Hydrant",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/fire_hydrant",
+   "author": "Gonçalo Felício",
+   "license": "CC0",
+   "attribution": "Fire Hydrant by Gonçalo Felício (https://polyhaven.com/a/fire_hydrant), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 0.8,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/fire_hydrant/lod0.glb",
+     "bytes": 247956,
+     "triangles": 16488,
+     "bounds": [
+      [
+       -0.4417659274092977,
+       0,
+       -0.12630126158668956
+      ],
+      [
+       0.43285586140979604,
+       0.7993673086166382,
+       0.19101498378191473
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/fire_hydrant/lod1.glb",
+     "bytes": 88852,
+     "triangles": 2998,
+     "bounds": [
+      [
+       -0.4417704517669185,
+       0,
+       -0.1262857037164012
+      ],
+      [
+       0.4327723555639534,
+       0.7991747260093689,
+       0.1910273005925709
+      ]
+     ]
+    }
+   }
+  },
+  "planter_box": {
+   "id": "planter_box",
+   "category": "street/planter",
+   "title": "Planter Box 01",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/planter_box_01",
+   "author": "James Ray Cock",
+   "license": "CC0",
+   "attribution": "Planter Box 01 by James Ray Cock (https://polyhaven.com/a/planter_box_01), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 0.42,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/planter_box/lod0.glb",
+     "bytes": 139168,
+     "triangles": 4856,
+     "bounds": [
+      [
+       -0.45671579241752625,
+       4.6825564000596565e-05,
+       -0.20714024625550104
+      ],
+      [
+       0.4558955729007721,
+       0.42497774998983384,
+       0.20653865657578302
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/planter_box/lod1.glb",
+     "bytes": 48384,
+     "triangles": 1212,
+     "bounds": [
+      [
+       -0.45671579241752625,
+       4.6825564000596565e-05,
+       -0.2071302350524431
+      ],
+      [
+       0.4558955729007721,
+       0.42497774998983384,
+       0.206325855470038
+      ]
+     ]
+    }
+   }
+  },
+  "shrub_a": {
+   "id": "shrub_a",
+   "category": "vegetation/shrub",
+   "title": "Shrub 01",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/shrub_01",
+   "author": "Rico Cilliers",
+   "license": "CC0",
+   "attribution": "Shrub 01 by Rico Cilliers (https://polyhaven.com/a/shrub_01), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 0.9,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/shrub_a/lod0.glb",
+     "bytes": 227252,
+     "triangles": 12426,
+     "bounds": [
+      [
+       -1.854261338710785,
+       -0.008788454879267882,
+       -0.11357527203903603
+      ],
+      [
+       0.7318415492773056,
+       0.38677866065148897,
+       0.10457067914352822
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/shrub_a/lod1.glb",
+     "bytes": 69320,
+     "triangles": 2332,
+     "bounds": [
+      [
+       -1.8541616797447205,
+       -0.008800565476398292,
+       -0.11298618425563431
+      ],
+      [
+       0.7318415492773056,
+       0.3858042547729419,
+       0.104519992665802
+      ]
+     ]
+    }
+   }
+  },
+  "shrub_b": {
+   "id": "shrub_b",
+   "category": "vegetation/shrub",
+   "title": "Shrub 02",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/shrub_02",
+   "author": "Rico Cilliers",
+   "license": "CC0",
+   "attribution": "Shrub 02 by Rico Cilliers (https://polyhaven.com/a/shrub_02), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 0.9,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/shrub_b/lod0.glb",
+     "bytes": 103240,
+     "triangles": 2694,
+     "bounds": [
+      [
+       -2.092172378411175,
+       -0.023129506524094068,
+       -1.1296374790214532
+      ],
+      [
+       3.9616941809350603,
+       1.677360989999701,
+       1.1550362685544389
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/shrub_b/lod1.glb",
+     "bytes": 37976,
+     "triangles": 406,
+     "bounds": [
+      [
+       -2.092161228244864,
+       -0.0026744708366222003,
+       -1.1296908759390238
+      ],
+      [
+       3.961693868950776,
+       1.6172136040718235,
+       1.0822792467146019
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "generated": "2026-11-26"
+}

@@ -31,6 +31,8 @@ from shapely.ops import unary_union
 
 import config
 import osm as osm_mod
+import facades
+import streets as street_geo
 from dop import OrthoMosaic
 
 MIN_E, MIN_N, MAX_E, MAX_N = config.BBOX
@@ -237,6 +239,8 @@ def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_colo
     """osm_lookup(e, n) -> {material, roof, name} | None;  roof_color(E, N) -> packed RGB (0 = unknown)."""
     tree = STRtree([p for p, _ in footprints])
     walls_for_index = []  # (E, N, y_center, y_top, nx, nz, width) of large walls, for wall-mounted features
+    kit_walls = []  # (facades.Wall, vertex array) – flags are OR-ed into the array's code column later
+    chimney_spots = []  # (x, y, z) in game coordinates
     chunks: dict[tuple[int, int], dict[str, list[np.ndarray]]] = defaultdict(lambda: {"walls": [], "roofs": []})
     count = 0
     stats = defaultdict(int)
@@ -309,6 +313,7 @@ def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_colo
                 rgb = float(roof_color(rp[:, 0], rp[:, 1]))
 
             ck = (int(math.floor((ce - config.ORIGIN_E) / config.CHUNK)), int(math.floor(-(cn - config.ORIGIN_N) / config.CHUNK)))
+            pitched_roof = []
             for kind, rings in surfaces:
                 if kind == "GroundSurface" and style != STYLE_BRIDGE:
                     continue
@@ -332,7 +337,13 @@ def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_colo
                     hgt = y - (base - h0)
                     wl = np.full_like(u, umax - umin)
                     code = np.full_like(u, wall_code if kind != "ClosureSurface" else float(STYLE_SMALL | (variant << 5)))
-                    chunks[ck]["walls"].append(np.stack([x, y, z, u, hgt, wl, code], axis=1))
+                    arr = np.stack([x, y, z, u, hgt, wl, code], axis=1)
+                    chunks[ck]["walls"].append(arr)
+                    if kind == "WallSurface" and abs(ng[1]) < 0.2 and umax - umin > 0.5:
+                        try:
+                            kit_walls.append((facades.Wall(gid, style, shop, variant, ring_local, ng, float(base - h0), ck), arr))
+                        except Exception:
+                            pass
                     if kind == "WallSurface" and umax - umin > 6 and abs(ng[1]) < 0.2:
                         cE, cN = rings[0][:, 0].mean(), rings[0][:, 1].mean()
                         walls_for_index.append((cE, cN, float(y.mean()), float(y.max()), float(ng[0]), float(ng[2]), float(umax - umin)))
@@ -348,7 +359,13 @@ def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_colo
                             b = -b  # v increases up the slope
                         u, v = pos @ t, pos @ b
                         rc = roof_code if roof_kind != ROOF_FLAT else float(ROOF_METAL | (variant << 3))
+                        if roof_kind in (ROOF_TILES, ROOF_SLATE) and style in (STYLE_ALTBAU, STYLE_BRICK, STYLE_POSTWAR, STYLE_HISTORIC):
+                            pitched_roof.append(pos)
                     chunks[ck]["roofs"].append(np.stack([x, y, z, u, v, np.full_like(u, rc), np.full_like(u, rgb)], axis=1))
+            if pitched_roof and height > 7:
+                gp = [r[0] for k, r in surfaces if k == "GroundSurface"]
+                area = Polygon(gp[0][:, :2]).area if gp and len(gp[0]) >= 3 else 80.0
+                chimney_spots.extend(facades.chimneys(np.concatenate(pitched_roof), area, seed))
             count += 1
             el.clear()
             while el.getprevious() is not None:
@@ -373,7 +390,7 @@ def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_colo
         dist = (px - wx) * nx + (pz - wz) * nz
         return {"x": round(px - nx * dist + nx * 0.12, 2), "y": round(min(ytop - 2.5, yc + 3.5), 2), "z": round(pz - nz * dist + nz * 0.12, 2), "nx": round(nx, 3), "nz": round(nz, 3)}
 
-    return chunks, count, walls_index
+    return chunks, count, walls_index, kit_walls, chimney_spots
 
 
 # ----------------------------------------------------------------------------- land use
@@ -475,6 +492,20 @@ def carve_riverbed(heights: np.ndarray, water_geom, levels, depth=2.5):
     return heights
 
 
+def load_house_numbers(raw: Path) -> list[tuple[float, float]]:
+    """ALKIS house-number label positions (AX_LagebezeichnungMitHausnummer) in game coordinates."""
+    r = shapefile.Reader(str(raw / "alkis" / "heilbronn" / "praesentation"), encoding="cp1252")
+    out = []
+    for sr in r.iterShapeRecords():
+        rec = sr.record.as_dict()
+        if rec.get("art") != "HNR" or not sr.shape.points:
+            continue
+        e, n = sr.shape.points[0]
+        if MIN_E <= e <= MAX_E and MIN_N <= n <= MAX_N:
+            out.append((e - config.ORIGIN_E, -(n - config.ORIGIN_N)))
+    return out
+
+
 # ----------------------------------------------------------------------------- POIs
 def build_pois(footprints, labels, landuse, h0, sample):
     pois = []
@@ -528,15 +559,48 @@ def main() -> None:
     ortho = OrthoMosaic(raw)
     print(f"  roof colours: {'on' if ortho.available else 'off (no DOP files)'}")
 
+    print("Land use …")
+    lu = build_landuse(landuse, osm_mod.pedestrian_shapes(osm) if osm else ())
+
+    def landuse_at(x: float, z: float) -> int:
+        c = int((x + config.ORIGIN_E - MIN_E) / config.LANDUSE_CELL)
+        r = int((MAX_N - (config.ORIGIN_N - z)) / config.LANDUSE_CELL)
+        return int(lu[r, c]) if 0 <= r < lu.shape[0] and 0 <= c < lu.shape[1] else -1
+
     print("Buildings …")
-    chunks, count, walls_index = build_buildings(
+    chunks, count, walls_index, kit_walls, chimney_spots = build_buildings(
         raw, h0, footprints,
         osm_lookup=osm_mod.building_materials(osm) if osm else None,
         roof_color=ortho.roof_color if ortho.available else None,
     )
 
-    print("Land use …")
-    lu = build_landuse(landuse, osm_mod.pedestrian_shapes(osm) if osm else ())
+    print("Facades …")
+    walls = [w for w, _ in kit_walls]
+    blind = facades.detect_party_walls(walls)
+    facades.classify_street(walls, landuse_at)
+    kit, kit_stats = facades.layout_kit(walls, load_house_numbers(raw))
+    for w, arr in kit_walls:
+        bits = (facades.BIT_BLIND if w.blind else 0) | (facades.BIT_KIT if w.kit else 0)
+        if bits:
+            arr[:, 6] = (arr[:, 6].astype(np.int64) | bits).astype(np.float64)
+    brick = facades.hex_rgb("#8a4a3a")
+    for x, y, z in chimney_spots:
+        kit.append((x, y, z, 0.0, 1.0, 0.62, 1.4, facades.M_CHIMNEY, 0.5, brick))
+    kit_stats["chimneys"] = len(chimney_spots)
+    kit_stats["partyWalls"] = blind
+    print("  " + ", ".join(f"{k}: {v}" for k, v in kit_stats.items()))
+    kit_chunks: dict[tuple[int, int], list] = defaultdict(list)
+    for it in kit:
+        kit_chunks[(int(math.floor(it[0] / config.CHUNK)), int(math.floor(it[2] / config.CHUNK)))].append(it)
+    kit_index = []
+    kit_off = 0
+    with open(out / "kit.bin", "wb") as fk:
+        for (cx, cz), items in sorted(kit_chunks.items()):
+            a = np.array(items, dtype=np.float64)
+            a[:, 9] = a[:, 9]  # packed RGB stays exact in float32 (< 2^24)
+            fk.write(a.astype("<f4").tobytes())
+            kit_index.append({"cx": cx, "cz": cz, "offset": kit_off, "count": len(items)})
+            kit_off += len(items) * 10 * 4
 
     markings = np.zeros((0, 5), np.float32)
     points = {}
@@ -546,6 +610,13 @@ def main() -> None:
         points = osm_mod.build_points(osm, sample, h0, walls_index)
         print(f"  markings: {len(markings) // 3} triangles, " + ", ".join(f"{k}: {len(v)}" for k, v in points.items()))
     markings.astype("<f4").tofile(out / "markings.bin")
+
+    print("Kerbs …")
+    crossings_local = [(c[0], c[2]) for c in points.get("crossings", [])]
+    kerbs = street_geo.build_kerbs(lu, sample, h0, crossings_local)
+    kerbs.astype("<f4").tofile(out / "kerbs.bin")
+    print(f"  {len(kerbs) // 3} kerb triangles")
+    heights = street_geo.raise_walkways(heights, lu)
     Image.fromarray(lu, mode="L").save(out / "landuse.png", optimize=True)
 
     # --- write binaries
@@ -580,6 +651,8 @@ def main() -> None:
         "landuse": {"width": int(lu.shape[1]), "height": int(lu.shape[0]), "cell": config.LANDUSE_CELL},
         "water": {"vertices": int(water.shape[0])},
         "markings": {"vertices": int(markings.shape[0]), "stride": 5},
+        "kerbs": {"vertices": int(kerbs.shape[0])},
+        "kit": {"stride": 10, "chunks": kit_index, "stats": kit_stats},
         "osm": points,
         "buildings": {"count": count, "chunkSize": config.CHUNK, "wallStride": 7, "roofStride": 7, "chunks": chunk_index},
         "pois": pois,

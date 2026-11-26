@@ -207,7 +207,8 @@ def _local(e: float, n: float, sample, h0: float):
 
 
 def build_points(osm: OsmData, sample, h0: float, walls_index):
-    out = {"trees": [], "crossings": [], "signals": [], "benches": [], "busStops": [], "fountains": [], "clocks": []}
+    out = {"trees": [], "crossings": [], "signals": [], "benches": [], "busStops": [], "fountains": [], "clocks": [],
+           "wasteBaskets": [], "postBoxes": [], "bicycleParking": [], "bollards": [], "hydrants": [], "adColumns": []}
     for nid, t in osm.node_tags.items():
         e, n = osm.nodes[nid]
         if not in_bbox(e, n):
@@ -231,8 +232,25 @@ def build_points(osm: OsmData, sample, h0: float, walls_index):
             out["signals"].append([x, y, z, round(float(d[0]), 3), round(float(-d[1]), 3), round(min(max(width, 5.5), 16), 1)])
         elif t.get("amenity") == "bench":
             out["benches"].append([x, y, z])
-        elif t.get("highway") == "bus_stop":
-            out["busStops"].append([x, y, z])
+        elif t.get("highway") == "bus_stop" or (t.get("public_transport") == "platform" and t.get("bus") == "yes"):
+            # x, y, z, shelter (OSM shelter=yes → glass shelter), bench
+            shelter = 1 if t.get("shelter") == "yes" else 0
+            bench = 1 if t.get("bench") == "yes" else 0
+            if any(abs(b[0] - x) < 4 and abs(b[2] - z) < 4 for b in out["busStops"]):
+                continue  # stop_position + platform duplicates
+            out["busStops"].append([x, y, z, shelter, bench])
+        elif t.get("amenity") == "waste_basket":
+            out["wasteBaskets"].append([x, y, z])
+        elif t.get("amenity") == "post_box":
+            out["postBoxes"].append([x, y, z])
+        elif t.get("amenity") == "bicycle_parking":
+            out["bicycleParking"].append([x, y, z, int(t.get("capacity", "6")) if t.get("capacity", "").isdigit() else 6])
+        elif t.get("barrier") == "bollard":
+            out["bollards"].append([x, y, z])
+        elif t.get("emergency") == "fire_hydrant" and t.get("fire_hydrant:type", "pillar") == "pillar":
+            out["hydrants"].append([x, y, z])
+        elif t.get("advertising") == "column":
+            out["adColumns"].append([x, y, z])
         elif t.get("amenity") == "fountain":
             out["fountains"].append([x, y, z])
         elif t.get("amenity") == "clock" and t.get("support") != "pole" and t.get("display") != "digital":

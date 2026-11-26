@@ -37,21 +37,34 @@ export class PropInstancer {
     type.collider?.(position, scale);
   }
 
-  build(ctx: WorldContext): void {
+  /**
+   * One InstancedMesh per material slot and per CELL×CELL area: whole areas outside the view
+   * frustum are culled, while draw calls stay low.
+   */
+  build(ctx: WorldContext, cell = 250): void {
     for (const [name, type] of this.types) {
       if (type.matrices.length === 0) continue;
-      const mesh = new THREE.InstancedMesh(type.geometry, type.materials, type.matrices.length);
-      mesh.name = `props:${name}`;
+      const cells = new Map<string, number[]>();
+      const p = new THREE.Vector3();
       type.matrices.forEach((m, i) => {
-        mesh.setMatrixAt(i, m);
-        mesh.setColorAt(i, type.colors[i]);
+        p.setFromMatrixPosition(m);
+        const key = `${Math.floor(p.x / cell)},${Math.floor(p.z / cell)}`;
+        (cells.get(key) ?? cells.set(key, []).get(key)!).push(i);
       });
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-      mesh.castShadow = type.castShadow;
-      mesh.receiveShadow = true;
-      mesh.computeBoundingSphere();
-      ctx.root.add(mesh);
+      for (const [key, idx] of cells) {
+        const mesh = new THREE.InstancedMesh(type.geometry, type.materials, idx.length);
+        mesh.name = `props:${name}:${key}`;
+        idx.forEach((src, i) => {
+          mesh.setMatrixAt(i, type.matrices[src]);
+          mesh.setColorAt(i, type.colors[src]);
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+        mesh.castShadow = type.castShadow;
+        mesh.receiveShadow = true;
+        mesh.computeBoundingSphere();
+        ctx.root.add(mesh);
+      }
     }
   }
 }

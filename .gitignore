@@ -8,3 +8,8 @@ dist/
 .geodata/
 __pycache__/
 .assets-raw/
+
+# User-licensed models (Mixamo / Envato Elements) – never commit, see public/models/player/README.md
+public/models/player/*.glb
+public/models/player/*.fbx
+public/models/vehicles/
