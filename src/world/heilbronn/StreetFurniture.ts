@@ -124,6 +124,22 @@ export async function buildStreetFurniture(
   place('trash_can', at(osm.wasteBaskets).map((p) => ({ ...p, scale: 0.62 })), 0.3, 160, 'amenity=waste_basket');
   place('fire_hydrant', at(osm.hydrants), 0.15, 160, 'emergency=fire_hydrant');
 
+  // Utility cabinets: OSM street_cabinet + one traffic-signal controller per signalised junction
+  // (signals within 40 m form one junction), set back onto the pavement facing the road.
+  const cabinets = at(osm.streetCabinets);
+  const junctions: { x: number; z: number }[] = [];
+  for (const [x, , z] of osm.signals ?? []) {
+    if (junctions.some((j) => Math.hypot(j.x - x, j.z - z) < 40)) continue;
+    junctions.push({ x, z });
+    const yaw = facing(x, z);
+    const [cx, cz] = snap(x - Math.sin(yaw) * 3.5, z - Math.cos(yaw) * 3.5);
+    if (WALKABLE.has(classAt(cx, cz)) && !covered(cx, cz)) cabinets.push({ position: new THREE.Vector3(cx, ground(cx, cz), cz), yaw: facing(cx, cz) });
+  }
+  place('utility_box', cabinets, 0.32, 160, 'man_made=street_cabinet / signal controller');
+  const blocks = at(osm.barrierBlocks, facing, false);
+  place('concrete_barrier', blocks, 0, 160, 'barrier=block');
+  for (const b of blocks) ctx.physics.addStaticBox(b.position.clone().setY(b.position.y + 0.41), new THREE.Vector3(0.78, 0.41, 0.32), b.yaw);
+
   // --- Planters and modular seating on pedestrian squares (generated, clear of buildings/roads)
   const { planters, seating } = squareFurniture(data, ground, rng);
   if (place('planter_box', planters, 0.45, 160, 'generated: planter on square')) {
@@ -237,7 +253,7 @@ function addKerbs(ctx: WorldContext, data: HeilbronnData): void {
   geo.setAttribute('position', new THREE.BufferAttribute(data.kerbs, 3));
   geo.computeVertexNormals(); // non-indexed → flat faces: crisp kerb edge
   geo.computeBoundingSphere();
-  const mat = new THREE.MeshStandardMaterial({ color: 0x9c9a94, roughness: 0.78, metalness: 0 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0x77756f, roughness: 0.8, metalness: 0 });
   mat.onBeforeCompile = (shader) => {
     // Granite speckle + individual kerbstones (1 m) with darker joints, without a texture fetch.
     shader.vertexShader = shader.vertexShader
@@ -382,7 +398,7 @@ function planterGreen(): { geo: THREE.BufferGeometry; mat: THREE.Material }[] {
   const leaves: THREE.BufferGeometry[] = [];
   const flowers: THREE.BufferGeometry[] = [];
   for (let i = 0; i < 5; i++) {
-    const g = new THREE.IcosahedronGeometry(0.26 + rng.next() * 0.08, 1);
+    const g = new THREE.IcosahedronGeometry(0.26 + rng.next() * 0.08, 3);
     const pos = g.getAttribute('position');
     for (let k = 0; k < pos.count; k++) {
       const f = 0.85 + rng.next() * 0.3;
@@ -392,10 +408,10 @@ function planterGreen(): { geo: THREE.BufferGeometry; mat: THREE.Material }[] {
     leaves.push(g.translate(-0.6 + i * 0.3, 0.78 + rng.next() * 0.05, (rng.next() - 0.5) * 0.25));
   }
   for (let i = 0; i < 14; i++) {
-    flowers.push(new THREE.SphereGeometry(0.045, 6, 4).translate(-0.7 + rng.next() * 1.4, 0.95 + rng.next() * 0.12, (rng.next() - 0.5) * 0.55));
+    flowers.push(new THREE.SphereGeometry(0.03, 6, 4).translate(-0.7 + rng.next() * 1.4, 0.95 + rng.next() * 0.12, (rng.next() - 0.5) * 0.55));
   }
   return [
-    { geo: merge(leaves), mat: new THREE.MeshStandardMaterial({ color: 0x3f6b2e, roughness: 0.85, flatShading: true }) },
+    { geo: merge(leaves), mat: new THREE.MeshStandardMaterial({ color: 0x3f6b2e, roughness: 0.85 }) },
     { geo: merge(flowers), mat: new THREE.MeshStandardMaterial({ color: 0xd8475a, roughness: 0.7 }) },
   ];
 }

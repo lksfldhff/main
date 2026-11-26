@@ -39,6 +39,7 @@ OSM_KEYS = {  # meta.osm key → feature label used by the game
     "bollards": "barrier=bollard",
     "postBoxes": "amenity=post_box",
     "adColumns": "advertising=column",
+    "barrierBlocks": "barrier=block",
 }
 
 

@@ -208,7 +208,8 @@ def _local(e: float, n: float, sample, h0: float):
 
 def build_points(osm: OsmData, sample, h0: float, walls_index):
     out = {"trees": [], "crossings": [], "signals": [], "benches": [], "busStops": [], "fountains": [], "clocks": [],
-           "wasteBaskets": [], "postBoxes": [], "bicycleParking": [], "bollards": [], "hydrants": [], "adColumns": []}
+           "wasteBaskets": [], "postBoxes": [], "bicycleParking": [], "bollards": [], "hydrants": [], "adColumns": [],
+           "streetCabinets": [], "barrierBlocks": []}
     for nid, t in osm.node_tags.items():
         e, n = osm.nodes[nid]
         if not in_bbox(e, n):
@@ -249,6 +250,10 @@ def build_points(osm: OsmData, sample, h0: float, walls_index):
             out["bollards"].append([x, y, z])
         elif t.get("emergency") == "fire_hydrant" and t.get("fire_hydrant:type", "pillar") == "pillar":
             out["hydrants"].append([x, y, z])
+        elif t.get("man_made") == "street_cabinet":
+            out["streetCabinets"].append([x, y, z])
+        elif t.get("barrier") in ("block", "jersey_barrier"):
+            out["barrierBlocks"].append([x, y, z])
         elif t.get("advertising") == "column":
             out["adColumns"].append([x, y, z])
         elif t.get("amenity") == "fountain":

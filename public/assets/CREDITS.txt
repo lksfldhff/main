@@ -3,9 +3,9 @@ Textures and HDRI from Poly Haven (https://polyhaven.com), licensed CC0 1.0 (pub
 ground_asphalt: https://polyhaven.com/a/asphalt_02
 ground_sidewalk: https://polyhaven.com/a/concrete_pavement
 ground_plaza: https://polyhaven.com/a/red_sandstone_pavement
-ground_path: https://polyhaven.com/a/gravel_concrete
+ground_path: https://polyhaven.com/a/park_dirt
 ground_grass: https://polyhaven.com/a/leafy_grass
-ground_urban: https://polyhaven.com/a/rectangular_paving
+ground_urban: https://polyhaven.com/a/cobblestone_01
 ground_rail: https://polyhaven.com/a/gravel_floor
 wall_plaster: https://polyhaven.com/a/painted_plaster_wall
 wall_brick: https://polyhaven.com/a/red_brick_03
@@ -17,3 +17,7 @@ roof_slate: https://polyhaven.com/a/roof_slates_03
 roof_metal: https://polyhaven.com/a/corrugated_iron
 roof_flat: https://polyhaven.com/a/gravel_concrete_03
 sky_partly_cloudy: https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky
+hausdorf_clear_sky_1k: https://polyhaven.com/a/hausdorf_clear_sky
+german_town_street_1k: https://polyhaven.com/a/german_town_street
+blaubeuren_church_square_1k: https://polyhaven.com/a/blaubeuren_church_square
+cobblestone_street_night_1k: https://polyhaven.com/a/cobblestone_street_night

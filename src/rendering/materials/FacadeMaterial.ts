@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLSL_NOISE, GLSL_PERTURB } from './glsl';
 import { SHOP_ACCENTS, STYLES } from '../../world/heilbronn/BuildingStyles';
+import { nightUniform } from '../TimeOfDay';
 
 /**
  * Procedural facade shader for real LoD2 wall polygons.
@@ -33,6 +34,7 @@ export function createFacadeMaterial(
     uPalette: { value: palette },
     uAccents: { value: SHOP_ACCENTS.map((c) => new THREE.Color(c)) },
     uKitDist: kitDistance,
+    uNight: nightUniform,
   };
 
   material.onBeforeCompile = (shader) => {
@@ -58,6 +60,7 @@ uniform float uFrameDark[10];
 uniform vec3 uPalette[80];
 uniform vec3 uAccents[8];
 uniform float uKitDist;
+uniform float uNight;
 varying vec3 vFacadeWorld;
 varying vec3 vFacade;
 flat varying int vFacadeCode;
@@ -205,9 +208,9 @@ if (hasWindows) {
         col = interior * 0.12;
         fMetal = 0.1;
         fRough = 0.07;
-        fEmissive = interior * vec3(1.0, 0.9, 0.75) * (0.2 + 0.14 * rnd);
-      } else if (rnd > 0.93) {
-        fEmissive = vec3(1.0, 0.82, 0.55) * 0.12;
+        fEmissive = interior * vec3(1.0, 0.9, 0.75) * (0.2 + 0.14 * rnd) * (1.0 + 1.6 * uNight);
+      } else if (rnd > mix(0.93, 0.52, uNight)) {
+        fEmissive = vec3(1.0, 0.82, 0.55) * mix(0.12, 0.85 + 0.6 * fract(rnd * 17.0), uNight);
       }
     }
   } else {
@@ -257,6 +260,6 @@ normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);
       )
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += fEmissive;');
   };
-  material.customProgramCacheKey = () => 'facade-v6';
+  material.customProgramCacheKey = () => 'facade-v7';
   return material;
 }

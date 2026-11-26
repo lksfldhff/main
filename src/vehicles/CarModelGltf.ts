@@ -16,6 +16,12 @@ export const CAR_MODEL_FILES: Partial<Record<CarType, string>> = {
   suv_model: 'models/vehicles/city_suv.glb',
 };
 
+/** Optional low-detail variants (same node layout) shown beyond LOD1_DISTANCE. */
+export const CAR_MODEL_LOD1_FILES: Partial<Record<CarType, string>> = {
+  suv_model: 'models/vehicles/city_suv_lod1.glb',
+};
+const LOD1_DISTANCE = 30;
+
 export interface CarTemplate {
   body: THREE.Object3D;
   /** FL, FR, RL, RR (same order as CarModel.wheels). */
@@ -29,8 +35,8 @@ const cache = new Map<string, Promise<CarTemplate | null>>();
 let loader: GLTFLoader | null = null;
 
 /** Loads (once) and caches a car template; resolves to null when the file is missing or invalid. */
-export function loadCarTemplate(type: CarType): Promise<CarTemplate | null> {
-  const file = CAR_MODEL_FILES[type];
+export function loadCarTemplate(type: CarType, lod: 0 | 1 = 0): Promise<CarTemplate | null> {
+  const file = (lod === 1 ? CAR_MODEL_LOD1_FILES : CAR_MODEL_FILES)[type];
   if (!file) return Promise.resolve(null);
   const url = `${import.meta.env.BASE_URL}${file}`;
   let p = cache.get(url);
@@ -64,7 +70,7 @@ function toTemplate(scene: THREE.Object3D): CarTemplate | null {
  * the physics spec). Keeps the model's groups, so the vehicle code and anything attached to the
  * body (e.g. the seated player) are unaffected.
  */
-export function applyCarTemplate(model: CarModel, tpl: CarTemplate, spec: CarSpec, paintHex: string): void {
+export function applyCarTemplate(model: CarModel, tpl: CarTemplate, spec: CarSpec, paintHex: string, far: CarTemplate | null = null): void {
   const s = spec.wheelbase / tpl.wheelbase;
 
   // --- Body
@@ -82,25 +88,36 @@ export function applyCarTemplate(model: CarModel, tpl: CarTemplate, spec: CarSpe
     clearcoatRoughness: 0.06,
   });
   let taillight: THREE.MeshStandardMaterial | null = null;
-  const body = tpl.body.clone(true);
-  body.scale.multiplyScalar(s);
-  body.traverse((o) => {
-    const mesh = o as THREE.Mesh;
-    if (!mesh.isMesh) return;
-    const mat = mesh.material as THREE.MeshStandardMaterial;
-    const name = mat.name ?? '';
-    if (name === 'paint') mesh.material = paint;
-    else if (name === 'taillight') {
-      taillight ??= Object.assign(mat.clone(), { emissive: new THREE.Color(1, 0.05, 0.02) });
-      mesh.material = taillight;
-    } else if (name === 'headlight') {
-      mat.emissiveIntensity = 2;
-    }
-    const transparent = (mesh.material as THREE.Material).transparent;
-    mesh.castShadow = !transparent;
-    mesh.receiveShadow = !transparent;
-  });
-  model.body.add(body);
+  const prepare = (src: THREE.Object3D, scale: number, shadows: boolean): THREE.Object3D => {
+    const obj = src.clone(true);
+    obj.scale.multiplyScalar(scale);
+    obj.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      const name = mat.name ?? '';
+      if (name === 'paint') mesh.material = paint;
+      else if (name === 'taillight') {
+        taillight ??= Object.assign(mat.clone(), { emissive: new THREE.Color(1, 0.05, 0.02) });
+        mesh.material = taillight;
+      } else if (name === 'headlight') {
+        mat.emissiveIntensity = 2;
+      }
+      const transparent = (mesh.material as THREE.Material).transparent;
+      mesh.castShadow = shadows && !transparent;
+      mesh.receiveShadow = !transparent;
+    });
+    return obj;
+  };
+  const withLod = (near: THREE.Object3D, farObj: THREE.Object3D | null): THREE.Object3D => {
+    if (!farObj) return near;
+    const lod = new THREE.LOD();
+    lod.addLevel(near, 0);
+    lod.addLevel(farObj, LOD1_DISTANCE);
+    return lod;
+  };
+  const sFar = far ? spec.wheelbase / far.wheelbase : 1;
+  model.body.add(withLod(prepare(tpl.body, s, true), far ? prepare(far.body, sFar, true) : null));
   if (taillight) model.brakeLights = taillight;
 
   // --- Wheels: keep the pivot (steer) / spin groups, swap their meshes.
@@ -113,16 +130,14 @@ export function applyCarTemplate(model: CarModel, tpl: CarTemplate, spec: CarSpe
       spin.remove(child);
       (child as THREE.Mesh).geometry?.dispose();
     }
-    const wheel = src.clone(true);
+    const wheel = prepare(src, ws, true);
     wheel.position.set(0, 0, 0);
-    wheel.scale.multiplyScalar(ws);
-    wheel.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-      }
-    });
-    spin.add(wheel);
+    let farWheel: THREE.Object3D | null = null;
+    if (far) {
+      farWheel = prepare(far.wheels[i], spec.wheelRadius / far.wheelRadius, false);
+      farWheel.position.set(0, 0, 0);
+    }
+    spin.add(withLod(wheel, farWheel));
     pivot.position.x = src.position.x * s;
     pivot.position.z = src.position.z * s;
   });

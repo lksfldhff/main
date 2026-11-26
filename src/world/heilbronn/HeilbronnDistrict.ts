@@ -17,6 +17,7 @@ import * as Models from '../props/PropModels';
 import { Random } from '../../utils/random';
 import type { VehicleSpawn } from '../../vehicles/VehicleManager';
 import { FacadeKit } from './FacadeKit';
+import { buildMapImage } from './MapImage';
 import { AssetLibrary, type Placement } from '../../assets/AssetLibrary';
 import { buildStreetFurniture, createCoverTest, placeLibraryLamps, type QaPlacement } from './StreetFurniture';
 
@@ -59,8 +60,8 @@ export async function buildHeilbronnDistrict(
     classToLayer: LANDUSE_TO_LAYER,
     diffuse: groundDiff,
     normal: groundNrm,
-    //          asphalt sidewalk plaza path grass urban rail
-    layerTile: [7, 2.5, 3.5, 4, 5, 3, 3],
+    //          asphalt sidewalk plaza path grass urban(setts) rail
+    layerTile: [7, 2.5, 3.5, 4, 5, 2.2, 3],
     layerRoughness: [0.82, 0.9, 0.75, 0.95, 0.97, 0.88, 0.95],
     roadLayer: 0,
     sidewalkLayer: 1,
@@ -114,6 +115,7 @@ export async function buildHeilbronnDistrict(
     showcaseRadius: 150,
     attribution: meta.attribution,
     vehicleSpawns,
+    mapImage: buildMapImage(data),
     update: (t) => water.update(t),
     updateView: (camera) => kit.update(camera),
     qa: () => ({ placements: furniture.placements, facadeKit: meta.kit?.stats ?? {}, assets: assets.credits() }),

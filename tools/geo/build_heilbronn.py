@@ -49,6 +49,7 @@ STYLE_INDUSTRIAL, STYLE_SMALL, STYLE_BRICK, STYLE_BRIDGE, STYLE_HISTORIC = 5, 6,
 # Named landmarks with historic sandstone facades.
 HISTORIC_NAMES = ("rathaus", "fleisch", "deutschhof", "käthchen", "schießhaus", "museum im deutschhof")
 ROOF_FLAT, ROOF_TILES, ROOF_SLATE, ROOF_METAL, ROOF_COPPER = 0, 1, 2, 3, 4
+ROOF_DECK = 5  # bridge deck: asphalt road surface (must match RoofMaterial.ts)
 
 # Land-use classes. Must match src/world/heilbronn/LandUse.ts
 LANDUSE_NONE, LANDUSE_ROAD, LANDUSE_SIDEWALK, LANDUSE_PLAZA, LANDUSE_PATH = 0, 1, 2, 3, 4
@@ -235,9 +236,10 @@ def triangulate(rings: list[np.ndarray], normal: np.ndarray) -> np.ndarray:
     return tris[area > 1e-6]
 
 
-def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_color=None):
+def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_color=None, sample=None):
     """osm_lookup(e, n) -> {material, roof, name} | None;  roof_color(E, N) -> packed RGB (0 = unknown)."""
     tree = STRtree([p for p, _ in footprints])
+    skipped_low = 0
     walls_for_index = []  # (E, N, y_center, y_top, nx, nz, width) of large walls, for wall-mounted features
     kit_walls = []  # (facades.Wall, vertex array) – flags are OR-ed into the array's code column later
     chimney_spots = []  # (x, y, z) in game coordinates
@@ -286,6 +288,15 @@ def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_colo
             lod2_function = el.findtext("bldg:function", default="", namespaces=NS)
             base = allv[:, 2].min()
             height = allv[:, 2].max() - base
+            # Underground structures (garage decks, passages) whose roof is flush with the street
+            # rendered as flat white slabs on squares: skip anything that does not rise 1.8 m
+            # above the terrain at its centre.
+            if sample is not None:
+                terrain = float(sample(np.array([ce]), np.array([cn]))[0])
+                if allv[:, 2].max() - terrain < 1.8:
+                    skipped_low += 1
+                    el.clear()
+                    continue
             fn, name = "", ""
             hits = tree.query(Point(ce, cn), predicate="within")
             if len(hits) == 0:
@@ -351,6 +362,8 @@ def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_colo
                     if ng[1] > 0.985:
                         u, v = x, z
                         rc = float(ROOF_FLAT | (variant << 3)) if roof_kind != ROOF_COPPER else roof_code
+                        if style == STYLE_BRIDGE:
+                            rc = float(ROOF_DECK | (variant << 3))
                     else:
                         t = np.array([ng[2], 0.0, -ng[0]])
                         t /= max(np.linalg.norm(t), 1e-6)
@@ -370,7 +383,7 @@ def build_buildings(raw: Path, h0: float, footprints, osm_lookup=None, roof_colo
             el.clear()
             while el.getprevious() is not None:
                 del el.getparent()[0]
-    print(f"  {count} buildings, styles: {dict(stats)}")
+    print(f"  {count} buildings, styles: {dict(stats)}, skipped {skipped_low} below-ground structures")
 
     wall_arr = np.array(walls_for_index) if walls_for_index else np.zeros((0, 7))
 
@@ -588,6 +601,7 @@ def main() -> None:
         raw, h0, footprints,
         osm_lookup=osm_mod.building_materials(osm) if osm else None,
         roof_color=ortho.roof_color if ortho.available else None,
+        sample=sample,
     )
 
     print("Facades …")

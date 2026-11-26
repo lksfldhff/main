@@ -18,9 +18,11 @@ tools/assets/build_player.sh <ordner-mit-den-fbx-dateien> ich_rigged.glb  # eige
 Mit zweitem Argument werden die Mixamo-Animationen auf eine eigene geriggte Figur übertragen
 (z. B. ein Image-to-3D-Scan von dir selbst mit 24-Knochen-Rig: Hips, Spine02, Spine01, Spine,
 neck, Head, Arme/Beine wie bei Mixamo). Das Retargeting berücksichtigt die unterschiedliche
-Ruhepose (T- vs. A-Pose); weil Scans die Arme/Hände oft mit dem Körper verschmolzen haben
-(Hände in den Hosentaschen), laufen die Arme nur zu 35 % mit, und Hosen-Vertices, die der
-Auto-Rigger an die Arme gebunden hat, werden an die Oberschenkel umgehängt (`--pocket-fix`).
+Ruhepose (T- vs. A-Pose). Scans haben Arme/Hände oft mit dem Körper verschmolzen (Hände in den
+Hosentaschen): `--free-hands` schneidet Unterarme und Hände frei, schließt die Löcher in
+Shirt/Hose und baut saubere Unterarme mit Händen (Hautfarbe aus der Scan-Textur), sodass die
+Arme voll mitschwingen; `--pocket-fix` hängt Hosen-Vertices von den Arm- an die Beinknochen.
+Bei Sprung/Fall laufen die Arme gedämpft mit (`~0.5` hinter dem Clip), damit die Ärmel nicht reißen.
 Ein Scan ist ein **persönliches Abbild** – nie committen oder hochladen.
 
 Das Skript (`tools/assets/convert_mixamo.py`) importiert Figur und Animationen, macht die

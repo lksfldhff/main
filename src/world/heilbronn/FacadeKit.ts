@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLSL_NOISE } from '../../rendering/materials/glsl';
+import { nightUniform } from '../../rendering/TimeOfDay';
 import type { HeilbronnMeta } from './HeilbronnData';
 
 /** Module types – must match tools/geo/facades.py. */
@@ -181,6 +182,7 @@ function createKitMaterial(maxDist: { value: number }): THREE.MeshStandardMateri
   const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, metalness: 0, side: THREE.DoubleSide });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uKitMaxDist = maxDist;
+    shader.uniforms.uNight = nightUniform;
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
@@ -199,6 +201,7 @@ if (distance(kitCenter, cameraPosition) > uKitMaxDist) gl_Position = vec4(2.0, 2
       .replace(
         '#include <common>',
         `#include <common>
+uniform float uNight;
 varying float vPart;
 varying float vRand;
 varying vec3 vKitColor;
@@ -221,6 +224,8 @@ else if (part == 1 || part == 12) {
   c = mix(vec3(0.36, 0.43, 0.48), vec3(0.24, 0.29, 0.33), vRand);
   kRough = 0.05; kMetal = 0.8;
   if (part == 1 && vRand > 0.62 && vKitLocal.y > vKitSize.y * (0.18 + 0.2 * vRand)) { c = vec3(0.82, 0.78, 0.7); kRough = 0.8; kMetal = 0.0; }
+  // Night: a share of the rooms is lit (warm, varying brightness).
+  if (part == 1 && fract(vRand * 7.31) > mix(1.1, 0.5, uNight)) { kEmissive = vec3(1.0, 0.8, 0.52) * (0.6 + 0.8 * fract(vRand * 13.7)) * uNight; kMetal = 0.2; }
   if (part == 12) {
     // Shop window: less mirror-like than upper windows so the lit interior reads through –
     // a cheap fake interior (back wall, shelves with goods) instead of a blank reflective panel.
@@ -234,7 +239,7 @@ else if (part == 1 || part == 12) {
     c = mix(backWall, goods, hasGoods * 0.8);
     c = mix(c, vec3(0.55, 0.52, 0.48), shelf * step(0.15, y01));
     // Interiors are much darker than the sunlit street: tiny diffuse part, the rest is "interior light".
-    kEmissive = c * vec3(1.0, 0.9, 0.75) * (0.2 + 0.14 * vRand);
+    kEmissive = c * vec3(1.0, 0.9, 0.75) * (0.2 + 0.14 * vRand) * (1.0 + 1.6 * uNight);
     c *= 0.12;
     kMetal = 0.1; kRough = 0.07;
   }
@@ -272,7 +277,7 @@ diffuseColor.rgb *= c;
       .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = kMetal;')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += kEmissive;');
   };
-  material.customProgramCacheKey = () => 'facade-kit-v1';
+  material.customProgramCacheKey = () => 'facade-kit-v2';
   return material;
 }
 

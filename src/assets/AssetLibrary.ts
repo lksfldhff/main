@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadGltf } from './loadGltf';
+import { registerBulb } from '../rendering/TimeOfDay';
 
 /** Instances are grouped into square cells of this size (frustum culling + LOD per cell). */
 const CELL = 100;
@@ -148,6 +149,8 @@ export class AssetLibrary {
           if (!mesh.isMesh) return;
           const geometry = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
           const material = mesh.material as THREE.Material;
+          // Lamp bulbs / lantern glass glow at night.
+          if (/bulb|lantern|lamp.*glass|light_glass/i.test(material.name) && (material as THREE.MeshStandardMaterial).isMeshStandardMaterial) registerBulb(material as THREE.MeshStandardMaterial);
           (byMaterial.get(material) ?? byMaterial.set(material, []).get(material)!).push(geometry);
         });
         const parts: LoadedLod['parts'] = [];

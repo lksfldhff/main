@@ -49,7 +49,8 @@ int roofKind;
       .replace(
         '#include <map_fragment>',
         `
-roofKind = min(vRoofCode & 7, 4);
+int rawRoofKind = vRoofCode & 7;
+roofKind = rawRoofKind == 5 ? 0 : min(rawRoofKind, 4); // 5 = bridge deck (uses the flat layer)
 float roofVariant = float(vRoofCode >> 3);
 vec2 ruv = vRoof.xy / uRoofTile[roofKind];
 float rl = uRoofLayer[roofKind];
@@ -61,6 +62,11 @@ if (vRoofReal.r >= 0.0) {
   float lum = dot(rTex, vec3(0.299, 0.587, 0.114));
   float avg = roofKind == 1 ? 0.2 : 0.3;
   rc = real * clamp(lum / avg, 0.55, 1.5);
+}
+if (rawRoofKind == 5) {
+  // Bridge deck: dark asphalt carriageway instead of a bright flat roof.
+  float lum = dot(rTex, vec3(0.299, 0.587, 0.114));
+  rc = vec3(0.105, 0.105, 0.1) * clamp(lum / 0.3, 0.7, 1.3);
 }
 rc *= 0.85 + 0.25 * fbm2(vRoof.xy * 0.08 + roofVariant);
 rNrmSample = texture(uRoofNrm, vec3(ruv, rl)).rgb;
@@ -81,6 +87,6 @@ normal = normalize((viewMatrix * vec4(perturbWorldNormal(rN, rT, rB, rNrmSample,
 `,
       );
   };
-  material.customProgramCacheKey = () => 'roof-v3';
+  material.customProgramCacheKey = () => 'deck-roof-v3';
   return material;
 }

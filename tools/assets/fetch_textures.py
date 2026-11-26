@@ -1,7 +1,7 @@
 """Downloads the CC0 PBR textures + HDRI used by the game from Poly Haven (polyhaven.com, CC0).
 
 The files are committed to public/assets/, so this only needs to run when the list changes.
-Usage: python tools/assets/fetch_textures.py
+Usage: python tools/assets/fetch_textures.py [--only ground_path,ground_urban]
 """
 import io
 import json
@@ -19,9 +19,9 @@ TEXTURES = {
     "ground_asphalt": "asphalt_02",
     "ground_sidewalk": "concrete_pavement",
     "ground_plaza": "red_sandstone_pavement",
-    "ground_path": "gravel_concrete",
+    "ground_path": "park_dirt",  # mossy park ground (was gravel_concrete)
     "ground_grass": "leafy_grass",
-    "ground_urban": "rectangular_paving",
+    "ground_urban": "cobblestone_01",  # old-town basalt setts with weeds (was rectangular_paving)
     "ground_rail": "gravel_floor",
     # wall layers (must match src/world/heilbronn/BuildingStyles.ts)
     "wall_plaster": "painted_plaster_wall",
@@ -35,7 +35,14 @@ TEXTURES = {
     "roof_metal": "corrugated_iron",
     "roof_flat": "gravel_concrete_03",
 }
-HDRI = ("sky_partly_cloudy", "kloofendal_48d_partly_cloudy_puresky")
+HDRIS = [
+    ("sky_partly_cloudy", "kloofendal_48d_partly_cloudy_puresky"),
+    # Day: real sky as background, German street for reflections; night: cobblestone street.
+    ("hausdorf_clear_sky_1k", "hausdorf_clear_sky"),
+    ("german_town_street_1k", "german_town_street"),
+    ("blaubeuren_church_square_1k", "blaubeuren_church_square"),
+    ("cobblestone_street_night_1k", "cobblestone_street_night"),
+]
 
 DIFF_SIZE = 2048
 NORMAL_SIZE = 1024
@@ -55,22 +62,28 @@ def save_jpg(data: bytes, path: Path, size: int, quality: int) -> None:
 
 
 def main() -> None:
+    import sys
+    only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
     (OUT / "textures").mkdir(parents=True, exist_ok=True)
     (OUT / "hdri").mkdir(parents=True, exist_ok=True)
     credits = []
     for name, asset in TEXTURES.items():
+        credits.append(f"{name}: https://polyhaven.com/a/{asset}")
+        if only and name not in only:
+            continue
         files = json.loads(get(API + asset))
         diff = (files.get("Diffuse") or files.get("diffuse"))["2k"]["jpg"]["url"]
         nor = files["nor_gl"]["1k"]["jpg"]["url"]
         save_jpg(get(diff), OUT / "textures" / f"{name}_diff.jpg", DIFF_SIZE, 82)
         save_jpg(get(nor), OUT / "textures" / f"{name}_nrm.jpg", NORMAL_SIZE, 90)
-        credits.append(f"{name}: https://polyhaven.com/a/{asset}")
         print("✓", name, "←", asset)
-    name, asset = HDRI
-    files = json.loads(get(API + asset))
-    (OUT / "hdri" / f"{name}.hdr").write_bytes(get(files["hdri"]["1k"]["hdr"]["url"]))
-    credits.append(f"{name}: https://polyhaven.com/a/{asset}")
-    print("✓", name)
+    for name, asset in HDRIS:
+        credits.append(f"{name}: https://polyhaven.com/a/{asset}")
+        if only and name not in only:
+            continue
+        files = json.loads(get(API + asset))
+        (OUT / "hdri" / f"{name}.hdr").write_bytes(get(files["hdri"]["1k"]["hdr"]["url"]))
+        print("✓", name)
     (OUT / "CREDITS.txt").write_text(
         "Textures and HDRI from Poly Haven (https://polyhaven.com), licensed CC0 1.0 (public domain).\n\n"
         + "\n".join(credits) + "\n"

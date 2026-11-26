@@ -246,3 +246,13 @@ body.is-driving .controls-hint { display: none; }
 body.is-driving .interaction-prompt { bottom: 6%; }
 
 .setting-note { margin: 6px 0 0; font-size: 12px; color: var(--text-dim); }
+
+/* ---------- Minimap (radar) ---------- */
+.minimap {
+  position: absolute; left: 28px; bottom: 26px;
+  width: 208px; height: 208px; border-radius: 50%;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.minimap-canvas { width: 100%; height: 100%; display: block; }
+.controls-hint { left: 260px; }

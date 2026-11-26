@@ -39,6 +39,7 @@ import re
 import sys
 
 import bpy  # type: ignore
+import bmesh  # type: ignore
 from mathutils import Matrix, Quaternion, Vector  # type: ignore
 
 HIPS = 'pose.bones["mixamorig:Hips"].location'
@@ -226,6 +227,391 @@ def fix_pocket_weights(tgt, meshes, max_dist=0.15):
     return moved
 
 
+
+# --------------------------------------------------------------------------- scan clean-up: free hands
+SKIN_MIN_RED = 0.33
+
+
+def _is_skin(c):
+    r, g, b = float(c[0]), float(c[1]), float(c[2])
+    return r > SKIN_MIN_RED and r > g * 1.04 and g >= b * 0.92 and r - b > 0.07
+
+
+def _closest_on_chain(p, chain):
+    """(distance, segment index, t in segment, projected-before-start) for a polyline."""
+    best = None
+    for i in range(len(chain) - 1):
+        a, b = chain[i], chain[i + 1]
+        ab = b - a
+        L2 = ab.length_squared or 1e-12
+        t = (p - a).dot(ab) / L2
+        tc = max(0.0, min(1.0, t))
+        d = (p - (a + ab * tc)).length
+        if best is None or d < best[0]:
+            best = (d, i, tc, i == 0 and t < 0)
+    return best
+
+
+def free_hands(tgt, me_obj, log=print):
+    """Separates arms that a 3D scan fused with the body (hands in trouser pockets, forearms glued
+    to the torso) and gives the character proper hands:
+
+    * welds the scan (UV-seam splits), finds the short-sleeve hem on each upper arm from the
+      texture (first skin-coloured texels below the shoulder),
+    * deletes everything around the bone chain from just below the hem down to the finger tips
+      (the fused forearm, the hand in the pocket and the trouser/shirt surface glued to it),
+      drops left-over fragments and fills the resulting holes (new faces reuse the UVs of the
+      hole border, i.e. the surrounding shirt/trouser colours),
+    * builds a clean skin-coloured forearm + hand (palm, four slightly curled fingers, thumb;
+      ~450 triangles per side) along the bones, UV-mapped onto the scan's own skin texels,
+      skinned to Arm/ForeArm/Hand,
+    * re-binds remaining torso/trouser vertices that the auto-rigger had bound to the arm bones.
+    """
+    import numpy as np
+
+    mesh = me_obj.data
+    mw = me_obj.matrix_world
+    mwi = mw.inverted()
+    amw = tgt.matrix_world
+    bones = tgt.data.bones
+    head = lambda n: amw @ bones[n].head_local
+    img = next((n.image for m in mesh.materials if m and m.node_tree for n in m.node_tree.nodes
+                if n.type == "TEX_IMAGE" and n.image), None)
+    if img is None:
+        log("  free hands: no base colour texture – skipped")
+        return
+    iw, ih = img.size
+    px = np.empty(iw * ih * 4, np.float32)
+    img.pixels.foreach_get(px)
+    px = px.reshape(ih, iw, 4)
+
+    def tex(uv):
+        return px[int((uv[1] % 1.0) * (ih - 1)), int((uv[0] % 1.0) * (iw - 1)), :3]
+
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4 / max(1e-9, mw.to_scale()[0]))
+    bm.verts.ensure_lookup_table()
+    uvl = bm.loops.layers.uv.active
+    dl = bm.verts.layers.deform.verify()
+    gidx = {g.name: g.index for g in me_obj.vertex_groups}
+    for name in ("Hips", "Spine02", "Spine01", "Spine", "LeftUpLeg", "RightUpLeg"):
+        if name not in gidx and name in bones:
+            gidx[name] = me_obj.vertex_groups.new(name=name).index
+
+    def vuv(v):
+        return v.link_loops[0][uvl].uv.copy() if v.link_loops else Vector((0.5, 0.5))
+
+    wpos = {v: mw @ v.co for v in bm.verts}
+    hips_z = head("Hips").z
+    remove = set()
+    sides = {}
+    for side in ("Left", "Right"):
+        S, E, W = head(f"{side}Arm"), head(f"{side}ForeArm"), head(f"{side}Hand")
+        d = (W - E).normalized()
+        T = W + d * 0.19
+        # Sleeve hem: skin texels on the upper arm surface, closest to the shoulder.
+        ua = (E - S)
+        ts = []
+        for v, p in wpos.items():
+            t = (p - S).dot(ua) / ua.length_squared
+            if 0.05 < t < 1.0 and (p - (S + ua * t)).length < 0.075 and _is_skin(tex(vuv(v))):
+                ts.append(t)
+        ts.sort()
+        hem_t = ts[int(len(ts) * 0.05)] if len(ts) > 20 else 0.5
+        cut_t = min(0.8, hem_t + 0.035 / ua.length)
+        H = S + ua * hem_t
+        C = S + ua * cut_t
+        chain = [C, E, W, T]
+        radii = [0.06, 0.058, 0.055, 0.06]
+        skin_kd_pts = []
+        for v, p in wpos.items():
+            dist, i, tc, before = _closest_on_chain(p, chain)
+            if before:
+                continue
+            r = radii[i] + (radii[i + 1] - radii[i]) * tc
+            skin = _is_skin(tex(vuv(v)))
+            # Skin (the arm itself) generously, clothing only where it is glued to the arm.
+            if (skin and dist < 0.1) or dist < r * 0.8:
+                remove.add(v)
+                c = tex(vuv(v))
+                if _is_skin(c) and dist < 0.06:
+                    skin_kd_pts.append((p, vuv(v)))
+        sides[side] = dict(S=S, E=E, W=W, T=T, H=H, C=C, d=d, skin=skin_kd_pts)
+        log(f"  free hands {side}: sleeve hem at {hem_t:.2f} of the upper arm, {len(skin_kd_pts)} skin samples")
+
+    # Fallback skin samples: face/neck texels.
+    face_skin = [(p, vuv(v)) for v, p in wpos.items() if p.z > head("neck").z and v not in remove and _is_skin(tex(vuv(v)))]
+
+    n_removed = len(remove)
+    bmesh.ops.delete(bm, geom=list(remove), context="VERTS")
+    # Drop fragments that lost their connection to the body.
+    seen, islands = set(), []
+    for f in bm.faces:
+        if f in seen:
+            continue
+        stack, isl = [f], []
+        seen.add(f)
+        while stack:
+            x = stack.pop()
+            isl.append(x)
+            for e in x.edges:
+                for g in e.link_faces:
+                    if g not in seen:
+                        seen.add(g)
+                        stack.append(g)
+        islands.append(isl)
+    islands.sort(key=len, reverse=True)
+    frag = [f for isl in islands[1:] if len(isl) < 400 for f in isl]
+    if frag:
+        bmesh.ops.delete(bm, geom=frag, context="FACES")
+    loose = [v for v in bm.verts if not v.link_faces]
+    if loose:
+        bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    # Fill every hole with a triangle fan around its centroid. Each new triangle uses its border
+    # edge in the opposite direction of the existing neighbour face → consistent orientation,
+    # works for non-planar and pinched borders where bmesh's holes_fill gives up.
+    boundary = [e for e in bm.edges if e.is_boundary]
+    comp, seen_e = [], set()
+    for e in boundary:
+        if e in seen_e:
+            continue
+        stack, group = [e], []
+        seen_e.add(e)
+        while stack:
+            x = stack.pop()
+            group.append(x)
+            for v in x.verts:
+                for y in v.link_edges:
+                    if y.is_boundary and y not in seen_e:
+                        seen_e.add(y)
+                        stack.append(y)
+        comp.append(group)
+    tri = []
+    for group in comp:
+        verts = {v for e in group for v in e.verts}
+        if len(verts) < 3:
+            continue
+        center = bm.verts.new(sum((v.co for v in verts), Vector()) / len(verts))
+        for v in verts:
+            for g, w in v[dl].items():
+                center[dl][g] = center[dl].get(g, 0.0) + w / len(verts)
+        for e in group:
+            loop = e.link_loops[0]
+            a, b = loop.vert, loop.link_loop_next.vert
+            try:
+                tri.append(bm.faces.new((b, a, center)))
+            except ValueError:
+                pass
+    filled = comp
+    tri_set = set(tri)
+    for f in tri:
+        f.smooth = True
+        f.material_index = 0
+    for f in tri:
+        for loop in f.loops:
+            other = next((l for l in loop.vert.link_loops if l.face not in tri_set), None)
+            if other is not None:
+                loop[uvl].uv = other[uvl].uv
+        f.material_index = 0
+    log(f"  free hands: removed {n_removed} vertices (+{len(frag)} fragment faces), filled {len(filled)} holes "
+        f"({len(tri)} triangles), open edges left: {sum(1 for e in bm.edges if e.is_boundary)}")
+
+    # Re-colour the patches and left-over arm texels on the shirt/trousers: each such face takes
+    # the UV of the nearest clothing-coloured vertex (uniform per face → no skin streaks).
+    from mathutils.kdtree import KDTree
+    neck_z = head("neck").z - 0.03
+
+    def body_zone(p):
+        if p.z > neck_z:
+            return False
+        for sd in sides.values():
+            seg = sd["C"] - sd["S"]
+            t = max(0.0, min(1.0, (p - sd["S"]).dot(seg) / seg.length_squared))
+            if (p - (sd["S"] + seg * t)).length < 0.075:
+                return False
+        return True
+
+    fill_verts = {v for f in tri for v in f.verts}
+    dark = [(mw @ v.co, vuv(v)) for v in bm.verts
+            if v not in fill_verts and v.link_loops and body_zone(mw @ v.co) and not _is_skin(tex(vuv(v)))]
+    kd = KDTree(len(dark))
+    for i, (p, _) in enumerate(dark):
+        kd.insert(p, i)
+    kd.balance()
+    recoloured = 0
+    for f in bm.faces:
+        if f not in tri_set:
+            if not any(_is_skin(tex(l[uvl].uv)) for l in f.loops):
+                continue
+            if not all(body_zone(mw @ v.co) for v in f.verts):
+                continue
+        uv = dark[kd.find(mw @ f.calc_center_median())[1]][1]
+        for l in f.loops:
+            l[uvl].uv = uv
+        recoloured += 1
+    log(f"  free hands: re-coloured {recoloured} faces on shirt/trousers")
+
+    # Re-bind vertices that still follow the arm bones but are not part of the (kept) upper arm.
+    spine = [(n, head(n).z) for n in ("Spine02", "Spine01", "Spine") if n in bones]
+    moved = 0
+    for v in bm.verts:
+        p = mw @ v.co
+        dv = v[dl]
+        for side, sd in sides.items():
+            arm_g = [gidx.get(f"{side}{k}") for k in ("Arm", "ForeArm", "Hand")]
+            ws = {g: dv[g] for g in arm_g if g is not None and g in dv}
+            if not ws:
+                continue
+            S, C = sd["S"], sd["C"]
+            seg = C - S
+            t = max(0.0, min(1.0, (p - S).dot(seg) / seg.length_squared))
+            on_arm = (p - (S + seg * t)).length < 0.08
+            total = sum(ws.values())
+            for g in ws:
+                del dv[g]
+            if on_arm:
+                target = gidx[f"{side}Arm"]
+            elif p.z < hips_z - 0.02:
+                target = gidx.get(f"{side}UpLeg", gidx["Hips"])
+            else:
+                target = gidx[min(spine, key=lambda s: abs(s[1] - p.z))[0]] if spine else gidx["Hips"]
+            dv[target] = dv.get(target, 0.0) + total
+            moved += 1
+    log(f"  free hands: re-bound {moved} body vertices from the arm bones")
+
+    # ---- new forearm + hand geometry
+    def add_tube(points, radii, ref, weights, uv_for, cap_start=False, cap_end=True, sides_n=10, flat=None):
+        """Tube through `points` (world); `weights[i]` = {group: w}; `flat[i]` = ellipse ratio."""
+        rings = []
+        prev_x = None
+        for i, p in enumerate(points):
+            tan = (points[min(i + 1, len(points) - 1)] - points[max(i - 1, 0)]).normalized()
+            x = (ref - tan * ref.dot(tan)).normalized() if prev_x is None else (prev_x - tan * prev_x.dot(tan)).normalized()
+            prev_x = x
+            y = tan.cross(x)
+            fr = flat[i] if flat else 1.0
+            ring = []
+            for k in range(sides_n):
+                a = 2 * math.pi * k / sides_n
+                off = x * (math.cos(a) * radii[i] / fr) + y * (math.sin(a) * radii[i])
+                ring.append(p + off)
+            rings.append(ring)
+        vs = []
+        for i, ring in enumerate(rings):
+            row = []
+            for q in ring:
+                v = bm.verts.new(mwi @ q)
+                for g, w in weights[i].items():
+                    v[dl][gidx[g]] = w
+                row.append(v)
+            vs.append(row)
+        faces = []
+        for i in range(len(vs) - 1):
+            for k in range(sides_n):
+                a, b = vs[i][k], vs[i][(k + 1) % sides_n]
+                c, d2 = vs[i + 1][(k + 1) % sides_n], vs[i + 1][k]
+                faces.append(bm.faces.new((a, b, c, d2)))
+        for end, flag in ((0, cap_start), (len(vs) - 1, cap_end)):
+            if not flag:
+                continue
+            tan = (points[-1] - points[-2]).normalized() if end else (points[0] - points[1]).normalized()
+            tip = bm.verts.new(mwi @ (points[end] + tan * radii[end] * 0.6))
+            for g, w in weights[end].items():
+                tip[dl][gidx[g]] = w
+            ring = vs[end]
+            for k in range(sides_n):
+                a, b = ring[k], ring[(k + 1) % sides_n]
+                cap = bm.faces.new((b, a, tip) if end else (a, b, tip))
+                cap.smooth = False
+                faces.append(cap)
+        for f in faces:
+            if len(f.verts) == 4:
+                f.smooth = True
+            f.material_index = 0
+            for loop in f.loops:
+                loop[uvl].uv = uv_for(mw @ loop.vert.co)
+        # Outward normals: flip if the first quad faces the axis.
+        f0 = faces[0]
+        f0.normal_update()
+        if f0.normal.dot(f0.calc_center_median() - mwi @ points[0]) < 0:
+            bmesh.ops.reverse_faces(bm, faces=faces)
+        return faces
+
+    tri_count = 0
+    for side, sd in sides.items():
+        # One representative skin texel per arm (the sample closest to the median skin colour):
+        # nearest-texel mapping picks up shadows/tattoo-like streaks from the scan.
+        samples = sd["skin"] if len(sd["skin"]) >= 8 else face_skin
+        cols = np.array([tex(uv) for _, uv in samples])
+        med = np.median(cols, axis=0)
+        best = int(np.argmin(((cols - med) ** 2).sum(axis=1)))
+        skin_uv = samples[best][1]
+        log(f"  free hands {side}: skin colour {tuple(round(float(c), 2) for c in cols[best])}")
+        uv_for = lambda q, uv=skin_uv: uv
+        S, E, W, H, C, d = sd["S"], sd["E"], sd["W"], sd["H"], sd["C"], sd["d"]
+        Ln, Fa, Hn = f"{side}Arm", f"{side}ForeArm", f"{side}Hand"
+        sign = 1.0 if W.x > 0 else -1.0
+        # Hand frame: a = along the hand, n = palm normal (towards the body), t = thumb side.
+        a = d
+        n0 = Vector((-sign, 0.0, 0.0))
+        n = (n0 - a * n0.dot(a)).normalized()
+        t = a.cross(n)
+        pref = Vector((0.0, -1.0, 1.0))
+        if t.dot(pref - a * pref.dot(a)) < 0:
+            t = -t
+        # Forearm from inside the sleeve down to the wrist.
+        top = H + (S - H).normalized() * 0.03
+        mid = E + (W - E) * 0.5
+        faces = add_tube(
+            [top, C, E, mid, W],
+            [0.043, 0.042, 0.038, 0.035, 0.026],
+            n,
+            [{Ln: 1.0}, {Ln: 1.0}, {Ln: 0.5, Fa: 0.5}, {Fa: 1.0}, {Fa: 0.5, Hn: 0.5}],
+            uv_for,
+            cap_start=True, cap_end=False, sides_n=12,
+            flat=[1.0, 1.0, 1.0, 1.1, 1.35],
+        )
+        tri_count += len(faces) * 2
+        # Palm: rounded box from the wrist to the knuckles.
+        palm_pts = [W + a * s for s in (-0.01, 0.03, 0.065, 0.092)]
+        faces = add_tube(palm_pts, [0.03, 0.041, 0.043, 0.041], n, [{Hn: 1.0}] * 4, uv_for,
+                         cap_start=True, cap_end=True, sides_n=10, flat=[1.6, 2.3, 2.6, 2.8])
+        tri_count += len(faces) * 2
+        # Fingers (index on the thumb side), relaxed curl towards the palm.
+        for off, length, rad in ((0.026, 0.074, 0.0095), (0.009, 0.082, 0.0100), (-0.009, 0.077, 0.0095), (-0.025, 0.062, 0.0085)):
+            base = W + a * 0.085 + t * off + n * 0.002
+            pts, direc = [base], a.copy()
+            for frac, ang in ((0.45, 12), (0.3, 22), (0.25, 18)):
+                direc = Quaternion(t, math.radians(ang) * (1 if t.cross(a).dot(n) > 0 else -1)) @ direc
+                pts.append(pts[-1] + direc * length * frac)
+            faces = add_tube(pts, [rad, rad * 0.95, rad * 0.88, rad * 0.8], n, [{Hn: 1.0}] * 4, uv_for, sides_n=6)
+            tri_count += len(faces) * 2
+        # Thumb.
+        base = W + a * 0.02 + t * 0.03 + n * 0.008
+        direc = (a * 0.85 + t * 0.45 + n * 0.3).normalized()
+        pts = [base]
+        for frac, ang in ((0.4, 10), (0.32, 18), (0.28, 15)):
+            direc = Quaternion(a, math.radians(ang) * (1 if a.cross(t).dot(n) > 0 else -1)) @ direc
+            pts.append(pts[-1] + direc * 0.068 * frac)
+        faces = add_tube(pts, [0.0125, 0.0115, 0.0105, 0.009], n, [{Hn: 1.0}] * 4, uv_for, sides_n=6)
+        tri_count += len(faces) * 2
+
+    # Normalise weights.
+    for v in bm.verts:
+        dv = v[dl]
+        tot = sum(dv.values())
+        if tot > 0:
+            for g in list(dv.keys()):
+                dv[g] = dv[g] / tot
+    bm.to_mesh(mesh)
+    bm.free()
+    if "custom_normal" in mesh.attributes:
+        mesh.attributes.remove(mesh.attributes["custom_normal"])
+    mesh.shade_smooth()
+    log(f"  free hands: added ~{tri_count} triangles of forearm/hand geometry")
+
+
 class Retargeter:
     """Copies Mixamo animation onto another humanoid skeleton with a different rest pose.
 
@@ -376,6 +762,8 @@ def main():
                     "per clip: name=path#mode~weight")
     ap.add_argument("--pocket-fix", action="store_true", help="retargeting: re-bind trouser vertices that the "
                     "auto-rigger bound to the arms (hands in pockets) to the thighs")
+    ap.add_argument("--free-hands", action="store_true", help="retargeting: cut fused arms/hands of a scanned "
+                    "character free and build clean forearms + hands (see free_hands)")
     ap.add_argument("--delete", action="append", default=[], help="target-file objects to drop (stray helpers)")
     ap.add_argument("--out", required=True, help="output .glb (uncompressed; run gltf-transform meshopt afterwards)")
     args = ap.parse_args(argv)
@@ -418,9 +806,12 @@ def main():
         bpy.context.view_layer.update()
         retarget = Retargeter(arm, tgt)
         owner = tgt
+        meshes = [o for o in tobjs if o.type == "MESH"]
         if args.pocket_fix:
-            meshes = [o for o in tobjs if o.type == "MESH"]
             print("  pocket fix: re-bound", fix_pocket_weights(tgt, meshes), "vertices to the thighs")
+        if args.free_hands:
+            for m in meshes:
+                free_hands(tgt, m)
 
     speeds = {}
     for spec in args.clip:

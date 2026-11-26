@@ -1,4 +1,4 @@
-import type { GraphicsQuality, SettingsStore, ShadowQuality } from '../../core/Settings';
+import type { GraphicsQuality, SettingsStore, ShadowQuality, TimeOfDay } from '../../core/Settings';
 import { h } from '../dom';
 
 /** Settings form shared by the start screen and the pause menu. */
@@ -52,6 +52,7 @@ export class SettingsPanel {
       toggle('Maus-Y invertieren', v.invertY, (b) => settings.update({ invertY: b })),
       h('h3', {}, 'Grafik'),
       segmented<GraphicsQuality>('Qualität (AO, Grading, 2K-Texturen*)', [['low', 'Aus'], ['medium', 'Mittel'], ['high', 'Hoch']], v.graphicsQuality, (q) => settings.update({ graphicsQuality: q })),
+      segmented<TimeOfDay>('Tageszeit', [['day', 'Tag'], ['night', 'Nacht']], v.timeOfDay, (t) => settings.update({ timeOfDay: t })),
       segmented<ShadowQuality>('Schatten', [['off', 'Aus'], ['low', 'Mittel'], ['high', 'Hoch']], v.shadowQuality, (q) => settings.update({ shadowQuality: q })),
       range('Renderauflösung', 0.5, 1, 0.05, v.renderScale, (n) => `${Math.round(n * 100)} %`, (n) => settings.update({ renderScale: n })),
       range('Sichtfeld (FOV)', 50, 90, 1, v.fov, (n) => `${n}°`, (n) => settings.update({ fov: n })),

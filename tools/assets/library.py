@@ -38,6 +38,8 @@ CATALOGUE = [
     ("trash_can", "street/waste_basket", "polyhaven", "metal_trash_can", 0.92, 0.5, 0.04, 512),
     ("fire_hydrant", "street/fire_hydrant", "polyhaven", "fire_hydrant", 0.8, 0.15, 0.015, 512),
     ("planter_box", "street/planter", "polyhaven", "planter_box_01", 0.42, 0.6, 0.15, 512),
+    ("utility_box", "street/street_cabinet", "polyhaven", "utility_box_01", 1.12, 0.5, 0.06, 512),
+    ("concrete_barrier", "street/barrier_block", "polyhaven", "concrete_road_barrier", 0.82, 0.08, 0.01, 512),
     ("shrub_a", "vegetation/shrub", "polyhaven", "shrub_01", 0.9, 0.08, 0.015, 512),
     ("shrub_b", "vegetation/shrub", "polyhaven", "shrub_02", 0.9, 0.08, 0.015, 512),
 ]

@@ -58,8 +58,16 @@ def build_kerbs(landuse: np.ndarray, sample, h0: float, crossings_local: list[tu
         # pixel (row, col) → game coords (x east, z south)
         xs = min_e + (contour[:, 1] + 0.5) * cell - config.ORIGIN_E
         zs = -((max_n - (contour[:, 0] + 0.5) * cell) - config.ORIGIN_N)
-        line = LineString(np.stack([xs, zs], axis=1)).simplify(0.35)
+        # Raster contours are staircases on diagonal edges: simplify generously, then round the
+        # corners with two Chaikin passes so kerbs run straight / curve smoothly.
+        line = LineString(np.stack([xs, zs], axis=1)).simplify(0.9)
         pts = np.array(line.coords)
+        for _ in range(2):
+            if len(pts) < 3:
+                break
+            q = 0.75 * pts[:-1] + 0.25 * pts[1:]
+            r = 0.25 * pts[:-1] + 0.75 * pts[1:]
+            pts = np.concatenate([pts[:1], np.stack([q, r], axis=1).reshape(-1, 2), pts[-1:]])
         for a, b in zip(pts[:-1], pts[1:]):
             seg = b - a
             ln = float(np.linalg.norm(seg))

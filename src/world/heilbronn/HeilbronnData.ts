@@ -45,6 +45,8 @@ export interface OsmPoints {
   bollards?: [number, number, number][];
   hydrants?: [number, number, number][];
   adColumns?: [number, number, number][];
+  streetCabinets?: [number, number, number][];
+  barrierBlocks?: [number, number, number][];
   fountains?: [number, number, number][];
   clocks?: { name: string; x: number; y: number; z: number; nx: number; nz: number }[];
 }

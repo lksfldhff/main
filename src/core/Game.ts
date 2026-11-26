@@ -111,13 +111,11 @@ export class Game {
     try {
       const progress = (text: string) => this.ui.startScreen.setProgress(text);
       progress('Physik wird gestartet …');
-      // The HDRI's dark lower hemisphere made vertical glass reflect almost black; the procedural
-      // sky environment (bright horizon + ground bounce) reads better for a city. Opt-in via ?hdri.
-      const hdri = new URLSearchParams(location.search).has('hdri')
-        ? this.environment
-            .loadHdri(`${import.meta.env.BASE_URL}assets/hdri/sky_partly_cloudy.hdr`, this.renderer.renderer)
-            .catch((e) => console.warn('HDRI not loaded, using procedural sky lighting', e))
-        : Promise.resolve();
+      // Real HDRIs (Poly Haven, CC0): German street for reflections, photographed sky as background,
+      // night street for the night mode. Falls back to the procedural sky when they fail to load.
+      const hdri = this.environment
+        .loadHdris(`${import.meta.env.BASE_URL}assets/hdri/`, this.settings.values.timeOfDay)
+        .catch((e) => console.warn('HDRIs not loaded, using procedural sky lighting', e));
       const physics = await PhysicsWorld.create(CONFIG.physics.gravity);
       // Yield one frame so the loading UI paints before the (synchronous) world build.
       await new Promise((r) => requestAnimationFrame(() => r(null)));
@@ -128,6 +126,7 @@ export class Game {
       const world = await World.create(districtId, this.scene, materials, physics, this.interactions, this.events, progress, textureSize);
       const district = world.district;
       if (district.attribution) this.ui.startScreen.setAttribution(district.attribution);
+      this.ui.hud.minimap.setMap(district.mapImage ?? null);
 
       const player = new PlayerController(physics, district.spawn, district.spawnYaw);
       progress('Spielfigur …');
@@ -202,6 +201,7 @@ export class Game {
     this.renderer.setRenderScale(s.renderScale);
     this.post.setQuality(s.graphicsQuality);
     this.environment.setShadowQuality(s.shadowQuality);
+    this.environment.setTimeOfDay(s.timeOfDay);
     this.runtime?.followCam.setBaseFov(s.fov);
     this.ui.debug.setVisible(s.showDebug);
   }
@@ -303,6 +303,8 @@ export class Game {
     return this.runtime?.world.district.groundHeight?.(x, z) ?? null;
   }
 
+  private readonly camDir = new THREE.Vector3();
+
   private frame = (dt: number, alpha: number): void => {
     this.elapsed += dt;
     const rt = this.runtime;
@@ -341,6 +343,16 @@ export class Game {
 
       world.district.update?.(this.elapsed);
       world.district.updateView?.(this.camera.position);
+      if (this.state === 'playing') {
+        // Radar: rotate with the camera; arrow = player / car heading.
+        this.camera.getWorldDirection(this.camDir);
+        const camYaw = Math.atan2(-this.camDir.x, -this.camDir.z);
+        const v = this.driving;
+        const p = v ? v.position : player.feetPosition;
+        const markers = vehicles.vehicles.filter((c) => c !== v).map((c) => ({ x: c.position.x, z: c.position.z, color: '#4fa3a5' }));
+        this.ui.hud.minimap.setSpeed(v ? v.speed : 0);
+        this.ui.hud.minimap.update(p.x, p.z, camYaw, v ? v.heading + Math.PI : player.visualFacing, markers);
+      }
       if (this.state === 'playing') {
         if (this.driving) {
           this.updateLocation(dt, this.driving.position);

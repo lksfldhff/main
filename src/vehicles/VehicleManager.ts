@@ -48,7 +48,9 @@ export class VehicleManager {
   }
 
   spawn(s: VehicleSpawn): Vehicle {
-    const types: CarType[] = ['sedan', 'sedan', 'hatch', 'hatch', 'suv', 'suv_model', 'van', 'taxi', 'sedan', 'suv_model', 'hatch', 'police'];
+    // The detailed City SUV (when installed) makes up ~40 % of the parked cars in varied paints;
+    // the procedural models fill in the rest (and replace it when the GLB is missing).
+    const types: CarType[] = ['suv_model', 'sedan', 'suv_model', 'hatch', 'suv_model', 'sedan', 'suv_model', 'hatch', 'suv', 'suv_model', 'taxi', 'sedan', 'van', 'police'];
     // Spawns arrive sorted by distance to the player spawn (the first one is the starter car):
     // the nearest car without a fixed type becomes the detailed City SUV, so it is easy to find.
     let type = s.type;
@@ -66,8 +68,8 @@ export class VehicleManager {
     if (CAR_MODEL_FILES[type]) {
       // Detailed GLB model: swapped in asynchronously, the procedural model stays as fallback.
       const carPaint = paint;
-      void loadCarTemplate(type).then((tpl) => {
-        if (tpl) applyCarTemplate(v.model, tpl, v.spec, carPaint);
+      void Promise.all([loadCarTemplate(type), loadCarTemplate(type, 1)]).then(([tpl, far]) => {
+        if (tpl) applyCarTemplate(v.model, tpl, v.spec, carPaint, far);
       });
     }
     this.vehicles.push(v);

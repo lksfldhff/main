@@ -416,6 +416,110 @@
      ]
     }
    }
+  },
+  "utility_box": {
+   "id": "utility_box",
+   "category": "street/street_cabinet",
+   "title": "Utility Box 01",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/utility_box_01",
+   "author": "James Ray Cock",
+   "license": "CC0",
+   "attribution": "Utility Box 01 by James Ray Cock (https://polyhaven.com/a/utility_box_01), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 1.12,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/utility_box/lod0.glb",
+     "bytes": 89392,
+     "triangles": 2202,
+     "bounds": [
+      [
+       -0.25998951377683693,
+       0.0009488463401794434,
+       -0.2099889186016662
+      ],
+      [
+       0.25998951377683693,
+       1.1203334331512451,
+       0.2219889280192001
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/utility_box/lod1.glb",
+     "bytes": 31588,
+     "triangles": 397,
+     "bounds": [
+      [
+       -0.2582142550869901,
+       0.0009488463401794434,
+       -0.20745563641575712
+      ],
+      [
+       0.2582142550869901,
+       1.1185641288757324,
+       0.2202921970227136
+      ]
+     ]
+    }
+   }
+  },
+  "concrete_barrier": {
+   "id": "concrete_barrier",
+   "category": "street/barrier_block",
+   "title": "Concrete Road Barrier",
+   "source": "polyhaven",
+   "sourceUrl": "https://polyhaven.com/a/concrete_road_barrier",
+   "author": "Amal Kumar",
+   "license": "CC0",
+   "attribution": "Concrete Road Barrier by Amal Kumar (https://polyhaven.com/a/concrete_road_barrier), CC0",
+   "downloaded": "2026-11-26",
+   "targetHeight": 0.82,
+   "lodDistances": [
+    0,
+    45
+   ],
+   "lods": {
+    "lod0": {
+     "file": "models/concrete_barrier/lod0.glb",
+     "bytes": 125356,
+     "triangles": 4872,
+     "bounds": [
+      [
+       -0.774281919002533,
+       -0.008174956907002429,
+       -0.29476558642484235
+      ],
+      [
+       0.7700847387313843,
+       0.8223810672205372,
+       0.34401127176381635
+      ]
+     ]
+    },
+    "lod1": {
+     "file": "models/concrete_barrier/lod1.glb",
+     "bytes": 28092,
+     "triangles": 604,
+     "bounds": [
+      [
+       -0.7736237049102783,
+       -0.007297125765898638,
+       -0.2939685544391705
+      ],
+      [
+       0.7688215970993042,
+       0.8224138912091343,
+       0.3440135976692273
+      ]
+     ]
+    }
+   }
   }
  },
  "generated": "2026-11-26"

@@ -1,5 +1,6 @@
 export type ShadowQuality = 'off' | 'low' | 'high';
 export type GraphicsQuality = 'low' | 'medium' | 'high';
+export type TimeOfDay = 'day' | 'night';
 
 export interface GameSettings {
   mouseSensitivity: number;
@@ -9,6 +10,7 @@ export interface GameSettings {
   renderScale: number;
   fov: number;
   showDebug: boolean;
+  timeOfDay: TimeOfDay;
 }
 
 const STORAGE_KEY = 'gta-heilbronn.settings.v1';
@@ -21,6 +23,7 @@ const DEFAULTS: GameSettings = {
   renderScale: 1,
   fov: 62,
   showDebug: false,
+  timeOfDay: 'day',
 };
 
 type Listener = (settings: Readonly<GameSettings>) => void;

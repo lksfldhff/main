@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import type { VehicleSpawn } from '../vehicles/VehicleManager';
+import type { MapImage } from '../ui/hud/Minimap';
 
 /** What the game needs to know about a loaded district (test grid or real Heilbronn). */
 export interface District {
@@ -21,6 +22,8 @@ export interface District {
   qa?(): unknown;
   /** Extra lines for the performance monitor. */
   stats?(): string;
+  /** Radar map image (GTA-style minimap). */
+  mapImage?: MapImage;
   /** Human-readable location (street / square) for the HUD. */
   locate?(position: THREE.Vector3): string | null;
   /** Terrain height at (x, z), if the district has terrain. */
