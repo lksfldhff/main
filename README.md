@@ -14,6 +14,15 @@ Sounds werden nicht verwendet.
 
 ---
 
+## Dokumentation
+
+- [`docs/ARCHITEKTUR_IST.md`](docs/ARCHITEKTUR_IST.md): Ist-Analyse mit Messwerten
+- [`docs/UMSETZUNGSPLAN.md`](docs/UMSETZUNGSPLAN.md): Zielarchitektur, Entscheidungen, Phasen, Migrationsstrategie
+- [`docs/verification/`](docs/verification/): Kartenabgleich gegen das amtliche Luftbild
+  - `report.json`: Messwerte
+  - `index.html`: interaktive Karte
+  - neu erzeugen mit `python tools/geo/verify.py`
+
 ## Schnellstart
 
 Voraussetzung: **Node.js ≥ 20** und ein aktueller Desktop-Browser mit Hardwarebeschleunigung.

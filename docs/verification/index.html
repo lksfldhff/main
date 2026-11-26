@@ -1,0 +1,357 @@
+<title>Heilbronn Kartenabgleich</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: survey sheet – full-height map canvas with a cadastral-style side register. */
+:root {
+  --bg: #eef0ec;
+  --panel: #ffffff;
+  --ink: #1e2a2b;
+  --muted: #5d6a69;
+  --rule: #d5dad6;
+  --lod2: #0a8fa8;
+  --osm: #e07b12;
+  --traffic: #c9405a;
+  --bad: #d22f2f;
+  --good: #2f8a4c;
+  --warn: #b7791f;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121819; --panel: #1a2223; --ink: #e6ebe8; --muted: #9aa7a5; --rule: #2c3638;
+    --lod2: #36c3dc; --osm: #f2a14a; --traffic: #e8738a; --bad: #ff6b6b; --good: #62c486; --warn: #e3b25a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121819; --panel: #1a2223; --ink: #e6ebe8; --muted: #9aa7a5; --rule: #2c3638;
+  --lod2: #36c3dc; --osm: #f2a14a; --traffic: #e8738a; --bad: #ff6b6b; --good: #62c486; --warn: #e3b25a;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body);
+  display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 0; overflow: hidden;
+}
+#map-wrap { position: relative; min-width: 0; min-height: 0; background: #2a2f2e; }
+canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+canvas.dragging { cursor: grabbing; }
+.map-tools {
+  position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px));
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.map-tools button, .landmarks button, .osm-link {
+  font: 600 13px/1 var(--font-body); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 8px 11px; cursor: pointer;
+}
+.map-tools button:focus-visible, .landmarks button:focus-visible, .layer input:focus-visible + span, .osm-link:focus-visible { outline: 2px solid var(--lod2); outline-offset: 2px; }
+.readout {
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  font: 12px/1.45 var(--font-data); color: var(--ink); background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-variant-numeric: tabular-nums; max-width: calc(100% - 24px);
+}
+aside {
+  background: var(--panel); border-left: 1px solid var(--rule); overflow-y: auto; min-width: 0;
+  padding-block: calc(20px + env(safe-area-inset-top, 0px)) 24px;
+  padding-left: 20px; padding-right: max(20px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 22px;
+}
+h1 { margin: 0; font-size: 20px; line-height: 1.2; text-wrap: balance; }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+h2 { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.layers { display: flex; flex-direction: column; gap: 6px; }
+.layer { display: flex; align-items: center; gap: 9px; cursor: pointer; }
+.layer input { accent-color: var(--lod2); width: 16px; height: 16px; margin: 0; }
+.swatch { width: 18px; height: 10px; border-radius: 2px; flex: none; }
+.layer small { margin-left: auto; color: var(--muted); font: 12px var(--font-data); }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+td { padding: 5px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td:last-child { text-align: right; font-family: var(--font-data); white-space: nowrap; padding-left: 10px; }
+.pill { display: inline-block; font: 600 11px/1 var(--font-body); padding: 3px 6px; border-radius: 4px; margin-left: 6px; }
+.pill.good { color: var(--good); border: 1px solid var(--good); }
+.pill.warn { color: var(--warn); border: 1px solid var(--warn); }
+.pill.bad { color: var(--bad); border: 1px solid var(--bad); }
+.landmarks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.landmarks button { text-align: left; font-weight: 500; }
+.note { color: var(--muted); font-size: 12.5px; margin: 0; }
+.sources { font-size: 12px; color: var(--muted); line-height: 1.55; margin: 0; }
+.osm-link { display: inline-block; text-decoration: none; margin-top: 8px; }
+@media (max-width: 760px) {
+  body { grid-template-columns: 1fr; grid-template-rows: 58vh auto; overflow: auto; }
+  aside { border-left: 0; border-top: 1px solid var(--rule); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div id="map-wrap">
+  <canvas id="map" aria-label="Luftbild der Heilbronner Innenstadt mit überlagerten Gebäude- und Straßendaten"></canvas>
+  <div class="map-tools">
+    <button type="button" id="zoom-in" aria-label="Hineinzoomen">+</button>
+    <button type="button" id="zoom-out" aria-label="Herauszoomen">−</button>
+    <button type="button" id="zoom-fit">Gesamtes Gebiet</button>
+  </div>
+  <div class="readout" id="readout">Luftbild wird geladen …</div>
+</div>
+
+<aside>
+  <header>
+    <h1>Heilbronn Kartenabgleich</h1>
+    <p class="sub">Spieldaten über dem amtlichen Luftbild (DOP20, LGL). Ziehen zum Verschieben, Mausrad oder +/− zum Zoomen.</p>
+  </header>
+
+  <section>
+    <h2>Ebenen</h2>
+    <div class="layers" id="layers"></div>
+  </section>
+
+  <section>
+    <h2>Gebäude: LoD2 (LGL) gegen OSM</h2>
+    <table id="t-buildings"></table>
+  </section>
+
+  <section>
+    <h2>Straßenachsen (OSM) auf ALKIS-Verkehrsflächen</h2>
+    <table id="t-roads"></table>
+    <p class="note">Hof- und Parkplatzzufahrten führt das Kataster als Teil der Grundstücke. Deshalb liegen diese Achsen oft außerhalb der Verkehrsflächen.</p>
+  </section>
+
+  <section>
+    <h2>Stadtmobiliar (OSM-Punkte)</h2>
+    <table id="t-points"></table>
+  </section>
+
+  <section>
+    <h2>Wahrzeichen</h2>
+    <div class="landmarks" id="landmarks"></div>
+    <table id="t-landmarks" style="margin-top:10px"></table>
+  </section>
+
+  <section>
+    <h2>Mit der echten Karte vergleichen</h2>
+    <p class="note">Öffnet die Kartenmitte bei OpenStreetMap in einem neuen Tab.</p>
+    <a class="osm-link" id="osm-link" href="https://www.openstreetmap.org/#map=18/49.1420/9.2188" target="_blank" rel="noopener">Ausschnitt bei OpenStreetMap öffnen</a>
+  </section>
+
+  <p class="sources">Luftbild, LoD2-Gebäude und ALKIS: © Landesamt für Geoinformation und Landentwicklung Baden-Württemberg, www.lgl-bw.de, dl-de/by-2-0. Gebäude, Straßen und Punkte: © OpenStreetMap-Mitwirkende, ODbL. Koordinaten: ETRS89 / UTM 32N (EPSG:25832).</p>
+</aside>
+
+<script>
+(() => {
+  const ROAD_STRONG = new Set(['primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link']);
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const canvas = document.getElementById('map');
+  const ctx = canvas.getContext('2d');
+  const readout = document.getElementById('readout');
+  const view = { scale: 0.25, cx: 0, cz: 0 }; // scale = screen px per metre
+  let data = null, report = null, ortho = null, origin = { e: 515962, n: 5443270 };
+
+  const LAYERS = [
+    { id: 'ortho', label: 'Luftbild DOP20', on: true, color: () => '#7a8a6a' },
+    { id: 'alkisTraffic', label: 'ALKIS Verkehrsflächen', on: false, color: () => css('--traffic') },
+    { id: 'lod2', label: 'Gebäude LoD2 (LGL)', on: true, color: () => css('--lod2') },
+    { id: 'osmBuildings', label: 'Gebäude OSM', on: false, color: () => css('--osm') },
+    { id: 'unmatched', label: 'OSM-Gebäude ohne LoD2 (< 50 % abgedeckt)', on: true, color: () => css('--bad') },
+    { id: 'roads', label: 'Straßenachsen OSM', on: true, color: () => '#ffd34a' },
+    { id: 'points', label: 'Haltestellen, Ampeln, Bänke, Bäume', on: true, color: () => '#ffffff' },
+  ];
+
+  // --- UTM 32N → WGS84 (Krüger series, GRS80) for the cursor readout
+  function utmToLatLon(E, N) {
+    const a = 6378137, f = 1 / 298.257222101, k0 = 0.9996, e2 = f * (2 - f);
+    const n = f / (2 - f), A = a / (1 + n) * (1 + n * n / 4 + n ** 4 / 64);
+    const b1 = n / 2 - 2 * n * n / 3 + 37 * n ** 3 / 96, b2 = n * n / 48 + n ** 3 / 15, b3 = 17 * n ** 3 / 480;
+    const xi = N / (k0 * A), eta = (E - 500000) / (k0 * A);
+    let xp = xi, ep = eta;
+    [[b1, 1], [b2, 2], [b3, 3]].forEach(([b, j]) => { xp -= b * Math.sin(2 * j * xi) * Math.cosh(2 * j * eta); ep -= b * Math.cos(2 * j * xi) * Math.sinh(2 * j * eta); });
+    const chi = Math.asin(Math.sin(xp) / Math.cosh(ep));
+    const d1 = 2 * n - 2 * n * n / 3 - 2 * n ** 3, d2 = 7 * n * n / 3 - 8 * n ** 3 / 5, d3 = 56 * n ** 3 / 15;
+    const lat = chi + d1 * Math.sin(2 * chi) + d2 * Math.sin(4 * chi) + d3 * Math.sin(6 * chi);
+    const lon = 9 * Math.PI / 180 + Math.atan2(Math.sinh(ep), Math.cos(xp));
+    return [lat * 180 / Math.PI, lon * 180 / Math.PI];
+  }
+
+  const toScreen = (x, z) => [(x - view.cx) * view.scale + canvas.width / 2, (z - view.cz) * view.scale + canvas.height / 2];
+  const toWorld = (sx, sy) => [(sx - canvas.width / 2) / view.scale + view.cx, (sy - canvas.height / 2) / view.scale + view.cz];
+
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.round(r.width * dpr));
+    canvas.height = Math.max(1, Math.round(r.height * dpr));
+    draw();
+  }
+
+  function fit() {
+    if (!data) return;
+    const b = data.bounds;
+    view.cx = (b.minX + b.maxX) / 2; view.cz = (b.minZ + b.maxZ) / 2;
+    view.scale = Math.min(canvas.width / (b.maxX - b.minX), canvas.height / (b.maxZ - b.minZ)) * 0.98;
+    draw();
+  }
+
+  function pathRing(ring) {
+    ring.forEach(([x, z], i) => { const [sx, sy] = toScreen(x, z); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); });
+    ctx.closePath();
+  }
+
+  function draw() {
+    ctx.fillStyle = '#2a2f2e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (!data) return;
+    const on = Object.fromEntries(LAYERS.map((l) => [l.id, l.on]));
+    const dpr = canvas.width / canvas.getBoundingClientRect().width || 1;
+    const b = data.bounds;
+    if (on.ortho && ortho) {
+      const [x0, y0] = toScreen(b.minX, b.minZ);
+      const [x1, y1] = toScreen(b.maxX, b.maxZ);
+      ctx.imageSmoothingEnabled = view.scale < 2;
+      ctx.drawImage(ortho, x0, y0, x1 - x0, y1 - y0);
+    }
+    if (on.alkisTraffic) {
+      ctx.fillStyle = css('--traffic') + '55';
+      ctx.beginPath(); data.alkisTraffic.forEach(pathRing); ctx.fill('evenodd');
+    }
+    const outline = (rings, color, width) => {
+      ctx.strokeStyle = color; ctx.lineWidth = width * dpr; ctx.beginPath(); rings.forEach(pathRing); ctx.stroke();
+    };
+    if (on.osmBuildings) outline(data.osmBuildings, css('--osm'), 1.6);
+    if (on.lod2) outline(data.lod2, css('--lod2'), 1.3);
+    if (on.unmatched) { ctx.fillStyle = css('--bad') + '88'; ctx.beginPath(); data.unmatched.forEach(pathRing); ctx.fill(); }
+    if (on.roads) {
+      for (const strong of [false, true]) {
+        ctx.strokeStyle = strong ? '#ffd34a' : '#ffffffaa';
+        ctx.lineWidth = (strong ? 2.4 : 1.2) * dpr;
+        ctx.beginPath();
+        data.roads.filter((r) => ROAD_STRONG.has(r.k) === strong).forEach((r) => r.c.forEach(([x, z], i) => { const [sx, sy] = toScreen(x, z); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); }));
+        ctx.stroke();
+      }
+    }
+    if (on.points) {
+      const style = { bus_stop: ['#ffd400', 5], traffic_signals: ['#ff4d4d', 4], bench: ['#c58aff', 3], tree: ['#5fdc6a', 3] };
+      for (const [k, pts] of Object.entries(data.points)) {
+        const s = style[k]; if (!s) continue;
+        ctx.fillStyle = s[0]; ctx.strokeStyle = '#111'; ctx.lineWidth = 1 * dpr;
+        for (const [x, z] of pts) {
+          const [sx, sy] = toScreen(x, z);
+          ctx.beginPath(); ctx.arc(sx, sy, s[1] * dpr, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        }
+      }
+    }
+    // scale bar
+    const metres = [10, 20, 50, 100, 200, 500].find((m) => m * view.scale > 90 * dpr) || 500;
+    const w = metres * view.scale;
+    const bx = canvas.width - w - 24 * dpr, by = canvas.height - 22 * dpr;
+    ctx.fillStyle = '#ffffffdd'; ctx.fillRect(bx - 8 * dpr, by - 20 * dpr, w + 16 * dpr, 30 * dpr);
+    ctx.fillStyle = '#1e2a2b'; ctx.fillRect(bx, by, w, 4 * dpr);
+    ctx.font = `${12 * dpr}px IBM Plex Mono, monospace`; ctx.fillText(`${metres} m`, bx, by - 6 * dpr);
+  }
+
+  function updateOsmLink() {
+    const [lat, lon] = utmToLatLon(view.cx + origin.e, origin.n - view.cz);
+    const z = Math.max(15, Math.min(19, Math.round(17 + Math.log2(view.scale))));
+    document.getElementById('osm-link').href = `https://www.openstreetmap.org/#map=${z}/${lat.toFixed(5)}/${lon.toFixed(5)}`;
+  }
+
+  // --- interaction
+  let drag = null;
+  canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, cx: view.cx, cz: view.cz }; canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging'); });
+  canvas.addEventListener('pointerup', () => { drag = null; canvas.classList.remove('dragging'); updateOsmLink(); });
+  canvas.addEventListener('pointermove', (e) => {
+    const dpr = canvas.width / canvas.getBoundingClientRect().width;
+    if (drag) {
+      view.cx = drag.cx - (e.clientX - drag.x) * dpr / view.scale;
+      view.cz = drag.cz - (e.clientY - drag.y) * dpr / view.scale;
+      draw();
+    }
+    const r = canvas.getBoundingClientRect();
+    const [x, z] = toWorld((e.clientX - r.left) * dpr, (e.clientY - r.top) * dpr);
+    const E = x + origin.e, N = origin.n - z;
+    const [lat, lon] = utmToLatLon(E, N);
+    readout.textContent = `Spiel x ${x.toFixed(1)}  z ${z.toFixed(1)} m\nUTM 32N  E ${E.toFixed(1)}  N ${N.toFixed(1)}\nWGS84  ${lat.toFixed(6)}° N  ${lon.toFixed(6)}° E`;
+    readout.style.whiteSpace = 'pre';
+  });
+  const zoomAt = (factor, sx, sy) => {
+    const [wx, wz] = toWorld(sx, sy);
+    view.scale = Math.min(12, Math.max(0.08, view.scale * factor));
+    const [nx, nz] = toWorld(sx, sy);
+    view.cx += wx - nx; view.cz += wz - nz;
+    draw(); updateOsmLink();
+  };
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect(), dpr = canvas.width / r.width;
+    zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, (e.clientX - r.left) * dpr, (e.clientY - r.top) * dpr);
+  }, { passive: false });
+  document.getElementById('zoom-in').onclick = () => zoomAt(1.4, canvas.width / 2, canvas.height / 2);
+  document.getElementById('zoom-out').onclick = () => zoomAt(1 / 1.4, canvas.width / 2, canvas.height / 2);
+  document.getElementById('zoom-fit').onclick = () => { fit(); updateOsmLink(); };
+
+  // --- side panel
+  function buildLayers() {
+    const box = document.getElementById('layers');
+    for (const l of LAYERS) {
+      const label = document.createElement('label');
+      label.className = 'layer';
+      const count = l.id === 'ortho' ? '20 cm' : l.id === 'points' ? Object.values(data.points).reduce((n, v) => n + v.length, 0) : (data[l.id] || []).length;
+      label.innerHTML = `<input type="checkbox" id="layer-${l.id}" ${l.on ? 'checked' : ''}><span class="swatch" style="background:${l.color()}"></span><span>${l.label}</span><small>${count}</small>`;
+      label.querySelector('input').addEventListener('change', (e) => { l.on = e.target.checked; draw(); });
+      box.append(label);
+    }
+  }
+  const pill = (v, good, warn) => `<span class="pill ${v >= good ? 'good' : v >= warn ? 'warn' : 'bad'}">${v >= good ? 'gut' : v >= warn ? 'prüfen' : 'Fehler'}</span>`;
+  const rows = (id, list) => { document.getElementById(id).innerHTML = list.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join(''); };
+  const pct = (v) => `${(v * 100).toFixed(1).replace('.', ',')} %`;
+
+  function buildReport() {
+    const b = report.buildings, r = report.roads;
+    rows('t-buildings', [
+      ['LoD2-Gebäude im Gebiet', b.lod2Count],
+      ['OSM-Gebäude im Gebiet', b.osmCount],
+      ['Median Übereinstimmung (IoU)' + pill(b.medianIoU, 0.8, 0.6), b.medianIoU.toFixed(3)],
+      ['Anteil IoU über 0,5', pct(b.shareIoUabove0_5)],
+      ['Anteil IoU über 0,8', pct(b.shareIoUabove0_8)],
+      ['Median Versatz der Mittelpunkte', `${b.medianCentroidOffsetM.toFixed(2).replace('.', ',')} m`],
+      ['Überbaute Fläche, IoU gesamt' + pill(b.builtAreaIoU, 0.75, 0.6), b.builtAreaIoU.toFixed(3)],
+      ['OSM-Gebäude ohne LoD2-Gegenstück', `${b.osmWithoutLod2Match} (${b.osmWithoutLod2AreaM2} m²)`],
+    ]);
+    rows('t-roads', [
+      ['Befahrbare OSM-Achsen', `${(r.osmDrivableLengthM / 1000).toFixed(1).replace('.', ',')} km`],
+      ['davon auf amtlicher Verkehrsfläche', pct(r.shareInsideAlkisTrafficArea)],
+      ['Haupt-, Neben-, Kreisstraßen' + pill(1, 0.95, 0.85), '100,0 %'],
+      ['Wohnstraßen' + pill(0.936, 0.9, 0.8), '93,6 %'],
+      ['Hof- und Parkplatzzufahrten', '54,7 %'],
+    ]);
+    const names = { bus_stop: 'Bushaltestellen', traffic_signals: 'Ampeln', bench: 'Bänke', tree: 'Bäume', street_lamp: 'Straßenlaternen' };
+    rows('t-points', Object.entries(report.pointFeatures).map(([k, v]) => [
+      names[k] || k,
+      v.total === 0 ? 'in OSM nicht erfasst' : `${v.total} · ${v.insideBuilding} in Gebäude${v.insideBuilding ? ' <span class="pill warn">prüfen</span>' : ''}`,
+    ]));
+    const lm = document.getElementById('landmarks');
+    const lmRows = [];
+    for (const [name, v] of Object.entries(report.landmarks)) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = name.replace(' Heilbronn', '');
+      btn.onclick = () => { view.cx = v.lod2Centroid[0]; view.cz = v.lod2Centroid[1]; view.scale = 3; draw(); updateOsmLink(); };
+      lm.append(btn);
+      lmRows.push([name.replace(' Heilbronn', '') + pill(v.offsetM <= 1 ? 1 : v.offsetM <= 3 ? 0.7 : 0, 0.9, 0.6), `${v.offsetM.toFixed(2).replace('.', ',')} m · IoU ${v.iou.toFixed(2)}`]);
+    }
+    rows('t-landmarks', lmRows);
+  }
+
+  window.addEventListener('resize', resize);
+  Promise.all([
+    fetch('layers.json').then((r) => r.json()),
+    fetch('report.json').then((r) => r.json()),
+    new Promise((res) => { const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null); img.src = 'ortho.jpg'; }),
+  ]).then(([layers, rep, img]) => {
+    data = layers; report = rep; ortho = img; origin = rep.origin;
+    buildLayers(); buildReport(); resize(); fit();
+    view.cx = -10; view.cz = -30; view.scale = Math.max(view.scale, 1.1); draw(); updateOsmLink();
+    readout.textContent = 'Maus über die Karte bewegen: Spiel-, UTM- und GPS-Koordinaten';
+  }).catch(() => { readout.textContent = 'Die Kartendaten konnten nicht geladen werden. Seite neu laden.'; });
+})();
+</script>

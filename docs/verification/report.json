@@ -1,0 +1,106 @@
+{
+  "crs": "EPSG:25832 (ETRS89/UTM32N); game = UTM minus origin, z = -northing",
+  "origin": {
+    "e": 515962.0,
+    "n": 5443270.0
+  },
+  "buildings": {
+    "lod2Count": 1681,
+    "osmCount": 1454,
+    "medianIoU": 0.833,
+    "shareIoUabove0_8": 0.613,
+    "shareIoUabove0_5": 0.865,
+    "medianCentroidOffsetM": 0.68,
+    "builtAreaIoU": 0.803,
+    "osmWithoutLod2Match": 30,
+    "osmWithoutLod2AreaM2": 6090
+  },
+  "roads": {
+    "osmDrivableLengthM": 35749,
+    "shareInsideAlkisTrafficArea": 0.776
+  },
+  "pointFeatures": {
+    "bus_stop": {
+      "total": 30,
+      "insideBuilding": 2
+    },
+    "bench": {
+      "total": 134,
+      "insideBuilding": 7
+    },
+    "traffic_signals": {
+      "total": 69,
+      "insideBuilding": 0
+    },
+    "tree": {
+      "total": 174,
+      "insideBuilding": 1
+    },
+    "street_lamp": {
+      "total": 0,
+      "insideBuilding": 0
+    }
+  },
+  "landmarks": {
+    "Kilianskirche": {
+      "osmCentroid": [
+        39.49,
+        36.45
+      ],
+      "lod2Centroid": [
+        40.04,
+        36.35
+      ],
+      "offsetM": 0.56,
+      "iou": 0.951
+    },
+    "Götzenturm": {
+      "osmCentroid": [
+        -275.98,
+        249.89
+      ],
+      "lod2Centroid": [
+        -276.57,
+        250.3
+      ],
+      "offsetM": 0.73,
+      "iou": 0.798
+    },
+    "experimenta": {
+      "osmCentroid": [
+        -289.04,
+        -269.17
+      ],
+      "lod2Centroid": [
+        -289.12,
+        -269.15
+      ],
+      "offsetM": 0.09,
+      "iou": 0.99
+    },
+    "Rathaus Heilbronn": {
+      "osmCentroid": [
+        -3.33,
+        -84.62
+      ],
+      "lod2Centroid": [
+        -6.21,
+        -84.1
+      ],
+      "offsetM": 2.92,
+      "iou": 0.654
+    },
+    "Theater Heilbronn": {
+      "osmCentroid": [
+        266.01,
+        -413.46
+      ],
+      "lod2Centroid": [
+        266.01,
+        -413.92
+      ],
+      "offsetM": 0.45,
+      "iou": 0.93
+    }
+  }
+}
