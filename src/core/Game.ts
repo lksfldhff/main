@@ -6,6 +6,7 @@ import { EventBus, type GameEvents } from './EventBus';
 import { Renderer } from '../rendering/Renderer';
 import { Environment } from '../rendering/Environment';
 import { PostProcessing } from '../rendering/PostProcessing';
+import { CINE_PRESETS } from '../rendering/cinematic/CinematicSettings';
 import { MaterialLibrary } from '../rendering/MaterialLibrary';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { InputManager } from '../input/InputManager';
@@ -100,6 +101,8 @@ export class Game {
       if (this.state === 'playing' && !this.input.pointerLocked) void this.input.requestPointerLock();
     });
 
+    // Performance mode: decided once per device (weaker / mobile GPUs skip the glow chain).
+    if (this.settings.values.cinePerformance === null) this.settings.update({ cinePerformance: Game.detectWeakDevice() });
     this.applySettings(this.settings.values);
     this.settings.subscribe((s) => this.applySettings(s));
 
@@ -203,6 +206,15 @@ export class Game {
     this.post.setQuality(s.graphicsQuality);
     this.environment.setShadowQuality(s.shadowQuality);
     this.environment.setTimeOfDay(s.timeOfDay);
+    this.post.setCinematic({
+      enabled: s.cineEnabled,
+      preset: s.cinePreset,
+      values: s.cine,
+      performance: s.cinePerformance === true,
+      compare: s.cineCompare,
+    });
+    this.ui.hud.setCompare(s.cineCompare && s.cineEnabled && s.graphicsQuality !== 'low');
+    this.environment.setHaze(s.cineEnabled ? (CINE_PRESETS[s.cinePreset]?.haze ?? 1) : 1);
     this.runtime?.followCam.setBaseFov(s.fov);
     this.ui.debug.setVisible(s.showDebug);
   }
@@ -305,6 +317,39 @@ export class Game {
   }
 
   private readonly camDir = new THREE.Vector3();
+  private perfTime = 0;
+  private perfFrames = 0;
+
+  /** Mobile / low-core / low-memory devices start in performance mode. */
+  private static detectWeakDevice(): boolean {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    return coarse || (nav.hardwareConcurrency ?? 8) <= 4 || (nav.deviceMemory ?? 8) <= 4;
+  }
+
+  /**
+   * If the frame rate stays below 28 FPS for 8 s of gameplay with the full camera look,
+   * switch to performance mode automatically (can be turned off again in the settings).
+   */
+  private watchPerformance(dt: number): void {
+    const s = this.settings.values;
+    if (import.meta.env.DEV && location.search.includes('noperfwatch')) return; // automated screenshot tests (software GPU)
+    if (this.state !== 'playing' || s.cinePerformance || !s.cineEnabled || s.graphicsQuality === 'low') {
+      this.perfTime = 0;
+      this.perfFrames = 0;
+      return;
+    }
+    this.perfTime += dt;
+    this.perfFrames++;
+    if (this.perfTime < 8) return;
+    const fps = this.perfFrames / this.perfTime;
+    this.perfTime = 0;
+    this.perfFrames = 0;
+    if (fps < 28) {
+      this.settings.update({ cinePerformance: true });
+      this.ui.hud.notify('Performance-Modus', `Kamera-Effekte reduziert (${fps.toFixed(0)} FPS). Abschaltbar unter Einstellungen → Kamera.`);
+    }
+  }
 
   private frame = (dt: number, alpha: number): void => {
     this.elapsed += dt;
@@ -381,6 +426,7 @@ export class Game {
     this.renderer.renderer.info.reset();
     this.post.render(dt);
     const renderMs = performance.now() - r0;
+    this.watchPerformance(dt);
     this.ui.debug.update(
       dt,
       this.renderer.renderer,

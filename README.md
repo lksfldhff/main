@@ -23,6 +23,7 @@ Sounds werden nicht verwendet.
 - [`docs/ARCHITEKTUR_IST.md`](docs/ARCHITEKTUR_IST.md): Ist-Analyse mit Messwerten
 - [`docs/UMSETZUNGSPLAN.md`](docs/UMSETZUNGSPLAN.md): Zielarchitektur, Entscheidungen, Phasen, Migrationsstrategie
 - [`docs/STAND_P2_P4.md`](docs/STAND_P2_P4.md): Abnahmebericht Fassaden-Baukasten, Straßenraum, Asset-Bibliothek, Performance, QA
+- [`docs/KAMERA_LOOK.md`](docs/KAMERA_LOOK.md): Kino-Kamera (Pro-Mist, Bloom, Aberration, Filmkorn, Vignette, Grading, Presets, Performance-Modus)
 - [`docs/qa/report.md`](docs/qa/report.md): automatischer Szenen-QA-Bericht je 200-m-Kartenausschnitt
 - [`docs/verification/`](docs/verification/): Kartenabgleich gegen das amtliche Luftbild
   - `report.json`: Messwerte

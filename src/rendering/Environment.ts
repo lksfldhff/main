@@ -21,6 +21,8 @@ export class Environment {
   private proceduralEnv: THREE.Texture | null = null;
   private hdris: { dayEnv: THREE.Texture; dayBackground: THREE.Texture; nightEnv: THREE.Texture } | null = null;
   private timeOfDay: TimeOfDay = 'day';
+  /** Atmospheric haze from the camera look: fog distances × factor (< 1 = hazier). */
+  private haze = 1;
   private readonly dayExposure: number;
   /** Sun direction of the day HDRI (so shadows match the photographed sky). */
   private readonly hdriSun = new THREE.Vector3();
@@ -110,6 +112,13 @@ export class Environment {
     this.setTimeOfDay(timeOfDay, true);
   }
 
+  /** Distance haze of the camera look (cheap: reuses the scene fog, no volumetrics). */
+  setHaze(factor: number): void {
+    if (Math.abs(factor - this.haze) < 1e-3) return;
+    this.haze = factor;
+    this.setTimeOfDay(this.timeOfDay, true);
+  }
+
   /** Day: photographed sky + street reflections. Night: dark sky, moonlight, lit windows and lamps. */
   setTimeOfDay(t: TimeOfDay, force = false): void {
     if (t === this.timeOfDay && !force) return;
@@ -127,8 +136,8 @@ export class Environment {
       this.hemi.groundColor.set(0x141210);
       this.hemi.intensity = 0.25;
       fog.color.set(0x0b0f16);
-      fog.near = 120;
-      fog.far = 900;
+      fog.near = 120 * this.haze;
+      fog.far = 900 * this.haze;
       this.sky.visible = true;
       this.scene.background = null;
       this.scene.environment = this.hdris?.nightEnv ?? this.proceduralEnv;
@@ -140,8 +149,8 @@ export class Environment {
       this.hemi.color.set(0xc4d8f2);
       this.hemi.groundColor.set(0x6a6255);
       this.hemi.intensity = 0.45;
-      fog.near = 260;
-      fog.far = 1500;
+      fog.near = 260 * this.haze;
+      fog.far = 1500 * this.haze;
       this.renderer.toneMappingExposure = this.dayExposure;
       if (this.hdris) {
         this.setSunDirection(this.hdriSun);

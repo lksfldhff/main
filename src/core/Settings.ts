@@ -1,6 +1,9 @@
+import { CINE_PRESETS, type CinePreset, type CineValues } from '../rendering/cinematic/CinematicSettings';
+
 export type ShadowQuality = 'off' | 'low' | 'high';
 export type GraphicsQuality = 'low' | 'medium' | 'high';
 export type TimeOfDay = 'day' | 'night';
+export type { CinePreset, CineValues };
 
 export interface GameSettings {
   mouseSensitivity: number;
@@ -11,6 +14,13 @@ export interface GameSettings {
   fov: number;
   showDebug: boolean;
   timeOfDay: TimeOfDay;
+  /** Cinematic camera look */
+  cineEnabled: boolean;
+  cinePreset: CinePreset;
+  cine: CineValues;
+  /** null = not decided yet (auto-detected on first start). */
+  cinePerformance: boolean | null;
+  cineCompare: boolean;
 }
 
 const STORAGE_KEY = 'gta-heilbronn.settings.v1';
@@ -24,6 +34,11 @@ const DEFAULTS: GameSettings = {
   fov: 62,
   showDebug: false,
   timeOfDay: 'day',
+  cineEnabled: true,
+  cinePreset: 'gta',
+  cine: { ...CINE_PRESETS.gta.values },
+  cinePerformance: null,
+  cineCompare: false,
 };
 
 type Listener = (settings: Readonly<GameSettings>) => void;

@@ -15,6 +15,7 @@ export class Hud {
   private currentPrompt: string | null = null;
   readonly speedometer = new Speedometer();
   readonly minimap = new Minimap();
+  private readonly compare: HTMLElement;
 
   constructor() {
     this.promptText = h('span', {});
@@ -31,7 +32,8 @@ export class Hud {
     this.locationStreet = h('strong', {});
     this.locationArea = h('span', {});
     this.location = h('div', { class: 'location hidden' }, this.locationStreet, this.locationArea);
-    this.element = h('div', { class: 'hud hidden' }, this.toasts, this.prompt, this.hint, this.location, this.speedometer.element, this.minimap.element);
+    this.compare = h('div', { class: 'compare-label hidden' }, h('span', {}, 'Vorher'), h('b', {}, 'Nachher'));
+    this.element = h('div', { class: 'hud hidden' }, this.compare, this.toasts, this.prompt, this.hint, this.location, this.speedometer.element, this.minimap.element);
   }
 
   show(visible: boolean): void {
@@ -40,6 +42,11 @@ export class Hud {
       this.hint.classList.remove('fade');
       window.setTimeout(() => this.hint.classList.add('fade'), 7000);
     }
+  }
+
+  /** Labels for the before/after split screen of the camera look. */
+  setCompare(on: boolean): void {
+    this.compare.classList.toggle('hidden', !on);
   }
 
   setPrompt(text: string | null): void {

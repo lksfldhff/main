@@ -256,3 +256,17 @@ body.is-driving .interaction-prompt { bottom: 6%; }
 }
 .minimap-canvas { width: 100%; height: 100%; display: block; }
 .controls-hint { left: 260px; }
+
+/* ---------- Kamera & Look ---------- */
+.settings-panel { max-height: calc(100vh - 40px); overflow-y: auto; overscroll-behavior: contain; }
+.cine-section .segmented { flex-wrap: wrap; gap: 2px; border-radius: 18px; }
+.cine-section .segmented button { padding: 7px 11px; }
+.cine-sliders { display: grid; gap: 2px; }
+.compare-label {
+  position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 28px; padding: 6px 14px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--line);
+  font: 700 11px/1 var(--font); letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim);
+  pointer-events: none;
+}
+.compare-label b { color: var(--accent); font-weight: 700; }

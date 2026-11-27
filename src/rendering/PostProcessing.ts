@@ -2,56 +2,38 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
+import { MistBloomPass } from './cinematic/MistBloomPass';
+import { CinematicPass } from './cinematic/CinematicPass';
+import { CINE_PRESETS, LOOKS, performanceValues, type CinePreset, type CineValues } from './cinematic/CinematicSettings';
+
+export interface CinematicConfig {
+  enabled: boolean;
+  preset: CinePreset;
+  values: CineValues;
+  /** Performance mode: no bloom / Pro-Mist chain, no chromatic aberration taps. */
+  performance: boolean;
+  /** Split-screen before/after comparison. */
+  compare: boolean;
+}
 
 export type GraphicsQuality = 'low' | 'medium' | 'high';
 
-/** Colour grade applied after tone mapping: saturation, contrast, split toning, vignette. */
-const GradeShader = {
-  name: 'GradeShader',
-  uniforms: {
-    tDiffuse: { value: null },
-    uSaturation: { value: 1.08 },
-    uContrast: { value: 1.07 },
-    uShadowTint: { value: new THREE.Vector3(0.95, 1.0, 1.05) },
-    uHighlightTint: { value: new THREE.Vector3(1.03, 1.0, 0.95) },
-    uVignette: { value: 0.32 },
-  },
-  vertexShader: /* glsl */ `
-    varying vec2 vUv;
-    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-  fragmentShader: /* glsl */ `
-    uniform sampler2D tDiffuse;
-    uniform float uSaturation;
-    uniform float uContrast;
-    uniform vec3 uShadowTint;
-    uniform vec3 uHighlightTint;
-    uniform float uVignette;
-    varying vec2 vUv;
-    void main() {
-      vec4 src = texture2D(tDiffuse, vUv);
-      vec3 c = src.rgb;
-      float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-      c = mix(vec3(l), c, uSaturation);
-      c = (c - 0.5) * uContrast + 0.5;
-      c *= mix(uShadowTint, uHighlightTint, smoothstep(0.05, 0.9, l));
-      float v = smoothstep(0.95, 0.3, length((vUv - 0.5) * vec2(1.25, 1.0)));
-      c *= mix(1.0, v, uVignette);
-      gl_FragColor = vec4(clamp(c, 0.0, 1.0), src.a);
-    }`,
-};
-
 /**
- * Post-processing chain: Render → GTAO (high) → Tone mapping/sRGB → Grade → FXAA.
- * "high" additionally renders with 4× MSAA.
+ * Post-processing chain:
+ *   Render (HDR, half float) → GTAO (high) → Mist/Bloom mip chain (1/2…1/32 res, optional) →
+ *   Cinematic pass (lens, CA, bloom + Pro-Mist, ACES tone mapping, grade, vignette, grain) → FXAA.
+ * "high" renders with 4× MSAA instead of FXAA. "low" renders directly (no post-processing).
  */
 export class PostProcessing {
   private composer: EffectComposer | null = null;
   private quality: GraphicsQuality = 'medium';
   private size = new THREE.Vector2(1, 1);
   private pixelRatio = 1;
+  private bloomPass: MistBloomPass | null = null;
+  private cinePass: CinematicPass | null = null;
+  private time = 0;
+  private cine: CinematicConfig = { enabled: true, preset: 'gta', values: CINE_PRESETS.gta.values, performance: false, compare: false };
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -74,15 +56,40 @@ export class PostProcessing {
     }
   }
 
+  /** Applies the camera look in real time (uniform updates only, no rebuild). */
+  setCinematic(config: CinematicConfig): void {
+    this.cine = config;
+    this.applyCinematic();
+  }
+
+  private applyCinematic(): void {
+    const c = this.cine;
+    const values = c.performance ? performanceValues(c.values) : c.values;
+    const def = CINE_PRESETS[c.preset] ?? CINE_PRESETS.gta;
+    this.cinePass?.apply(values, LOOKS[def.look], c.enabled, c.compare);
+    // The mip chain only runs when glow / diffusion is actually visible.
+    const needBloom = c.enabled && !c.performance && (values.bloom > 0.001 || values.mist > 0.001);
+    if (this.bloomPass) this.bloomPass.enabled = needBloom;
+    this.cinePass?.setTextures(needBloom ? this.bloomPass!.bloomTexture : null, needBloom ? this.bloomPass!.mistTexture : null);
+  }
+
   render(dt: number): void {
     if (this.quality === 'low' || !this.composer) {
       this.renderer.render(this.scene, this.camera);
       return;
     }
+    this.time += dt;
+    const exposure = this.renderer.toneMappingExposure;
+    if (this.bloomPass) this.bloomPass.exposure = exposure;
+    this.cinePass?.setFrame(this.time % 1000, exposure, this.size.x * this.pixelRatio, this.size.y * this.pixelRatio);
     this.composer.render(dt);
   }
 
   private rebuild(): void {
+    this.bloomPass?.dispose();
+    this.cinePass?.dispose();
+    this.bloomPass = null;
+    this.cinePass = null;
     this.composer?.dispose();
     this.composer = null;
     if (this.quality === 'low') return;
@@ -103,11 +110,14 @@ export class PostProcessing {
       gtao.updateGtaoMaterial({ radius: 1.2, distanceExponent: 1.4, thickness: 1.5, scale: 1.0, samples: 12 });
       composer.addPass(gtao);
     }
-    // Bloom is intentionally omitted for daytime: the HDR sky exceeds any useful threshold and
-    // veils the whole image. It returns with the day/night cycle (lit windows, street lamps).
-    composer.addPass(new OutputPass());
-    composer.addPass(new ShaderPass(GradeShader));
+    // Glow / Pro-Mist source (reads the HDR image, writes only its own small targets).
+    this.bloomPass = new MistBloomPass();
+    composer.addPass(this.bloomPass);
+    // Tone mapping (ACES, renderer exposure), sRGB and the whole camera look in one pass.
+    this.cinePass = new CinematicPass();
+    composer.addPass(this.cinePass);
     if (this.quality !== 'high') composer.addPass(new FXAAPass());
+    this.applyCinematic();
     this.composer = composer;
   }
 }
